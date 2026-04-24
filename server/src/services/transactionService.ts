@@ -108,8 +108,7 @@ export const applyAutoRulesToExisting = async () => {
     where: {
       OR: [
         { category: '기타' },
-        { category: '' },
-        { category: null }
+        { category: '' }
       ]
     }
   });
