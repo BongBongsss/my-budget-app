@@ -19,7 +19,10 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 app.use(cors({ 
-  origin: 'https://my-budget-app-client.vercel.app', // 실제 클라이언트 주소로 고정
+  origin: (origin, callback) => {
+    // 요청이 들어오는 origin을 그대로 허용 (세션 쿠키 사용 시 필수)
+    callback(null, true);
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
