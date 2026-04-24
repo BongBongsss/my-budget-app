@@ -1,6 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+// 환경 변수 확인
+if (!process.env.DATABASE_URL) {
+  throw new Error("DATABASE_URL environment variable is missing!");
+}
+
+// 명시적으로 URL 전달
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 
 export const initDb = async () => {
   // 기본 카테고리 데이터 삽입 (없을 경우)
