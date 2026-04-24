@@ -4,9 +4,9 @@ import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
 // 데이터의 고유 지문(hash) 생성 함수
-const generateHash = (date: string, amount: number, vendor: string) => {
+const generateHash = (date: string, amount: number, vendor: string, raw_data?: string | null) => {
   return createHash('sha256')
-    .update(`${date}-${amount}-${vendor}`)
+    .update(`${date}-${amount}-${vendor}-${raw_data || ''}`)
     .digest('hex');
 };
 
@@ -21,6 +21,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const date = transaction.date || new Date().toISOString().split('T')[0];
     const amount = transaction.amount || 0;
     const vendor = transaction.vendor || 'Unknown';
+    const raw_data = transaction.raw_data || null;
     
     return {
       id: randomUUID(),
@@ -31,8 +32,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       category: transaction.category || (await autoCategorize(vendor)),
       source: transaction.source || 'manual',
       is_recurring: transaction.is_recurring || 0,
-      raw_data: transaction.raw_data || null,
-      hash: generateHash(date, amount, vendor),
+      raw_data,
+      hash: generateHash(date, amount, vendor, raw_data),
     };
   }));
 
@@ -48,7 +49,8 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
   const amount = transaction.amount || 0;
   const vendor = transaction.vendor || 'Unknown';
   const category = transaction.category || await autoCategorize(vendor);
-  const hash = generateHash(date, amount, vendor);
+  const raw_data = transaction.raw_data || null;
+  const hash = generateHash(date, amount, vendor, raw_data);
 
   return await prisma.transaction.upsert({
     where: { hash: hash },
@@ -62,7 +64,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       category: category,
       source: transaction.source || 'manual',
       is_recurring: transaction.is_recurring || 0,
-      raw_data: transaction.raw_data || null,
+      raw_data,
       hash,
     },
   });

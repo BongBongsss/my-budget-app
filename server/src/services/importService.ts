@@ -9,6 +9,7 @@ export interface ParsedTransaction {
   category: string;
   type: 'income' | 'expense';
   source: string;
+  raw_data?: string;
 }
 
 const findFieldInfo = (row: any, keywords: string[]): { value: any, key: string } | undefined => {
@@ -34,6 +35,7 @@ const normalizeData = (row: any): ParsedTransaction => {
   const dateInfo = findFieldInfo(row, ['date', '날짜', '일자', '일시', 'time']) || { value: new Date().toISOString().split('T')[0], key: 'default' };
   const vendorInfo = findFieldInfo(row, ['가맹점명', 'vendor', '상호', '내용', '적요', 'store', 'description', 'payee', '가맹점']) || { value: 'Unknown', key: 'default' };
   const amountInfo = findFieldInfo(row, ['amount', '금액', '지출', '입금', 'price', 'cost', 'money']) || { value: '0', key: 'default' };
+  const authInfo = findFieldInfo(row, ['승인번호', 'auth', 'approval', 'confno']) || { value: '', key: 'default' };
 
   const amountVal = amountInfo.value;
   const amountKey = amountInfo.key;
@@ -52,16 +54,14 @@ const normalizeData = (row: any): ParsedTransaction => {
 
   const dateStr = String(dateInfo.value).split(' ')[0].replace(/\./g, '-');
 
-  // await added to support async autoCategorize
-  // Note: normalizeData needs to be async, but CSV/Excel parsers usually are not.
-  // To keep it simple, we will change it to return an object and caller handles promise
   return {
     date: dateStr,
     amount: Math.abs(isNaN(amount) ? 0 : amount),
     vendor: String(vendorInfo.value),
-    category: '기타', // Will be updated later
+    category: '기타',
     type: type,
-    source: 'file_import'
+    source: 'file_import',
+    raw_data: authInfo.value ? String(authInfo.value) : undefined
   };
 };
 
