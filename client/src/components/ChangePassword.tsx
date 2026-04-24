@@ -12,7 +12,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/change-password', { current, newPassword });
+      await axios.post('https://my-budget-app-nwm8.onrender.com/api/change-password', { current, newPassword });
       alert('비밀번호가 변경되었습니다.');
       onClose();
     } catch (err) {

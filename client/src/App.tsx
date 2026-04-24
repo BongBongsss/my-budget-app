@@ -41,7 +41,7 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await axios.post('http://localhost:5000/api/logout');
+    await axios.post('https://my-budget-app-nwm8.onrender.com/api/logout');
     setIsAuthenticated(false);
     setTransactions([]);
   };

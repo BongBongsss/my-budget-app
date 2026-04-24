@@ -11,7 +11,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('http://localhost:5000/api/login', { password }, { withCredentials: true });
+      await axios.post('https://my-budget-app-nwm8.onrender.com/api/login', { password }, { withCredentials: true });
       onLogin();
     } catch (err) {
       alert('비밀번호가 틀렸습니다.');
