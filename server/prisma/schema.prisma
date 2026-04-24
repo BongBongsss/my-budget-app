@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Transaction {
+  id           String  @id
+  date         String
+  amount       Float
+  vendor       String
+  category     String
+  type         String
+  source       String?
+  is_recurring Int     @default(0)
+  raw_data     String?
+}
+
+model CategoryRule {
+  id                String @id
+  keyword           String @unique
+  assigned_category String
+}
+
+model Category {
+  id   String @id
+  name String @unique
+}
+
+model RecurringTransaction {
+  id           String @id
+  vendor       String
+  amount       Float
+  category     String
+  type         String @default("expense")
+  day_of_month Int
+}

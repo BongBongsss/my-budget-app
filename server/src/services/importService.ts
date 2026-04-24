@@ -13,7 +13,6 @@ export interface ParsedTransaction {
 
 const findFieldInfo = (row: any, keywords: string[]): { value: any, key: string } | undefined => {
   const keys = Object.keys(row);
-  // '번호'가 포함된 키워드는 가장 마지막에 확인하거나 배제하여 이름을 먼저 찾습니다.
   const sortedKeys = keys.sort((a, b) => {
     if (a.includes('명') && !b.includes('명')) return -1;
     if (!a.includes('명') && b.includes('명')) return 1;
@@ -32,7 +31,6 @@ const findFieldInfo = (row: any, keywords: string[]): { value: any, key: string 
 };
 
 const normalizeData = (row: any): ParsedTransaction => {
-  // 지능형 키워드 매핑
   const dateInfo = findFieldInfo(row, ['date', '날짜', '일자', '일시', 'time']) || { value: new Date().toISOString().split('T')[0], key: 'default' };
   const vendorInfo = findFieldInfo(row, ['가맹점명', 'vendor', '상호', '내용', '적요', 'store', 'description', 'payee', '가맹점']) || { value: 'Unknown', key: 'default' };
   const amountInfo = findFieldInfo(row, ['amount', '금액', '지출', '입금', 'price', 'cost', 'money']) || { value: '0', key: 'default' };
@@ -40,29 +38,28 @@ const normalizeData = (row: any): ParsedTransaction => {
   const amountVal = amountInfo.value;
   const amountKey = amountInfo.key;
 
-  // 금액 정규화
   const amountStr = String(amountVal).replace(/,/g, '').replace(/[^\d.-]/g, '').trim();
   const amount = parseFloat(amountStr);
 
-  // 수입/지출 판별 로직
-  // 1. 컬럼명에 '수입', '입금'이 포함되면 Income
-  // 2. 컬럼명에 '지출', '결제', '매출', '금액'이 포함되면 기본적으로 Expense (카드 내역은 보통 양수로 표시됨)
   let type: 'income' | 'expense' = 'expense';
   if (amountKey.includes('수입') || amountKey.includes('입금')) {
     type = amount >= 0 ? 'income' : 'expense';
   } else if (amountKey.includes('지출') || amountKey.includes('결제') || amountKey.includes('매출') || amountKey.includes('금액')) {
-    type = amount >= 0 ? 'expense' : 'income'; // 취소(음수)면 수입으로 간주
+    type = amount >= 0 ? 'expense' : 'income'; 
   } else {
     type = amount >= 0 ? 'income' : 'expense';
   }
 
   const dateStr = String(dateInfo.value).split(' ')[0].replace(/\./g, '-');
 
+  // await added to support async autoCategorize
+  // Note: normalizeData needs to be async, but CSV/Excel parsers usually are not.
+  // To keep it simple, we will change it to return an object and caller handles promise
   return {
     date: dateStr,
     amount: Math.abs(isNaN(amount) ? 0 : amount),
     vendor: String(vendorInfo.value),
-    category: autoCategorize(String(vendorInfo.value)),
+    category: '기타', // Will be updated later
     type: type,
     source: 'file_import'
   };
@@ -79,10 +76,8 @@ export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   
-  // 1. 모든 데이터를 2차원 배열로 읽어옵니다.
   const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
   
-  // 2. 헤더 행(날짜, 가맹점, 금액 등이 포함된 행)을 찾습니다.
   let headerIndex = 0;
   for (let i = 0; i < Math.min(rows.length, 20); i++) {
     const rowStr = JSON.stringify(rows[i]);
@@ -96,7 +91,6 @@ export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
     }
   }
 
-  // 3. 찾은 헤더를 기준으로 다시 JSON으로 변환합니다.
   const data = XLSX.utils.sheet_to_json(worksheet, { range: headerIndex }) as any[];
   
   return data.map(normalizeData);

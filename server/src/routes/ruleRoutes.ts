@@ -7,28 +7,28 @@ import {
 
 const router = Router();
 
-router.get('/', (req, res) => {
+router.get('/', async (req, res) => {
   try {
-    const rules = getCategoryRules();
+    const rules = await getCategoryRules();
     res.json(rules);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
 });
 
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { keyword, assigned_category } = req.body;
-    const rule = addCategoryRule(keyword, assigned_category);
+    const rule = await addCategoryRule(keyword, assigned_category);
     res.status(201).json(rule);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
 });
 
-router.delete('/:id', (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
-    deleteCategoryRule(req.params.id);
+    await deleteCategoryRule(req.params.id);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
