@@ -29,8 +29,12 @@ export const deleteCategoryRule = async (id: string) => {
 
 export const autoCategorize = async (vendor: string): Promise<string> => {
   const rules = await getCategoryRules();
-  const matchedRule = rules.find(rule => 
-    vendor.toLowerCase().includes(rule.keyword.toLowerCase())
-  );
+  const normalizedVendor = vendor.toLowerCase().replace(/\s+/g, ' ').trim();
+
+  const matchedRule = rules.find(rule => {
+    const normalizedKeyword = rule.keyword.toLowerCase().trim();
+    return normalizedVendor.includes(normalizedKeyword);
+  });
+
   return matchedRule ? matchedRule.assigned_category : '기타';
 };
