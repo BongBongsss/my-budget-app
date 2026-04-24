@@ -25,6 +25,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const amount = transaction.amount || 0;
     const vendor = transaction.vendor || 'Unknown';
     const raw_data = transaction.raw_data || null;
+    
+    // 자동 카테고리 적용 (규칙 확인)
+    const category = await autoCategorize(vendor);
 
     // 동일한 기본 정보 조합 생성
     const baseKey = `${date}-${amount}-${vendor}-${raw_data || ''}`;
@@ -38,7 +41,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       amount,
       vendor,
       type: transaction.type || 'expense',
-      category: transaction.category || (await autoCategorize(vendor)),
+      category: category, // 규칙에 따른 자동 카테고리 적용
       source: transaction.source || 'manual',
       is_recurring: transaction.is_recurring || 0,
       raw_data,
