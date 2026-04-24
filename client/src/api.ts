@@ -1,6 +1,9 @@
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://my-budget-app-nwm8.onrender.com/api';
+
+// 모든 요청에 대해 쿠키(세션) 정보를 포함하도록 설정
+axios.defaults.withCredentials = true;
 
 export interface Transaction {
   id?: string;

@@ -15,7 +15,10 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-app.use(cors({ origin: 'http://localhost:3000', credentials: true }));
+app.use(cors({ 
+  origin: true, // 모든 origin 허용 (credentials 사용 시 필수)
+  credentials: true 
+}));
 app.use(express.json());
 
 app.use(session({
