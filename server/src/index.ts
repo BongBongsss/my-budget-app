@@ -53,10 +53,21 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   res.status(401).json({ error: 'Unauthorized' });
 };
 
+// 비밀번호 설정 확인 (보안을 위해 존재 여부만 체크)
+if (!process.env.ADMIN_PASSWORD) {
+  console.warn("⚠️ WARNING: ADMIN_PASSWORD environment variable is NOT set!");
+} else {
+  console.log("✅ ADMIN_PASSWORD environment variable is detected.");
+}
+
 let currentPassword = process.env.ADMIN_PASSWORD;
 
 app.post('/api/login', (req, res) => {
   const { password } = req.body;
+  
+  // 디버깅용 로그 (나중에 삭제 권장)
+  console.log(`Login attempt: Password provided? ${!!password}, Matches? ${password === currentPassword}`);
+
   if (password === currentPassword) {
     req.session.authenticated = true;
     res.json({ success: true });
