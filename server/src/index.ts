@@ -19,20 +19,24 @@ const PORT = process.env.PORT || 5000;
 app.set('trust proxy', 1);
 
 app.use(cors({ 
-  origin: true, // 모든 origin 허용 (credentials 사용 시 필수)
-  credentials: true 
+  origin: 'https://my-budget-app-client.vercel.app', // 실제 클라이언트 주소로 고정
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
 
 app.use(session({
   secret: process.env.SESSION_SECRET || 'secret',
-  resave: false,
-  saveUninitialized: false,
-  proxy: true, // 프록시 환경 명시
+  resave: true,
+  saveUninitialized: true,
+  proxy: true,
+  name: 'budget-app-session', // 쿠키 이름 명시
   cookie: { 
-    secure: true, // HTTPS 환경이므로 true (Vercel/Render 모두 HTTPS 사용)
-    sameSite: 'none', // 크로스 도메인(Vercel -> Render) 간 쿠키 전송 허용
-    maxAge: 24 * 60 * 60 * 1000 // 24시간 유지
+    secure: true, 
+    sameSite: 'none', 
+    httpOnly: true,
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7일 유지
   } 
 }));
 
