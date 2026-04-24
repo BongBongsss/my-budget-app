@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getRules, addRule, deleteRule, CategoryRule, CategoryItem } from '../api';
-import { Trash2, PlusCircle, Edit2, Check, X } from 'lucide-react';
+import { getRules, addRule, deleteRule, CategoryRule, CategoryItem, applyAutoRules } from '../api';
+import { Trash2, PlusCircle, Edit2, Check, X, Wand2 } from 'lucide-react';
 import axios from 'axios';
 
 interface AutoCategorySettingsProps {
@@ -13,6 +13,7 @@ const AutoCategorySettings: React.FC<AutoCategorySettingsProps> = ({ categories 
   const [assignedCategory, setAssignedCategory] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<CategoryRule>>({});
+  const [isApplying, setIsApplying] = useState(false);
 
   const fetchRules = async () => {
     try {
@@ -50,6 +51,20 @@ const AutoCategorySettings: React.FC<AutoCategorySettingsProps> = ({ categories 
     }
   };
 
+  const handleApplyRules = async () => {
+    if (!window.confirm('Apply all rules to existing "기타" transactions?')) return;
+    setIsApplying(true);
+    try {
+      const res = await applyAutoRules();
+      alert(`Successfully updated ${res.data.count} transactions!`);
+      window.location.reload(); 
+    } catch (err) {
+      alert('Error applying rules');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   const startEdit = (rule: CategoryRule) => {
     setEditingId(rule.id!);
     setEditValues(rule);
@@ -57,8 +72,6 @@ const AutoCategorySettings: React.FC<AutoCategorySettingsProps> = ({ categories 
 
   const handleUpdateRule = async (id: string) => {
     try {
-      // 규칙 업데이트 API가 별도로 없을 경우를 대비해 삭제 후 재등록하거나 API 확인 필요
-      // 현재 api.ts 확인 결과 updateRule이 없으므로 직접 axios 호출 또는 기능 추가 필요
       await axios.put(`https://my-budget-app-nwm8.onrender.com/api/rules/${id}`, editValues, { withCredentials: true });
       setEditingId(null);
       fetchRules();
@@ -101,7 +114,7 @@ const AutoCategorySettings: React.FC<AutoCategorySettingsProps> = ({ categories 
         </div>
       </form>
 
-      <div style={{ flex: 1, overflowY: 'auto', maxHeight: '400px', border: '1px solid #eee', borderRadius: '8px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', maxHeight: '350px', border: '1px solid #eee', borderRadius: '8px' }}>
         <table className="category-table">
           <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
             <tr>
@@ -155,6 +168,24 @@ const AutoCategorySettings: React.FC<AutoCategorySettingsProps> = ({ categories 
             ))}
           </tbody>
         </table>
+      </div>
+
+      <div className="mt-4 pt-4 border-t flex justify-end">
+        <button 
+          onClick={handleApplyRules} 
+          className="btn btn-secondary"
+          disabled={isApplying}
+          style={{ fontSize: '0.85rem', gap: '8px' }}
+        >
+          {isApplying ? (
+            <>Processing...</>
+          ) : (
+            <>
+              <Wand2 size={16} />
+              Apply Rules to Existing "기타" Data
+            </>
+          )}
+        </button>
       </div>
     </div>
   );

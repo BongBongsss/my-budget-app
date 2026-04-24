@@ -27,6 +27,13 @@ export const deleteCategoryRule = async (id: string) => {
   });
 };
 
+export const updateCategoryRule = async (id: string, keyword: string, assigned_category: string) => {
+  return await prisma.categoryRule.update({
+    where: { id },
+    data: { keyword, assigned_category },
+  });
+};
+
 export const autoCategorize = async (vendor: string): Promise<string> => {
   const rules = await getCategoryRules();
   const normalizedVendor = vendor.toLowerCase().replace(/\s+/g, ' ').trim();

@@ -29,6 +29,7 @@ export interface CategoryItem {
 }
 
 export const getTransactions = () => axios.get<Transaction[]>(`${API_BASE}/transactions`);
+export const applyAutoRules = () => axios.post<{ success: boolean, count: number }>(`${API_BASE}/transactions/apply-rules`);
 export const addTransaction = (tx: Partial<Transaction>) => axios.post<Transaction>(`${API_BASE}/transactions`, tx);
 export const updateTransaction = (id: string, tx: Partial<Transaction>) => axios.put(`${API_BASE}/transactions/${id}`, tx);
 export const deleteTransaction = (id: string) => axios.delete(`${API_BASE}/transactions/${id}`);

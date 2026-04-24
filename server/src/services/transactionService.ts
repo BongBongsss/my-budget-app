@@ -102,3 +102,28 @@ export const deleteTransaction = async (id: string) => {
     where: { id },
   });
 };
+
+export const applyAutoRulesToExisting = async () => {
+  const transactions = await prisma.transaction.findMany({
+    where: {
+      OR: [
+        { category: '기타' },
+        { category: '' },
+        { category: null }
+      ]
+    }
+  });
+
+  let updatedCount = 0;
+  for (const tx of transactions) {
+    const newCategory = await autoCategorize(tx.vendor);
+    if (newCategory !== '기타' && newCategory !== tx.category) {
+      await prisma.transaction.update({
+        where: { id: tx.id },
+        data: { category: newCategory }
+      });
+      updatedCount++;
+    }
+  }
+  return updatedCount;
+};

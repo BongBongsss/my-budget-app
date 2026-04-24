@@ -5,13 +5,23 @@ import {
   addTransaction, 
   updateTransaction, 
   deleteTransaction,
-  bulkAddTransactions 
+  bulkAddTransactions,
+  applyAutoRulesToExisting
 } from '../services/transactionService';
 import { parseCSV, parseExcel } from '../services/importService';
 import prisma from '../db';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/apply-rules', async (req, res) => {
+  try {
+    const count = await applyAutoRulesToExisting();
+    res.json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
