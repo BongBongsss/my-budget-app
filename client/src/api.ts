@@ -60,6 +60,7 @@ export interface RecurringTransaction {
 // ... 기존 API 코드 ...
 
 export const getCategories = () => axios.get<CategoryItem[]>(`${API_BASE}/categories`);
+export const autoCategorizeVendor = (vendor: string) => axios.get<{ category: string }>(`${API_BASE}/categories/auto`, { params: { vendor } });
 export const addCategory = (cat: Partial<CategoryItem>) => axios.post<CategoryItem>(`${API_BASE}/categories`, cat);
 export const deleteCategory = (id: string) => axios.delete(`${API_BASE}/categories/${id}`);
 

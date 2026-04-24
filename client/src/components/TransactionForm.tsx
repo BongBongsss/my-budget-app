@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { addTransaction, CategoryItem } from '../api';
+import React, { useState, useEffect } from 'react';
+import { addTransaction, CategoryItem, autoCategorizeVendor } from '../api';
 import { PlusCircle } from 'lucide-react';
 
 interface TransactionFormProps {
@@ -16,6 +16,24 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     category: categories[0]?.name || '',
     memo: ''
   });
+
+  // Vendor 입력 시 자동 카테고리 매칭
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (formData.vendor.length >= 2) {
+        try {
+          const res = await autoCategorizeVendor(formData.vendor);
+          if (res.data.category !== '기타') {
+            setFormData(prev => ({ ...prev, category: res.data.category }));
+          }
+        } catch (err) {
+          console.error('Auto categorization failed');
+        }
+      }
+    }, 500); // 0.5초 디바운스 적용
+
+    return () => clearTimeout(timer);
+  }, [formData.vendor]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,8 +1,21 @@
 import { Router } from 'express';
 import prisma from '../db';
 import { randomUUID } from 'crypto';
+import { autoCategorize } from '../services/categoryService';
 
 const router = Router();
+
+// 실시간 자동 지정 API
+router.get('/auto', async (req, res) => {
+  try {
+    const { vendor } = req.query;
+    if (!vendor) return res.json({ category: '기타' });
+    const category = await autoCategorize(vendor as string);
+    res.json({ category });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
 
 router.get('/', async (req, res) => {
   try {
