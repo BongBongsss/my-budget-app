@@ -135,10 +135,89 @@ td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; }
 .btn-icon.edit:hover { color: #3b82f6; }
 .btn-icon.delete:hover { color: #ef4444; }
 
+/* Mobile Responsive Design */
+@media (max-width: 768px) {
+  .container {
+    padding: 1rem;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .grid-cols-3, .grid-cols-2 {
+    grid-template-columns: 1fr;
+  }
+
+  .card-summary {
+    padding: 1rem;
+  }
+
+  .card-summary .icon {
+    width: 40px;
+    height: 40px;
+  }
+
+  .card-summary .details h2 {
+    font-size: 1.25rem;
+  }
+
+  .grid-form {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    grid-column: span 1;
+  }
+
+  /* 테이블 가로 스크롤 허용 */
+  .transaction-list {
+    overflow-x: auto;
+    padding: 1rem;
+  }
+
+  table {
+    min-width: 600px; /* 테이블이 너무 찌그러지지 않게 최소폭 설정 */
+  }
+
+  th, td {
+    padding: 0.5rem;
+    font-size: 0.8rem;
+  }
+
+  .header {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 1rem;
+  }
+
+  .header .flex {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .tabs button {
+    font-size: 0.8rem;
+    padding: 0.4rem 0.8rem;
+  }
+}
+
 .flex { display: flex; }
-.items-center { align-items: center; }
-.justify-between { justify-content: space-between; }
-.space-x-2 > * + * { margin-left: 0.5rem; }
+.gap-1 { gap: 0.25rem; }
+.gap-2 { gap: 0.5rem; }
+.w-full { width: 100%; }
+.mb-2 { margin-bottom: 0.5rem; }
+.mb-4 { margin-bottom: 1rem; }
+.mb-6 { margin-bottom: 1.5rem; }
+.mt-4 { margin-top: 1rem; }
+.mr-2 { margin-right: 0.5rem; }
+.text-sm { font-size: 0.875rem; }
+.font-bold { font-weight: 700; }
+.text-blue-600 { color: #2563eb; }
+.bg-gray-100 { background-color: #f3f4f6; }
+.rounded { border-radius: 0.25rem; }
+.p-2 { padding: 0.5rem; }
 
 
 .btn {
