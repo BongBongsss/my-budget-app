@@ -35,8 +35,8 @@ app.use(express.json());
 app.use(session({
   store: new PgSession({
     conString: process.env.DATABASE_URL,
-    tableName: 'Session', // Prisma 모델 이름과 일치시키거나 직접 테이블 생성
-    createTableIfMissing: true // 테이블이 없으면 자동 생성
+    tableName: 'session', // 소문자로 변경
+    createTableIfMissing: true 
   }),
   secret: process.env.SESSION_SECRET || 'secret',
   resave: false,
