@@ -34,6 +34,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       is_recurring: transaction.is_recurring || 0,
       raw_data,
       hash: generateHash(date, amount, vendor, raw_data),
+      memo: transaction.memo || null,
     };
   }));
 
@@ -66,6 +67,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       is_recurring: transaction.is_recurring || 0,
       raw_data,
       hash,
+      memo: transaction.memo || null,
     },
   });
 };

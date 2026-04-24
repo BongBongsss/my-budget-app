@@ -32,11 +32,13 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
 
   const filteredTransactions = transactions.filter(tx => {
     if (!searchQuery) return true;
-    if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(searchQuery.toLowerCase());
+    const q = searchQuery.toLowerCase();
+    if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
     if (filterType === 'date') return tx.date.includes(searchQuery);
-    if (filterType === 'type') return tx.type.toLowerCase().includes(searchQuery.toLowerCase());
-    if (filterType === 'category') return tx.category.toLowerCase().includes(searchQuery.toLowerCase());
-    return true;
+    if (filterType === 'type') return tx.type.toLowerCase().includes(q);
+    if (filterType === 'category') return tx.category.toLowerCase().includes(q);
+    if (tx.memo && tx.memo.toLowerCase().includes(q)) return true; // 메모 검색 지원
+    return false;
   });
 
   const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
@@ -121,6 +123,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
             <th>Type</th>
             <th>Category</th>
             <th>Amount</th>
+            <th>Memo</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -144,6 +147,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                     </select>
                   </td>
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} /></td>
+                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} placeholder="Memo" /></td>
                   <td>
                     <button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button>
                     <button onClick={() => setEditingId(null)}><X size={16} /></button>
@@ -156,6 +160,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                   <td>{tx.type}</td>
                   <td>{tx.category}</td>
                   <td>{tx.amount.toLocaleString()}</td>
+                  <td style={{ fontSize: '0.8rem', color: '#666', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.memo}</td>
                   <td>
                     <button onClick={() => startEdit(tx)}><Edit2 size={16} /></button>
                     <button onClick={() => onDelete(tx.id!)}><Trash2 size={16} /></button>

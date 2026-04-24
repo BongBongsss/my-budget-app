@@ -13,7 +13,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     type: 'expense' as 'income' | 'expense' | 'recurring',
     vendor: '',
     amount: '',
-    category: categories[0]?.name || ''
+    category: categories[0]?.name || '',
+    memo: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -25,12 +26,14 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
         vendor: formData.vendor,
         amount: parseFloat(formData.amount),
         category: formData.category,
-        is_recurring: formData.type === 'recurring' ? 1 : 0
+        is_recurring: formData.type === 'recurring' ? 1 : 0,
+        memo: formData.memo
       });
       setFormData({
         ...formData,
         vendor: '',
         amount: '',
+        memo: ''
       });
       onSuccess();
     } catch (err) {
@@ -105,6 +108,15 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
                 <option key={cat.id} value={cat.name}>{cat.name}</option>
               ))}
             </select>
+          </div>
+          <div className="form-group">
+            <label>Memo (Optional)</label>
+            <input 
+              type="text" 
+              placeholder="e.g. Lunch with friends"
+              value={formData.memo}
+              onChange={(e) => setFormData({...formData, memo: e.target.value})}
+            />
           </div>
         </div>
         <div className="form-actions">

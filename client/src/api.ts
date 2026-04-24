@@ -14,6 +14,7 @@ export interface Transaction {
   type: 'income' | 'expense';
   source?: string;
   is_recurring?: number;
+  memo?: string;
 }
 
 export interface CategoryRule {

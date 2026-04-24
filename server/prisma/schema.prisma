@@ -18,6 +18,7 @@ model Transaction {
   is_recurring Int     @default(0)
   raw_data     String?
   hash         String? @unique // 중복 방지용 고유 값
+  memo         String? // 추가된 메모 필드
 }
 
 model CategoryRule {
