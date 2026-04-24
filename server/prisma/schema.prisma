@@ -38,3 +38,10 @@ model RecurringTransaction {
   type         String @default("expense")
   day_of_month Int
 }
+
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+}

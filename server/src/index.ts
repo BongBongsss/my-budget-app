@@ -9,11 +9,14 @@ import categoryRoutes from './routes/categoryRoutes';
 import recurringRoutes from './routes/recurringRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
+import connectPgSimple from 'connect-pg-simple';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+
+const PgSession = connectPgSimple(session);
 
 // Render와 같은 프록시 환경에서 세션 쿠키(secure)를 전달하기 위해 필요
 app.set('trust proxy', 1);
@@ -30,11 +33,16 @@ app.use(cors({
 app.use(express.json());
 
 app.use(session({
+  store: new PgSession({
+    conString: process.env.DATABASE_URL,
+    tableName: 'Session', // Prisma 모델 이름과 일치시키거나 직접 테이블 생성
+    createTableIfMissing: true // 테이블이 없으면 자동 생성
+  }),
   secret: process.env.SESSION_SECRET || 'secret',
-  resave: true,
-  saveUninitialized: true,
+  resave: false,
+  saveUninitialized: false,
   proxy: true,
-  name: 'budget-app-session', // 쿠키 이름 명시
+  name: 'budget-app-session',
   cookie: { 
     secure: true, 
     sameSite: 'none', 
