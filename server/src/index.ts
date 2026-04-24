@@ -67,7 +67,7 @@ app.post('/api/change-password', (req, res) => {
 });
 
 app.use('/api', (req, res, next) => {
-    if (req.path === '/login') return next();
+    if (req.path === '/login' || req.path === '/health') return next();
     isAuthenticated(req, res, next);
 });
 
