@@ -17,6 +17,7 @@ model Transaction {
   source       String?
   is_recurring Int     @default(0)
   raw_data     String?
+  hash         String? @unique // 중복 방지용 고유 값
 }
 
 model CategoryRule {
