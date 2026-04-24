@@ -1,0 +1,35 @@
+{
+  "name": "budget-automation",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "Automated Budget Tracking Application",
+  "private": true,
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "server": "npm run dev --workspace=server",
+    "client": "npm run dev --workspace=client",
+    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "electron": "electron .",
+    "build": "electron-builder"
+  },
+  "build": {
+    "appId": "com.budget.app",
+    "win": {
+      "target": "nsis"
+    }
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "node-cron": "^4.2.1"
+  },
+  "devDependencies": {
+    "@types/node-cron": "^3.0.11",
+    "electron": "^41.3.0",
+    "electron-builder": "^26.8.1"
+  }
+}
