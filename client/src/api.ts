@@ -28,6 +28,7 @@ export interface CategoryRule {
 export interface CategoryItem {
   id?: string;
   name: string;
+  groupName?: string;
 }
 
 export const getTransactions = () => axios.get<Transaction[]>(`${API_BASE}/transactions`);
@@ -64,6 +65,7 @@ export interface RecurringTransaction {
 
 export const getCategories = () => axios.get<CategoryItem[]>(`${API_BASE}/categories`);
 export const autoCategorizeVendor = (vendor: string) => axios.get<{ category: string }>(`${API_BASE}/categories/auto`, { params: { vendor } });
+export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => axios.post(`${API_BASE}/categories/batch-group`, { categoryIds, groupName });
 export const addCategory = (cat: Partial<CategoryItem>) => axios.post<CategoryItem>(`${API_BASE}/categories`, cat);
 export const deleteCategory = (id: string) => axios.delete(`${API_BASE}/categories/${id}`);
 

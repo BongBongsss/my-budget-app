@@ -118,7 +118,7 @@ function App() {
         year={year} setYear={setYear} 
         month={month} setMonth={setMonth} 
       />
-      <SummaryCharts transactions={filteredData} period={period} />
+      <SummaryCharts transactions={filteredData} categories={categories} period={period} />
       <TransactionForm onSuccess={fetchData} categories={categories} />
       
       <div className="tabs" style={{ marginBottom: '20px' }}>

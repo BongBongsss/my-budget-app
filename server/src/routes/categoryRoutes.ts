@@ -56,4 +56,23 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
+// 카테고리 그룹 일괄 업데이트
+router.post('/batch-group', async (req, res) => {
+  try {
+    const { categoryIds, groupName } = req.body;
+    if (!Array.isArray(categoryIds) || !groupName) {
+      return res.status(400).json({ error: 'Invalid data' });
+    }
+
+    await prisma.category.updateMany({
+      where: { id: { in: categoryIds } },
+      data: { groupName }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
 export default router;

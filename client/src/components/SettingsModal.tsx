@@ -3,6 +3,7 @@ import { X } from 'lucide-react';
 import CategorySettings from './CategorySettings';
 import ChangePassword from './ChangePassword';
 import AutoCategorySettings from './AutoCategorySettings';
+import CategoryGroupSettings from './CategoryGroupSettings';
 import { CategoryItem } from '../api';
 
 interface SettingsModalProps {
@@ -13,7 +14,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState<'category' | 'auto' | 'password'>('category');
+  const [activeTab, setActiveTab] = useState<'category' | 'auto' | 'group' | 'password'>('category');
 
   if (!isOpen) return null;
 
@@ -27,6 +28,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         <div className="tabs mb-4 flex border-b overflow-x-auto">
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'category' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('category')}>Categories</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'auto' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('auto')}>Auto Rules</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'group' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('group')}>Grouping</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
         </div>
         {activeTab === 'category' && (
@@ -34,6 +36,9 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         )}
         {activeTab === 'auto' && (
           <AutoCategorySettings categories={categories} />
+        )}
+        {activeTab === 'group' && (
+          <CategoryGroupSettings categories={categories} onRefresh={onRefresh} />
         )}
         {activeTab === 'password' && (
           <ChangePassword onClose={onClose} />
