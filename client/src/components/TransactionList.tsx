@@ -118,13 +118,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
         <thead>
           <tr>
             <th><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
-            <th>날짜</th>
-            <th>내용</th>
-            <th>타입</th>
-            <th>대분류</th>
-            <th>금액</th>
-            <th>메모</th>
-            <th>Actions</th>
+            <th>날짜</th><th>시간</th><th>타입</th><th>대분류</th><th>소분류</th><th>내용</th><th>금액</th><th>화폐</th><th>결제수단</th><th>메모</th><th>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -134,37 +128,21 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
               {editingId === tx.id! ? (
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} /></td>
+                  <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} /></td>
+                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})}><option value="expense">지출</option><option value="income">수입</option></select></td>
+                  <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
+                  <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} /></td>
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} /></td>
-                  <td>
-                    <select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as 'income' | 'expense'})}>
-                      <option value="expense">지출</option>
-                      <option value="income">수입</option>
-                    </select>
-                  </td>
-                  <td>
-                    <select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})}>
-                      {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
-                    </select>
-                  </td>
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} /></td>
-                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} placeholder="메모" /></td>
-                  <td>
-                    <button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button>
-                    <button onClick={() => setEditingId(null)}><X size={16} /></button>
-                  </td>
+                  <td><input type="text" value={editValues.currency || 'KRW'} onChange={e => setEditValues({...editValues, currency: e.target.value})} /></td>
+                  <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} /></td>
+                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} /></td>
+                  <td><button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button><button onClick={() => setEditingId(null)}><X size={16} /></button></td>
                 </>
               ) : (
                 <>
-                  <td>{tx.date}</td>
-                  <td>{tx.vendor}</td>
-                  <td>{tx.type === 'expense' ? '지출' : '수입'}</td>
-                  <td>{tx.category}</td>
-                  <td>{tx.amount.toLocaleString()}</td>
-                  <td style={{ fontSize: '0.8rem', color: '#666', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.memo}</td>
-                  <td>
-                    <button onClick={() => startEdit(tx)}><Edit2 size={16} /></button>
-                    <button onClick={() => onDelete(tx.id!)}><Trash2 size={16} /></button>
-                  </td>
+                  <td>{tx.date}</td><td>{tx.time}</td><td>{tx.type === 'expense' ? '지출' : '수입'}</td><td>{tx.category}</td><td>{tx.subcategory}</td><td>{tx.vendor}</td><td>{tx.amount.toLocaleString()}</td><td>{tx.currency}</td><td>{tx.source}</td><td>{tx.memo}</td>
+                  <td><button onClick={() => startEdit(tx)}><Edit2 size={16} /></button><button onClick={() => onDelete(tx.id!)}><Trash2 size={16} /></button></td>
                 </>
               )}
             </tr>

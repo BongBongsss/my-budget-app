@@ -8,12 +8,14 @@ axios.defaults.withCredentials = true;
 export interface Transaction {
   id?: string;
   date: string;
-  amount: number;
-  vendor: string;
-  category: string;
+  time?: string;
   type: 'income' | 'expense';
-  source?: string;
-  is_recurring?: number;
+  category: string;
+  subcategory?: string;
+  vendor: string;
+  amount: number;
+  currency?: string;
+  source: string;
   memo?: string;
 }
 

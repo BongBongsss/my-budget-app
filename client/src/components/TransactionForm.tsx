@@ -10,14 +10,17 @@ interface TransactionFormProps {
 const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories }) => {
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    type: 'expense' as 'income' | 'expense' | 'recurring',
+    time: new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' }),
+    type: 'expense' as 'income' | 'expense',
+    category: categories[0]?.name || '',
+    subcategory: '',
     vendor: '',
     amount: '',
-    category: categories[0]?.name || '',
+    currency: 'KRW',
+    source: 'manual',
     memo: ''
   });
 
-  // Vendor 입력 시 자동 카테고리 매칭
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (formData.vendor.length >= 2) {
@@ -30,8 +33,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
           console.error('Auto categorization failed');
         }
       }
-    }, 500); // 0.5초 디바운스 적용
-
+    }, 500);
     return () => clearTimeout(timer);
   }, [formData.vendor]);
 
@@ -39,20 +41,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     e.preventDefault();
     try {
       await addTransaction({
-        date: formData.date,
-        type: formData.type === 'recurring' ? 'expense' : (formData.type as 'income' | 'expense'),
-        vendor: formData.vendor,
-        amount: parseFloat(formData.amount),
-        category: formData.category,
-        is_recurring: formData.type === 'recurring' ? 1 : 0,
-        memo: formData.memo
-      });
-      setFormData({
         ...formData,
-        vendor: '',
-        amount: '',
-        memo: ''
+        amount: parseFloat(formData.amount)
       });
+      setFormData(prev => ({ ...prev, vendor: '', amount: '', memo: '', subcategory: '' }));
       onSuccess();
     } catch (err) {
       alert('Error adding transaction');
@@ -63,85 +55,19 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     <div className="card-form">
       <h3>Add New Transaction</h3>
       <form onSubmit={handleSubmit}>
-        <div className="grid-form">
-          <div className="form-group">
-            <label>Date</label>
-            <div className="flex gap-2">
-              <input 
-                type="date" 
-                value={formData.date}
-                onChange={(e) => setFormData({...formData, date: e.target.value})}
-                required
-              />
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                style={{ fontSize: '0.7rem', padding: '0 5px' }}
-                onClick={() => setFormData({...formData, date: new Date().toISOString().split('T')[0]})}
-              >
-                Today
-              </button>
-            </div>
-          </div>
-          <div className="form-group">
-            <label>Type</label>
-            <select 
-              value={formData.type}
-              onChange={(e) => setFormData({...formData, type: e.target.value as 'income' | 'expense' | 'recurring'})}
-            >
-              <option value="expense">Expense</option>
-              <option value="income">Income</option>
-              <option value="recurring">Recurring (Fixed)</option>
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Vendor / Source</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Starbucks, Salary"
-              value={formData.vendor}
-              onChange={(e) => setFormData({...formData, vendor: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Amount (₩)</label>
-            <input 
-              type="number" 
-              placeholder="0"
-              value={formData.amount}
-              onChange={(e) => setFormData({...formData, amount: e.target.value})}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label>Category</label>
-            <select 
-              value={formData.category}
-              onChange={(e) => setFormData({...formData, category: e.target.value})}
-              required
-            >
-              <option value="">Select Category</option>
-              {categories.map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="form-group">
-            <label>Memo (Optional)</label>
-            <input 
-              type="text" 
-              placeholder="e.g. Lunch with friends"
-              value={formData.memo}
-              onChange={(e) => setFormData({...formData, memo: e.target.value})}
-            />
-          </div>
+        <div className="grid-form" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+          <div className="form-group"><label>날짜</label><input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} required/></div>
+          <div className="form-group"><label>시간</label><input type="time" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} /></div>
+          <div className="form-group"><label>타입</label><select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value as any})}><option value="expense">지출</option><option value="income">수입</option></select></div>
+          <div className="form-group"><label>대분류</label><select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></div>
+          <div className="form-group"><label>소분류</label><input type="text" value={formData.subcategory} onChange={(e) => setFormData({...formData, subcategory: e.target.value})} /></div>
+          <div className="form-group"><label>내용</label><input type="text" value={formData.vendor} onChange={(e) => setFormData({...formData, vendor: e.target.value})} required/></div>
+          <div className="form-group"><label>금액</label><input type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: e.target.value})} required/></div>
+          <div className="form-group"><label>화폐</label><input type="text" value={formData.currency} onChange={(e) => setFormData({...formData, currency: e.target.value})} /></div>
+          <div className="form-group"><label>결제수단</label><input type="text" value={formData.source} onChange={(e) => setFormData({...formData, source: e.target.value})} /></div>
+          <div className="form-group"><label>메모</label><input type="text" value={formData.memo} onChange={(e) => setFormData({...formData, memo: e.target.value})} /></div>
         </div>
-        <div className="form-actions">
-          <button type="submit" className="btn btn-primary">
-            <PlusCircle className="mr-2" size={18} /> Add Transaction
-          </button>
-        </div>
+        <div className="form-actions"><button type="submit" className="btn btn-primary"><PlusCircle className="mr-2" size={18} /> Add</button></div>
       </form>
     </div>
   );
