@@ -22,13 +22,29 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
   const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source'>('vendor');
   const [bulkCategory, setBulkCategory] = useState('');
+  const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
+  const [bulkSubcategory, setBulkSubcategory] = useState('');
 
   const handleBulkUpdate = async () => {
-    if (!bulkCategory || selectedIds.length === 0) return;
-    for (const id of selectedIds) {
-      await onUpdate(id, { category: bulkCategory });
+    if (selectedIds.length === 0) return;
+    
+    const updates: Partial<Transaction> = {};
+    if (bulkCategory) updates.category = bulkCategory;
+    if (bulkType) updates.type = bulkType;
+    if (bulkSubcategory !== undefined && bulkSubcategory !== '') updates.subcategory = bulkSubcategory;
+
+    if (Object.keys(updates).length === 0) {
+      alert('Please select at least one field to update.');
+      return;
     }
+
+    for (const id of selectedIds) {
+      await onUpdate(id, updates);
+    }
+    
     setBulkCategory('');
+    setBulkType('');
+    setBulkSubcategory('');
     setSelectedIds([]);
   };
 
@@ -127,17 +143,36 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
       </div>
 
       {selectedIds.length > 0 && (
-        <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded">
-            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => onBulkDelete(selectedIds)}>
+        <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
+            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => onBulkDelete(selectedIds)} title="Delete Selected">
                 <Trash2 size={16} />
             </button>
-            <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }}>
-                <option value="">Category</option>
+            <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
+            
+            <select value={bulkType} onChange={(e) => setBulkType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '80px' }}>
+                <option value="">타입</option>
+                <option value="expense">지출</option>
+                <option value="income">수입</option>
+            </select>
+
+            <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '110px' }}>
+                <option value="">대분류</option>
                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
             </select>
-            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={handleBulkUpdate}>
-                <ListChecks size={16} />
+
+            <input 
+              type="text" 
+              placeholder="소분류 일괄 입력" 
+              value={bulkSubcategory} 
+              onChange={(e) => setBulkSubcategory(e.target.value)} 
+              className="edit-input" 
+              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} 
+            />
+
+            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes">
+                <ListChecks size={16} className="mr-1" /> 일괄 적용
             </button>
+            <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
         </div>
       )}
 
