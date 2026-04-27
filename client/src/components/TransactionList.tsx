@@ -18,7 +18,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category'>('vendor');
+  const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source'>('vendor');
   const [bulkCategory, setBulkCategory] = useState('');
 
   const handleBulkUpdate = async () => {
@@ -33,11 +33,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
   const filteredTransactions = transactions.filter(tx => {
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
+    const typeLabel = tx.type === 'expense' ? '지출' : '수입';
+    
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
     if (filterType === 'date') return tx.date.includes(searchQuery);
-    if (filterType === 'type') return tx.type.toLowerCase().includes(q);
+    if (filterType === 'type') return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
     if (filterType === 'category') return tx.category.toLowerCase().includes(q);
-    if (tx.memo && tx.memo.toLowerCase().includes(q)) return true; // 메모 검색 지원
+    if (filterType === 'subcategory') return (tx.subcategory || '').toLowerCase().includes(q);
+    if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
+    if (filterType === 'source') return (tx.source || '').toLowerCase().includes(q);
     return false;
   });
 
@@ -77,12 +81,15 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">
             <select value={filterType} onChange={e => setFilterType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
-              <option value="vendor">Vendor</option>
-              <option value="date">Date</option>
-              <option value="type">Type</option>
-              <option value="category">Category</option>
+              <option value="date">날짜</option>
+              <option value="vendor">내용</option>
+              <option value="type">타입</option>
+              <option value="category">대분류</option>
+              <option value="subcategory">소분류</option>
+              <option value="source">결제수단</option>
+              <option value="memo">메모</option>
             </select>
-            <input type="text" placeholder="" value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+            <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => setSearchQuery(search)}><Search size={16} /></button>
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); }}><RefreshCw size={16} /></button>
           </div>
