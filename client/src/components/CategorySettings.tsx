@@ -48,30 +48,32 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
         </button>
       </form>
 
-      <table className="category-table">
-        <thead>
-          <tr>
-            <th style={{ textAlign: 'left' }}>Category Name</th>
-            <th style={{ width: '80px', textAlign: 'center' }}>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {categories.map(cat => (
-            <tr key={cat.id}>
-              <td>{cat.name}</td>
-              <td style={{ textAlign: 'center' }}>
-                <button 
-                  onClick={() => cat.id && handleDelete(cat.id)}
-                  className="btn-icon delete"
-                  title="Delete"
-                >
-                  <Trash2 size={16} />
-                </button>
-              </td>
+      <div style={{ maxHeight: '400px', overflowY: 'auto', border: '1px solid #eee', borderRadius: '8px' }}>
+        <table className="category-table">
+          <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
+            <tr>
+              <th style={{ textAlign: 'left' }}>Category Name</th>
+              <th style={{ width: '80px', textAlign: 'center' }}>Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {categories.map(cat => (
+              <tr key={cat.id}>
+                <td>{cat.name}</td>
+                <td style={{ textAlign: 'center' }}>
+                  <button 
+                    onClick={() => cat.id && handleDelete(cat.id)}
+                    className="btn-icon delete"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
