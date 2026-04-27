@@ -9,7 +9,7 @@ export interface Transaction {
   id?: string;
   date: string;
   time?: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'recurring';
   category: string;
   subcategory?: string;
   vendor: string;
@@ -56,7 +56,7 @@ export interface RecurringTransaction {
   vendor: string;
   amount: number;
   category: string;
-  type: 'income' | 'expense';
+  type: 'income' | 'expense' | 'recurring';
   day_of_month: number;
 }
 
