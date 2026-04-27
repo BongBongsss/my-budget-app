@@ -35,19 +35,19 @@ app.use(express.json());
 app.use(session({
   store: new PgSession({
     conString: process.env.DATABASE_URL,
-    tableName: 'session', // 소문자로 변경
-    createTableIfMissing: true 
+    tableName: 'session', 
+    createTableIfMissing: true
   }),
   secret: process.env.SESSION_SECRET || 'secret',
-  resave: false,
-  saveUninitialized: false,
+  resave: false, // false로 변경하여 세션 무결성 유지
+  saveUninitialized: false, // false로 변경하여 불필요한 세션 생성 방지
   proxy: true,
   name: 'budget-app-session',
   cookie: { 
     secure: true, 
     sameSite: 'none', 
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000 // 7일 유지
+    maxAge: 7 * 24 * 60 * 60 * 1000
   } 
 }));
 
