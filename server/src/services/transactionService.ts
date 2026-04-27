@@ -25,7 +25,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
   })));
 
-  // 2. 고유 카테고리 목록 추출 후 일괄 등록
+  // 2. 고유 카테고리 목록 추출 후 일괄 등록 (순차 처리하여 DB 부하 감소)
   const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory)));
   for (const name of uniqueCategories) {
     await prisma.category.upsert({
