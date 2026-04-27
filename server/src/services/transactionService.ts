@@ -25,7 +25,14 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const vendor = transaction.vendor || 'Unknown';
     const time = transaction.time || '';
     
-    const category = transaction.category || (await autoCategorize(vendor));
+    const categoryName = transaction.category || (await autoCategorize(vendor));
+    
+    // 카테고리 자동 등록
+    await prisma.category.upsert({
+      where: { name: categoryName },
+      update: {},
+      create: { id: randomUUID(), name: categoryName }
+    });
 
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
     const sequence = occurrenceMap[baseKey] || 0;
@@ -36,7 +43,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       date,
       time,
       type: transaction.type || 'expense',
-      category: category,
+      category: categoryName,
       subcategory: transaction.subcategory || null,
       vendor,
       amount,
@@ -45,6 +52,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       memo: transaction.memo || null,
       hash: generateHash(date, amount, vendor, time, sequence),
     };
+
   }));
 
   return await prisma.transaction.createMany({
