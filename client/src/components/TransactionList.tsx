@@ -115,25 +115,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
-      {/* 기간 필터링 섹션 추가 */}
-      <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <div className="flex gap-2">
-          <button className={`btn ${period === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('all')}>All</button>
-          <button className={`btn ${period === 'month' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('month')}>Month</button>
-          <button className={`btn ${period === 'year' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('year')}>Year</button>
-        </div>
-        
-        {period !== 'all' && (
-          <div className="flex gap-2">
-            <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="edit-input" style={{ width: '100px' }}>
-              {years.map(y => <option key={y} value={y}>{y}년</option>)}
-            </select>
-            {period === 'month' && (
-              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="edit-input" style={{ width: '80px' }}>
-                {months.map(m => <option key={m} value={m}>{m}월</option>)}
-              </select>
-            )}
-          </div>
+      {/* 기간 필터링 섹션 (Summary와 동일한 형식) */}
+      <div className="flex justify-start items-center gap-2 mb-4">
+        <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+          <option value="all">All</option>
+          <option value="month">Month</option>
+          <option value="year">Year</option>
+        </select>
+        {(period === 'month' || period === 'year') && (
+          <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+            {years.map(y => <option key={y} value={y}>{y}</option>)}
+          </select>
+        )}
+        {period === 'month' && (
+          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+            {months.map(m => <option key={m} value={m}>{m}월</option>)}
+          </select>
         )}
       </div>
 
