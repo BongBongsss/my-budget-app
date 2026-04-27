@@ -18,6 +18,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source'>('vendor');
   const [bulkCategory, setBulkCategory] = useState('');
 
@@ -31,12 +33,20 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
   };
 
   const filteredTransactions = transactions.filter(tx => {
+    // 날짜 기간 검색 처리
+    if (filterType === 'date') {
+      if (!startDate && !endDate) return true;
+      const txDate = tx.date;
+      if (startDate && txDate < startDate) return false;
+      if (endDate && txDate > endDate) return false;
+      return true;
+    }
+
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     const typeLabel = tx.type === 'expense' ? '지출' : '수입';
     
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
-    if (filterType === 'date') return tx.date.includes(searchQuery);
     if (filterType === 'type') return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
     if (filterType === 'category') return tx.category.toLowerCase().includes(q);
     if (filterType === 'subcategory') return (tx.subcategory || '').toLowerCase().includes(q);
@@ -89,9 +99,19 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
               <option value="source">결제수단</option>
               <option value="memo">메모</option>
             </select>
-            <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+            
+            {filterType === 'date' ? (
+              <div className="flex gap-1 items-center">
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <span>~</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+              </div>
+            ) : (
+              <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+            )}
+            
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => setSearchQuery(search)}><Search size={16} /></button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); }}><RefreshCw size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); }}><RefreshCw size={16} /></button>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
