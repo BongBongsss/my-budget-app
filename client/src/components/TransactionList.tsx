@@ -141,20 +141,20 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
         </div>
       )}
 
-      <table style={{ tableLayout: 'fixed', width: '100%' }}>
+      <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}>
         <thead>
           <tr>
-            <th style={{ width: '40px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
-            <th style={{ width: '100px' }}>날짜</th>
-            <th style={{ width: '70px' }}>시간</th>
-            <th style={{ width: '60px' }}>타입</th>
-            <th style={{ width: '100px' }}>대분류</th>
-            <th style={{ width: '100px' }}>소분류</th>
-            <th>내용</th>
-            <th style={{ width: '100px' }}>금액</th>
+            <th style={{ width: '35px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
+            <th style={{ width: '90px' }}>날짜</th>
+            <th style={{ width: '60px' }}>시간</th>
+            <th style={{ width: '50px' }}>타입</th>
+            <th style={{ width: '110px' }}>대분류</th>
+            <th style={{ width: '110px' }}>소분류</th>
+            <th style={{ width: '180px' }}>내용</th>
+            <th style={{ width: '90px' }}>금액</th>
             <th style={{ width: '120px' }}>결제수단</th>
             <th>메모</th>
-            <th style={{ width: '80px' }}>Actions</th>
+            <th style={{ width: '70px' }}>Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -163,22 +163,22 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
               <td><input type="checkbox" checked={selectedIds.includes(tx.id!)} onChange={() => toggleSelect(tx.id!)} /></td>
               {editingId === tx.id! ? (
                 <>
-                  <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%' }} /></td>
-                  <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%' }} /></td>
-                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
-                  <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
-                  <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%' }} /></td>
-                  <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%' }} /></td>
-                  <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} style={{ width: '100%' }} /></td>
-                  <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%' }} /></td>
-                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%' }} /></td>
+                  <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%', fontSize: '11px' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
+                  <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%', fontSize: '11px' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
+                  <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
+                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button><button onClick={() => setEditingId(null)}><X size={16} /></button></td>
                 </>
               ) : (
                 <>
-                  <td>{tx.date}</td>
-                  <td>{tx.time}</td>
-                  <td>{tx.type === 'expense' ? '지출' : '수입'}</td>
+                  <td style={{ fontSize: '12px' }}>{tx.date}</td>
+                  <td style={{ fontSize: '12px' }}>{tx.time}</td>
+                  <td style={{ fontSize: '12px' }}>{tx.type === 'expense' ? '지출' : '수입'}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.subcategory}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
