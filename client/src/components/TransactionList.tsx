@@ -157,8 +157,29 @@ const TransactionList: React.FC<TransactionListProps> = ({
               <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => setSearchQuery(search)}><Search size={16} /></button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); }}><RefreshCw size={16} /></button>
+            <button 
+              className="btn btn-secondary" 
+              style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
+              onClick={() => {
+                setSearchQuery(search);
+                setCurrentPage(1); // 검색 시 1페이지로 이동
+              }}
+            >
+              <Search size={16} />
+            </button>
+            <button 
+              className="btn btn-secondary" 
+              style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
+              onClick={() => { 
+                setSearch(''); 
+                setSearchQuery(''); 
+                setStartDate(''); 
+                setEndDate(''); 
+                setCurrentPage(1); // 초기화 시 1페이지로 이동
+              }}
+            >
+              <RefreshCw size={16} />
+            </button>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
