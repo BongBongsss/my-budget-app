@@ -16,23 +16,43 @@ export interface ParsedTransaction {
 }
 
 const normalizeData = (row: any): ParsedTransaction => {
-  const dateStr = row['날짜'] || row['일자'] || new Date().toISOString().split('T')[0];
-  const timeStr = row['시간'] || '';
-  const typeStr = row['타입'] || '';
-  const category = row['대분류'] || '기타';
-  const subcategory = row['소분류'] || '';
+  // 날짜 변환 (엑셀 일련번호/문자열 처리)
+  let dateRaw = row['날짜'] || row['일자'] || new Date();
+  let dateStr: string;
+  if (typeof dateRaw === 'number') {
+    dateStr = new Date((dateRaw - 25569) * 86400 * 1000).toISOString().split('T')[0];
+  } else {
+    dateStr = String(dateRaw).split(' ')[0].replace(/\./g, '-');
+  }
+
+  // 시간 변환
+  let timeVal = row['시간'];
+  let timeStr = "";
+  if (typeof timeVal === 'number') {
+    const totalMinutes = Math.round(timeVal * 1440);
+    const hours = Math.floor(totalMinutes / 60) % 24;
+    const minutes = totalMinutes % 60;
+    timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  } else {
+    timeStr = String(timeVal || '');
+  }
+
   const vendor = row['내용'] || row['가맹점명'] || 'Unknown';
   const rawAmount = String(row['금액'] || '0').replace(/,/g, '').replace(/[^\d.-]/g, '');
   const amount = parseFloat(rawAmount);
+  
+  const typeStr = row['타입'] || '';
+  const type: 'income' | 'expense' = (typeStr.includes('수입') || typeStr.includes('입금')) ? 'income' : 'expense';
+  
+  const category = row['대분류'] || row['카테고리'] || '기타';
+  const subcategory = row['소분류'] || '';
   const currency = row['화폐'] || 'KRW';
   const source = row['결제수단'] || 'file_import';
   const memo = row['메모'] || '';
 
-  const type: 'income' | 'expense' = (typeStr.includes('수입') || typeStr.includes('입금')) ? 'income' : 'expense';
-
   return {
-    date: String(dateStr).split(' ')[0].replace(/\./g, '-'),
-    time: String(timeStr),
+    date: dateStr,
+    time: timeStr,
     type: type,
     category: category,
     subcategory: String(subcategory),
