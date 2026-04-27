@@ -86,8 +86,8 @@ function App() {
   });
 
   const filteredTransactions = (activeTab === 'all' 
-    ? filteredData.filter(t => !t.is_recurring)
-    : filteredData.filter(t => t.is_recurring)
+    ? filteredData.filter(t => t.type !== 'recurring')
+    : filteredData.filter(t => t.type === 'recurring')
   );
 
   if (!isAuthenticated) {
