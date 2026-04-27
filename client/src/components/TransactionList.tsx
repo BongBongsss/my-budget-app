@@ -184,7 +184,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
                   <td style={{ textAlign: 'right', fontWeight: 'bold' }}>{tx.amount.toLocaleString()}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.source}</td>
-                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.85rem', color: '#666' }} title={tx.memo}>{tx.memo}</td>
+                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
                   <td>
                     <div className="flex gap-1">
                       <button onClick={() => startEdit(tx)} className="btn-icon edit"><Edit2 size={16} /></button>
