@@ -59,12 +59,12 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   padding: 1.5rem;
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  font-size: 12px; /* 글자 크기를 12px로 조정 */
+  font-size: 13px; /* 글자 크기를 13px로 조정 */
 }
 
 table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 0.75rem; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 12px; }
-td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; font-size: 12px; }
+th { text-align: left; padding: 0.75rem; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 13px; }
+td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .income { color: #166534; font-weight: 600; }
 .expense { color: #991b1b; font-weight: 600; }
