@@ -71,9 +71,12 @@ export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
 };
 
 export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
-  const data = XLSX.utils.sheet_to_json(worksheet) as any[];
+  
+  // raw: false를 통해 서식이 적용된 문자열로 가져오고, dateNF로 날짜 형식을 고정
+  const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }) as any[];
+  
   return data.map(normalizeData);
 };
