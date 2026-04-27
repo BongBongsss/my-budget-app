@@ -118,12 +118,12 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
         <thead>
           <tr>
             <th><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
-            <th>Date</th>
-            <th>Vendor</th>
-            <th>Type</th>
-            <th>Category</th>
-            <th>Amount</th>
-            <th>Memo</th>
+            <th>날짜</th>
+            <th>내용</th>
+            <th>타입</th>
+            <th>대분류</th>
+            <th>금액</th>
+            <th>메모</th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -137,8 +137,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} /></td>
                   <td>
                     <select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as 'income' | 'expense'})}>
-                      <option value="expense">Expense</option>
-                      <option value="income">Income</option>
+                      <option value="expense">지출</option>
+                      <option value="income">수입</option>
                     </select>
                   </td>
                   <td>
@@ -147,7 +147,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                     </select>
                   </td>
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} /></td>
-                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} placeholder="Memo" /></td>
+                  <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} placeholder="메모" /></td>
                   <td>
                     <button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button>
                     <button onClick={() => setEditingId(null)}><X size={16} /></button>
@@ -157,7 +157,7 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
                 <>
                   <td>{tx.date}</td>
                   <td>{tx.vendor}</td>
-                  <td>{tx.type}</td>
+                  <td>{tx.type === 'expense' ? '지출' : '수입'}</td>
                   <td>{tx.category}</td>
                   <td>{tx.amount.toLocaleString()}</td>
                   <td style={{ fontSize: '0.8rem', color: '#666', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.memo}</td>
