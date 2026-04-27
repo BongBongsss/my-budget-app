@@ -16,25 +16,30 @@ export interface ParsedTransaction {
 }
 
 const normalizeData = (row: any): ParsedTransaction => {
-  // 날짜 변환 (엑셀 일련번호/문자열 처리)
-  let dateRaw = row['날짜'] || row['일자'] || new Date();
+  // 날짜 강제 변환 로직
+  let dateRaw = row['날짜'] || row['일자'];
   let dateStr: string;
-  if (typeof dateRaw === 'number') {
-    dateStr = new Date((dateRaw - 25569) * 86400 * 1000).toISOString().split('T')[0];
+  
+  if (dateRaw && !isNaN(Number(dateRaw)) && typeof dateRaw !== 'object' && String(dateRaw).length > 4) {
+    // 엑셀 날짜 일련번호 처리 (예: 46139)
+    const date = new Date((Number(dateRaw) - 25569) * 86400 * 1000);
+    dateStr = date.toISOString().split('T')[0];
   } else {
-    dateStr = String(dateRaw).split(' ')[0].replace(/\./g, '-');
+    dateStr = String(dateRaw || new Date().toISOString().split('T')[0]).split(' ')[0].replace(/\./g, '-');
   }
 
-  // 시간 변환
-  let timeVal = row['시간'];
+  // 시간 강제 변환 로직
+  let timeRaw = row['시간'];
   let timeStr = "";
-  if (typeof timeVal === 'number') {
-    const totalMinutes = Math.round(timeVal * 1440);
-    const hours = Math.floor(totalMinutes / 60) % 24;
-    const minutes = totalMinutes % 60;
+  
+  if (timeRaw !== undefined && !isNaN(Number(timeRaw)) && Number(timeRaw) < 1) {
+    // 엑셀 시간 일련번호 처리 (예: 0.2483...)
+    const totalSeconds = Math.round(Number(timeRaw) * 86400);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
     timeStr = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
   } else {
-    timeStr = String(timeVal || '');
+    timeStr = String(timeRaw || '');
   }
 
   const vendor = row['내용'] || row['가맹점명'] || 'Unknown';
@@ -71,12 +76,9 @@ export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
 };
 
 export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
-  const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true });
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
-  
-  // raw: false를 통해 서식이 적용된 문자열로 가져오고, dateNF로 날짜 형식을 고정
-  const data = XLSX.utils.sheet_to_json(worksheet, { raw: false, dateNF: 'yyyy-mm-dd' }) as any[];
-  
+  const data = XLSX.utils.sheet_to_json(worksheet) as any[];
   return data.map(normalizeData);
 };
