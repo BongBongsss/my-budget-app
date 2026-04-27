@@ -149,8 +149,8 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
             <th style={{ width: '60px' }}>시간</th>
             <th style={{ width: '50px' }}>타입</th>
             <th style={{ width: '110px' }}>대분류</th>
-            <th style={{ width: '110px' }}>소분류</th>
-            <th style={{ width: '180px' }}>내용</th>
+            <th style={{ width: '90px' }}>소분류</th>
+            <th style={{ width: '150px' }}>내용</th>
             <th style={{ width: '90px' }}>금액</th>
             <th style={{ width: '120px' }}>결제수단</th>
             <th>메모</th>
