@@ -15,7 +15,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, period }) =
   const categoryData = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc: any, t) => {
-      acc[t.category] = (acc[t.category] || 0) + t.amount;
+      const mainCategory = t.category.split('>')[0].trim();
+      acc[mainCategory] = (acc[mainCategory] || 0) + t.amount;
       return acc;
     }, {});
 
@@ -30,20 +31,22 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, period }) =
   const getBarData = () => {
     const grouped = transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => {
       let key;
-      if (period === 'all') key = t.date.substring(0, 4); // All -> Year
-      else if (period === 'year') key = t.date.substring(0, 7); // Year -> Month
-      else key = t.date.substring(0, 10); // Month -> Day
+      if (period === 'all') key = t.date.substring(0, 4); 
+      else if (period === 'year') key = t.date.substring(0, 7); 
+      else key = t.date.substring(0, 10);
       
+      const mainCategory = t.category.split('>')[0].trim();
       if (!acc[key]) acc[key] = {};
-      acc[key][t.category] = (acc[key][t.category] || 0) + t.amount;
+      acc[key][mainCategory] = (acc[key][mainCategory] || 0) + t.amount;
       return acc;
     }, {});
 
     const labels = Object.keys(grouped).sort();
-    const datasets = categories.map((cat, idx) => ({
+    const categoriesList = Array.from(new Set(transactions.map(t => t.category.split('>')[0].trim())));
+    const datasets = categoriesList.map((cat, idx) => ({
       label: cat,
       data: labels.map(label => grouped[label][cat] || 0),
-      backgroundColor: `hsl(${(idx * 360) / categories.length}, 70%, 60%)`,
+      backgroundColor: `hsl(${(idx * 360) / categoriesList.length}, 70%, 60%)`,
     }));
 
     return { labels, datasets };
