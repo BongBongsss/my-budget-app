@@ -29,8 +29,15 @@ model CategoryRule {
 }
 
 model Category {
-  id   String @id
-  name String @unique
+  id        String @id
+  name      String @unique
+  groupName String @default("기타")
+}
+
+model CategoryGroupRule {
+  id                String @id
+  categoryName      String @unique
+  assignedGroup     String
 }
 
 model RecurringTransaction {
