@@ -8,9 +8,18 @@ interface TransactionListProps {
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
+  period: 'all' | 'month' | 'year';
+  setPeriod: (p: 'all' | 'month' | 'year') => void;
+  year: number;
+  setYear: (y: number) => void;
+  month: number;
+  setMonth: (m: number) => void;
 }
 
-const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], categories = [], onDelete, onBulkDelete, onUpdate }) => {
+const TransactionList: React.FC<TransactionListProps> = ({ 
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate,
+  period, setPeriod, year, setYear, month, setMonth
+}) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
@@ -101,8 +110,33 @@ const TransactionList: React.FC<TransactionListProps> = ({ transactions = [], ca
     return range;
   };
 
+  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
   return (
     <div className="transaction-list">
+      {/* 기간 필터링 섹션 추가 */}
+      <div className="flex justify-between items-center mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+        <div className="flex gap-2">
+          <button className={`btn ${period === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('all')}>All</button>
+          <button className={`btn ${period === 'month' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('month')}>Month</button>
+          <button className={`btn ${period === 'year' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setPeriod('year')}>Year</button>
+        </div>
+        
+        {period !== 'all' && (
+          <div className="flex gap-2">
+            <select value={year} onChange={(e) => setYear(Number(e.target.value))} className="edit-input" style={{ width: '100px' }}>
+              {years.map(y => <option key={y} value={y}>{y}년</option>)}
+            </select>
+            {period === 'month' && (
+              <select value={month} onChange={(e) => setMonth(Number(e.target.value))} className="edit-input" style={{ width: '80px' }}>
+                {months.map(m => <option key={m} value={m}>{m}월</option>)}
+              </select>
+            )}
+          </div>
+        )}
+      </div>
+
       <div className="list-actions mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">

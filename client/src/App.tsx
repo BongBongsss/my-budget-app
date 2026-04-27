@@ -126,13 +126,20 @@ function App() {
         <button className={activeTab === 'recurring' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('recurring')} style={{ marginLeft: '10px' }}>Recurring Expenses</button>
       </div>
 
-      <TransactionList
-        transactions={filteredTransactions}
+      <TransactionList 
+        transactions={filteredTransactions} 
         categories={categories}
-        onDelete={handleDelete}
+        onDelete={handleDelete} 
         onBulkDelete={handleBulkDelete}
         onUpdate={handleUpdate}
+        period={period}
+        setPeriod={setPeriod}
+        year={year}
+        setYear={setYear}
+        month={month}
+        setMonth={setMonth}
       />
+
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
