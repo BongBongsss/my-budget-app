@@ -10,6 +10,12 @@ const generateHash = (date: string, amount: number, vendor: string, time: string
     .digest('hex');
 };
 
+export const getAllTransactions = async (): Promise<Transaction[]> => {
+  return await prisma.transaction.findMany({
+    orderBy: { date: 'desc' },
+  });
+};
+
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   const occurrenceMap: Record<string, number> = {};
 
