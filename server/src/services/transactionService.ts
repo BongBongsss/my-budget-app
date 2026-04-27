@@ -19,21 +19,29 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   const occurrenceMap: Record<string, number> = {};
 
-  const data = await Promise.all(transactions.map(async (transaction) => {
+  // 1. 모든 거래의 카테고리를 미리 확인
+  const processedTransactions = await Promise.all(transactions.map(async (t) => ({
+    ...t,
+    finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
+  })));
+
+  // 2. 고유 카테고리 목록 추출 후 일괄 등록
+  const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory)));
+  for (const name of uniqueCategories) {
+    await prisma.category.upsert({
+      where: { name },
+      update: {},
+      create: { id: randomUUID(), name }
+    });
+  }
+
+  // 3. 거래 내역 데이터 생성
+  const data = processedTransactions.map((transaction) => {
     const date = transaction.date || new Date().toISOString().split('T')[0];
     const amount = transaction.amount || 0;
     const vendor = transaction.vendor || 'Unknown';
     const time = transaction.time || '';
     
-    const categoryName = transaction.category || (await autoCategorize(vendor));
-    
-    // 카테고리 자동 등록
-    await prisma.category.upsert({
-      where: { name: categoryName },
-      update: {},
-      create: { id: randomUUID(), name: categoryName }
-    });
-
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
     const sequence = occurrenceMap[baseKey] || 0;
     occurrenceMap[baseKey] = sequence + 1;
@@ -43,7 +51,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       date,
       time,
       type: transaction.type || 'expense',
-      category: categoryName,
+      category: transaction.finalCategory,
       subcategory: transaction.subcategory || null,
       vendor,
       amount,
@@ -52,8 +60,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       memo: transaction.memo || null,
       hash: generateHash(date, amount, vendor, time, sequence),
     };
-
-  }));
+  });
 
   return await prisma.transaction.createMany({
     data,
