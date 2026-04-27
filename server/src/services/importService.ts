@@ -9,59 +9,35 @@ export interface ParsedTransaction {
   category: string;
   type: 'income' | 'expense';
   source: string;
+  memo?: string;
   raw_data?: string;
 }
 
-const findFieldInfo = (row: any, keywords: string[]): { value: any, key: string } | undefined => {
-  const keys = Object.keys(row);
-  const sortedKeys = keys.sort((a, b) => {
-    if (a.includes('명') && !b.includes('명')) return -1;
-    if (!a.includes('명') && b.includes('명')) return 1;
-    if (a.includes('번호') && !b.includes('번호')) return 1;
-    if (!a.includes('번호') && b.includes('번호')) return -1;
-    return 0;
-  });
-
-  for (const key of sortedKeys) {
-    const lowerKey = key.toLowerCase().replace(/\s/g, '');
-    if (keywords.some(k => lowerKey.includes(k))) {
-      return { value: row[key], key };
-    }
-  }
-  return undefined;
-};
-
+// 새로운 헤더 포맷에 맞춘 데이터 정제 함수
 const normalizeData = (row: any): ParsedTransaction => {
-  const dateInfo = findFieldInfo(row, ['date', '날짜', '일자', '일시', 'time']) || { value: new Date().toISOString().split('T')[0], key: 'default' };
-  const vendorInfo = findFieldInfo(row, ['가맹점명', 'vendor', '상호', '내용', '적요', 'store', 'description', 'payee', '가맹점']) || { value: 'Unknown', key: 'default' };
-  const amountInfo = findFieldInfo(row, ['amount', '금액', '지출', '입금', 'price', 'cost', 'money']) || { value: '0', key: 'default' };
-  const authInfo = findFieldInfo(row, ['승인번호', 'auth', 'approval', 'confno']) || { value: '', key: 'default' };
-
-  const amountVal = amountInfo.value;
-  const amountKey = amountInfo.key;
-
-  const amountStr = String(amountVal).replace(/,/g, '').replace(/[^\d.-]/g, '').trim();
-  const amount = parseFloat(amountStr);
-
-  let type: 'income' | 'expense' = 'expense';
-  if (amountKey.includes('수입') || amountKey.includes('입금')) {
-    type = amount >= 0 ? 'income' : 'expense';
-  } else if (amountKey.includes('지출') || amountKey.includes('결제') || amountKey.includes('매출') || amountKey.includes('금액')) {
-    type = amount >= 0 ? 'expense' : 'income'; 
-  } else {
-    type = amount >= 0 ? 'income' : 'expense';
-  }
-
-  const dateStr = String(dateInfo.value).split(' ')[0].replace(/\./g, '-');
+  // 헤더가 한글로 들어오는 경우를 처리
+  const dateStr = row['날짜'] || row['일자'] || new Date().toISOString().split('T')[0];
+  const vendor = row['내용'] || row['가맹점명'] || 'Unknown';
+  
+  const rawAmount = String(row['금액'] || '0').replace(/,/g, '').replace(/[^\d.-]/g, '');
+  const amount = parseFloat(rawAmount);
+  
+  // 타입: '수입' 또는 '입금'이 포함되면 income, 아니면 expense
+  const typeStr = row['타입'] || '';
+  const type: 'income' | 'expense' = (typeStr.includes('수입') || typeStr.includes('입금')) ? 'income' : 'expense';
+  
+  const category = row['대분류'] || row['카테고리'] || '기타';
+  const memo = row['메모'] || '';
+  const source = row['결제수단'] || 'file_import';
 
   return {
-    date: dateStr,
+    date: String(dateStr).split(' ')[0].replace(/\./g, '-'),
     amount: Math.abs(isNaN(amount) ? 0 : amount),
-    vendor: String(vendorInfo.value),
-    category: '기타',
+    vendor: String(vendor),
+    category: category,
     type: type,
-    source: 'file_import',
-    raw_data: authInfo.value ? String(authInfo.value) : undefined
+    source: String(source),
+    memo: String(memo)
   };
 };
 
@@ -76,22 +52,8 @@ export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   
-  const rows = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as any[][];
-  
-  let headerIndex = 0;
-  for (let i = 0; i < Math.min(rows.length, 20); i++) {
-    const rowStr = JSON.stringify(rows[i]);
-    if (
-      (rowStr.includes('일자') || rowStr.includes('날짜')) && 
-      (rowStr.includes('가맹점') || rowStr.includes('내용')) && 
-      (rowStr.includes('금액') || rowStr.includes('금액'))
-    ) {
-      headerIndex = i;
-      break;
-    }
-  }
-
-  const data = XLSX.utils.sheet_to_json(worksheet, { range: headerIndex }) as any[];
+  // 헤더를 포함하여 JSON으로 변환
+  const data = XLSX.utils.sheet_to_json(worksheet) as any[];
   
   return data.map(normalizeData);
 };
