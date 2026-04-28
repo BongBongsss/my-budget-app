@@ -37,12 +37,11 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(session({
   store: new PgSession({
     conString: process.env.DATABASE_URL,
-    tableName: 'session', 
-    createTableIfMissing: true
+    tableName: 'session'
   }),
   secret: process.env.SESSION_SECRET || 'secret',
-  resave: false, // false로 변경하여 세션 무결성 유지
-  saveUninitialized: false, // false로 변경하여 불필요한 세션 생성 방지
+  resave: false,
+  saveUninitialized: false,
   proxy: true,
   name: 'budget-app-session',
   cookie: { 

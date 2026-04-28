@@ -46,6 +46,14 @@ model PaymentRule {
   keyword     String @unique
 }
 
+model Session {
+  sid    String   @id @unique
+  sess   Json
+  expire DateTime
+
+  @@map("session")
+}
+
 model RecurringTransaction {
   id           String @id
   vendor       String
