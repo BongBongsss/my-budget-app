@@ -24,7 +24,7 @@ const PaymentRuleSettings: React.FC = () => {
     e.preventDefault();
     if (!keyword) return;
     try {
-      await addPaymentRule(paymentType, keyword);
+      await addPaymentRule({ paymentType, keyword });
       setKeyword('');
       fetchRules();
     } catch (err) {
