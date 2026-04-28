@@ -37,9 +37,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     });
   }
 
-  // 3. DB에 이미 존재하는 각 항목별 카운트를 가져와서 sequence 시작점 결정
-  // (날짜, 시간, 금액, 내용이 같은 기존 내역이 몇 개 있는지 파악)
-  const occurrenceMap: Record<string, number> = {};
+  // 3. 현재 가져오기 작업(Batch) 내에서의 순번을 관리하기 위한 맵
+  const batchOccurrenceMap: Record<string, number> = {};
   
   // 4. 거래 내역 데이터 생성 및 중복 방지용 해시 생성
   const data = [];
@@ -51,17 +50,13 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
     
-    // 현재 요청 내에서의 순번 계산
-    if (occurrenceMap[baseKey] === undefined) {
-      // 처음 나타난 키라면 DB에서 기존 개수를 조회해옴 (성능을 위해 최적화 가능하지만 일단 정확성 우선)
-      const existingCount = await prisma.transaction.count({
-        where: { date, time, amount, vendor }
-      });
-      occurrenceMap[baseKey] = existingCount;
+    // 이 파일(Batch) 안에서 몇 번째로 나타난 동일 내역인지 계산
+    if (batchOccurrenceMap[baseKey] === undefined) {
+      batchOccurrenceMap[baseKey] = 0;
     }
     
-    const sequence = occurrenceMap[baseKey];
-    occurrenceMap[baseKey] = sequence + 1;
+    const sequence = batchOccurrenceMap[baseKey];
+    batchOccurrenceMap[baseKey] = sequence + 1;
     
     data.push({
       id: randomUUID(),
@@ -76,11 +71,12 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash: generateHash(date, amount, vendor, time, sequence),
-      isVerified: false, // 가져온 내역은 기본적으로 검토 대기 상태
+      isVerified: false, 
     });
   }
 
-  // 5. Prisma createMany의 skipDuplicates 기능을 활용하여 DB 수준에서 중복 방지
+  // 5. Prisma createMany의 skipDuplicates 기능을 활용
+  // 이미 동일한 해시(날짜+시간+금액+내용+순번)가 DB에 있다면 무시하고 새 내역만 저장합니다.
   return await prisma.transaction.createMany({
     data: data as any,
     skipDuplicates: true,
