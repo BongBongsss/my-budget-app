@@ -15,6 +15,7 @@ interface SummaryProps {
 const Summary: React.FC<SummaryProps> = ({ transactions, period, setPeriod, year, setYear, month, setMonth }) => {
   const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
+  // exclude 타입은 자동으로 위 필터링에서 걸러집니다.
   const balance = income - expense;
 
   const years = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i);

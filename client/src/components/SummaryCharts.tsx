@@ -23,7 +23,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const categoryData = transactions
-    .filter(t => t.type === 'expense')
+    .filter(t => t.type === 'expense') // income, exclude 등은 자동 제외
     .reduce((acc: any, t) => {
       const groupName = getGroupName(t.category);
       acc[groupName] = (acc[groupName] || 0) + t.amount;

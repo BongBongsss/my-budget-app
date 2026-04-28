@@ -69,7 +69,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    const typeLabel = tx.type === 'expense' ? '지출' : '수입';
+    const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
     
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
     if (filterType === 'type') return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
@@ -248,6 +248,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <option value="">타입</option>
                 <option value="expense">지출</option>
                 <option value="income">수입</option>
+                <option value="exclude">미반영</option>
             </select>
 
             <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '110px' }}>
