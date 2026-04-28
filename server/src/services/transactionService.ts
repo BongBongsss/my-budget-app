@@ -76,6 +76,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash: generateHash(date, amount, vendor, time, sequence),
+      isVerified: false, // 가져온 내역은 기본적으로 검토 대기 상태
     });
   }
 
@@ -83,6 +84,13 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
   return await prisma.transaction.createMany({
     data: data as any,
     skipDuplicates: true,
+  });
+};
+
+export const verifyTransactions = async (ids: string[]) => {
+  return await prisma.transaction.updateMany({
+    where: { id: { in: ids } },
+    data: { isVerified: true }
   });
 };
 
@@ -115,6 +123,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash,
+      isVerified: true, // 직접 추가한 내역은 바로 승인 상태
     },
   });
 };

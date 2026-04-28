@@ -17,6 +17,7 @@ export interface Transaction {
   currency?: string;
   source: string;
   memo?: string;
+  isVerified?: boolean;
 }
 
 export interface CategoryRule {
@@ -37,6 +38,7 @@ export const addTransaction = (tx: Partial<Transaction>) => axios.post<Transacti
 export const updateTransaction = (id: string, tx: Partial<Transaction>) => axios.put(`${API_BASE}/transactions/${id}`, tx);
 export const deleteTransaction = (id: string) => axios.delete(`${API_BASE}/transactions/${id}`);
 export const bulkDeleteTransactions = (ids: string[]) => axios.delete(`${API_BASE}/transactions/bulk`, { data: { ids } });
+export const verifyTransactions = (ids: string[]) => axios.post(`${API_BASE}/transactions/verify`, { ids });
 
 export const importFile = (file: File) => {
   const formData = new FormData();

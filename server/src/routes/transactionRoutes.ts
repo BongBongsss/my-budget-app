@@ -6,13 +6,27 @@ import {
   updateTransaction, 
   deleteTransaction,
   bulkAddTransactions,
-  applyAutoRulesToExisting
+  applyAutoRulesToExisting,
+  verifyTransactions
 } from '../services/transactionService';
 import { parseCSV, parseExcel } from '../services/importService';
 import prisma from '../db';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/verify', async (req, res) => {
+  try {
+    const { ids } = req.body;
+    if (!Array.isArray(ids)) {
+      return res.status(400).json({ error: 'Expected an array of IDs' });
+    }
+    const result = await verifyTransactions(ids);
+    res.json({ success: true, count: result.count });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
 
 router.post('/apply-rules', async (req, res) => {
   try {
