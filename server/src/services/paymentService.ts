@@ -8,7 +8,11 @@ export interface PaymentRule {
 }
 
 export const getPaymentRules = async (): Promise<PaymentRule[]> => {
-  return await prisma.paymentRule.findMany();
+  const rules = await prisma.paymentRule.findMany();
+  return rules.map(r => ({
+    ...r,
+    paymentType: r.paymentType as 'card' | 'transfer'
+  }));
 };
 
 export const addPaymentRule = async (paymentType: 'card' | 'transfer', keyword: string) => {
