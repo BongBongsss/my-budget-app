@@ -62,8 +62,18 @@ function App() {
   };
 
   const handleUpdate = async (id: string, updates: Partial<Transaction>) => {
-    await updateTransaction(id, updates);
-    fetchData();
+    try {
+      await updateTransaction(id, updates);
+      // 서버에서 다시 가져오지 않고, 현재 상태에서 해당 데이터만 수정 (순서 유지)
+      setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    } catch (err) {
+      console.error('Update failed', err);
+      fetchData(); // 에러 시에만 서버 데이터와 동기화
+    }
+  };
+
+  const handleRefresh = () => {
+    fetchData(); // 수동 새로고침 시 정렬 적용
   };
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -133,6 +143,7 @@ function App() {
         onDelete={handleDelete} 
         onBulkDelete={handleBulkDelete}
         onUpdate={handleUpdate}
+        onRefresh={handleRefresh}
         period={period}
         setPeriod={setPeriod}
         year={year}

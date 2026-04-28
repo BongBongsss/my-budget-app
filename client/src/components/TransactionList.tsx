@@ -8,6 +8,7 @@ interface TransactionListProps {
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
+  onRefresh: () => void;
   period: 'all' | 'month' | 'year';
   setPeriod: (p: 'all' | 'month' | 'year') => void;
   year: number;
@@ -17,7 +18,7 @@ interface TransactionListProps {
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate,
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onRefresh,
   period, setPeriod, year, setYear, month, setMonth
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -212,7 +213,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 setSearchQuery(''); 
                 setStartDate(''); 
                 setEndDate(''); 
-                setCurrentPage(1); // 초기화 시 1페이지로 이동
+                setCurrentPage(1); 
+                onRefresh(); // 서버 데이터 새로고침 및 정렬 적용
               }}
             >
               <RefreshCw size={16} />
