@@ -40,6 +40,12 @@ model CategoryGroupRule {
   assignedGroup     String
 }
 
+model PaymentRule {
+  id          String @id
+  paymentType String // 'card' or 'transfer'
+  keyword     String @unique
+}
+
 model RecurringTransaction {
   id           String @id
   vendor       String

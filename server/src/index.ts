@@ -120,6 +120,7 @@ initDb().then(() => {
 app.use('/api/rules', ruleRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/recurring', recurringRoutes);
+app.use('/api/payment-rules', paymentRoutes);
 app.use('/api/transactions', transactionRoutes);
 
 app.get('/api/health', (req, res) => {
