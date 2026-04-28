@@ -297,7 +297,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
-                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%', fontSize: '11px' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
+                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%', fontSize: '11px' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%', fontSize: '11px' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
