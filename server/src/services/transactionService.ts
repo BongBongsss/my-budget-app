@@ -17,9 +17,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 };
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
-  const occurrenceMap: Record<string, number> = {};
-
-  // 1. 모든 거래의 카테고리를 미리 확인
+  // 1. 모든 거래의 카테고리를 미리 확인 및 자동 분류
   interface ProcessedTx extends Partial<Transaction> {
     finalCategory: string;
   }
@@ -29,7 +27,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
   })));
 
-  // 2. 고유 카테고리 목록 추출 후 일괄 등록 (순차 처리하여 DB 부하 감소)
+  // 2. 고유 카테고리 목록 추출 후 일괄 등록 (중복 방지 upsert)
   const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory)));
   for (const name of uniqueCategories) {
     await prisma.category.upsert({
@@ -39,18 +37,33 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     });
   }
 
-  // 3. 거래 내역 데이터 생성
-  const data = processedTransactions.map((transaction) => {
+  // 3. DB에 이미 존재하는 각 항목별 카운트를 가져와서 sequence 시작점 결정
+  // (날짜, 시간, 금액, 내용이 같은 기존 내역이 몇 개 있는지 파악)
+  const occurrenceMap: Record<string, number> = {};
+  
+  // 4. 거래 내역 데이터 생성 및 중복 방지용 해시 생성
+  const data = [];
+  for (const transaction of processedTransactions) {
     const date = transaction.date || new Date().toISOString().split('T')[0];
     const amount = transaction.amount || 0;
     const vendor = transaction.vendor || 'Unknown';
     const time = transaction.time || '';
     
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
-    const sequence = occurrenceMap[baseKey] || 0;
+    
+    // 현재 요청 내에서의 순번 계산
+    if (occurrenceMap[baseKey] === undefined) {
+      // 처음 나타난 키라면 DB에서 기존 개수를 조회해옴 (성능을 위해 최적화 가능하지만 일단 정확성 우선)
+      const existingCount = await prisma.transaction.count({
+        where: { date, time, amount, vendor }
+      });
+      occurrenceMap[baseKey] = existingCount;
+    }
+    
+    const sequence = occurrenceMap[baseKey];
     occurrenceMap[baseKey] = sequence + 1;
     
-    return {
+    data.push({
       id: randomUUID(),
       date,
       time,
@@ -63,11 +76,12 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash: generateHash(date, amount, vendor, time, sequence),
-    };
-  });
+    });
+  }
 
+  // 5. Prisma createMany의 skipDuplicates 기능을 활용하여 DB 수준에서 중복 방지
   return await prisma.transaction.createMany({
-    data: data as any, // Prisma createMany type workaround
+    data: data as any,
     skipDuplicates: true,
   });
 };
