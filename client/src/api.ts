@@ -63,6 +63,18 @@ export interface RecurringTransaction {
 
 // ... 기존 API 코드 ...
 
+export interface PaymentRule {
+  id?: string;
+  paymentType: 'card' | 'transfer';
+  keyword: string;
+}
+
+// ... (기존 코드들)
+
+export const getPaymentRules = () => axios.get<PaymentRule[]>(`${API_BASE}/payment-rules`);
+export const addPaymentRule = (rule: Partial<PaymentRule>) => axios.post<PaymentRule>(`${API_BASE}/payment-rules`, rule);
+export const deletePaymentRule = (id: string) => axios.delete(`${API_BASE}/payment-rules/${id}`);
+
 export const getCategories = () => axios.get<CategoryItem[]>(`${API_BASE}/categories`);
 export const autoCategorizeVendor = (vendor: string) => axios.get<{ category: string }>(`${API_BASE}/categories/auto`, { params: { vendor } });
 export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => axios.post(`${API_BASE}/categories/batch-group`, { categoryIds, groupName });
