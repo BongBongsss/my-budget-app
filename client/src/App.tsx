@@ -101,13 +101,15 @@ function App() {
     }
   };
 
-  // 공통 필터링 로직
   const filteredByPeriod = transactions.filter(t => {
     if (period === 'all') return true;
     if (period === 'month') return t.date.startsWith(`${year}-${String(month).padStart(2, '0')}`);
     if (period === 'year') return t.date.startsWith(`${year}`);
     return true;
   });
+
+  // 차트와 요약에 사용할 "전체 승인 내역" (탭 필터 무시)
+  const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
 
   const filteredTransactions = filteredByPeriod.filter(t => {
     const source = (t.source || '').toLowerCase();
@@ -150,12 +152,12 @@ function App() {
       </header>
 
       <Summary 
-        transactions={filteredTransactions} 
+        transactions={allVerifiedForPeriod} 
         period={period} setPeriod={setPeriod} 
         year={year} setYear={setYear} 
         month={month} setMonth={setMonth} 
       />
-      <SummaryCharts transactions={filteredTransactions} categories={categories} period={period} />
+      <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
       <TransactionForm onSuccess={fetchData} categories={categories} />
       
       <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
