@@ -310,7 +310,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td style={{ fontSize: '12px' }}>{tx.date}</td>
                   <td style={{ fontSize: '12px' }}>{tx.time}</td>
-                  <td style={{ fontSize: '12px' }}>{tx.type === 'expense' ? '지출' : '수입'}</td>
+                  <td style={{ fontSize: '12px' }}>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.subcategory}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
