@@ -16,7 +16,7 @@ function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'card' | 'transfer'>('all');
+  const [activeTab, setActiveTab] = useState<'card' | 'transfer' | 'unclassified'>('card');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // 상태 끌어올리기: 필터링 조건
@@ -89,18 +89,23 @@ function App() {
   };
 
   // 공통 필터링 로직
-  const filteredData = transactions.filter(t => {
+  const filteredByPeriod = transactions.filter(t => {
     if (period === 'all') return true;
     if (period === 'month') return t.date.startsWith(`${year}-${String(month).padStart(2, '0')}`);
     if (period === 'year') return t.date.startsWith(`${year}`);
     return true;
   });
 
-  const filteredTransactions = (
-    activeTab === 'all' ? filteredData :
-    activeTab === 'card' ? filteredData.filter(t => t.source?.toLowerCase().includes('카드')) :
-    filteredData.filter(t => t.source?.toLowerCase().includes('이체'))
-  );
+  const filteredTransactions = filteredByPeriod.filter(t => {
+    const source = (t.source || '').toLowerCase();
+    const isCard = source.includes('카드');
+    const isTransfer = source.includes('이체');
+
+    if (activeTab === 'card') return isCard;
+    if (activeTab === 'transfer') return isTransfer;
+    if (activeTab === 'unclassified') return !isCard && !isTransfer;
+    return true;
+  });
 
   if (!isAuthenticated) {
     return <Login onLogin={fetchData} />;
@@ -134,9 +139,9 @@ function App() {
       <TransactionForm onSuccess={fetchData} categories={categories} />
       
       <div className="tabs" style={{ marginBottom: '20px' }}>
-        <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
-        <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
+        <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')}>카드결제</button>
         <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
+        <button className={activeTab === 'unclassified' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('unclassified')} style={{ marginLeft: '10px' }}>미분류</button>
       </div>
 
       <TransactionList 
