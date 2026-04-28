@@ -12,6 +12,12 @@ interface SummaryChartsProps {
 }
 
 const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period }) => {
+  // 공통 색상 팔레트
+  const COLOR_PALETTE = [
+    '#f87171', '#fb923c', '#fbbf24', '#4ade80', '#38bdf8', '#818cf8', '#a78bfa', '#fb7185',
+    '#2dd4bf', '#a3e635', '#f472b6', '#94a3b8', '#fb923c', '#60a5fa', '#f87171'
+  ];
+
   // 카테고리 이름을 그룹 이름으로 변환하는 맵 생성
   const categoryToGroupMap: Record<string, string> = {};
   categories.forEach(cat => {
@@ -22,19 +28,28 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
+  const allGroups = Array.from(new Set(Object.values(categoryToGroupMap))).sort();
+  
+  // 그룹별 고정 색상 맵 생성
+  const groupColorMap: Record<string, string> = {};
+  allGroups.forEach((group, idx) => {
+    groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
+  });
+
   const categoryData = transactions
-    .filter(t => t.type === 'expense') // income, exclude 등은 자동 제외
+    .filter(t => t.type === 'expense')
     .reduce((acc: any, t) => {
       const groupName = getGroupName(t.category);
       acc[groupName] = (acc[groupName] || 0) + t.amount;
       return acc;
     }, {});
 
+  const pieLabels = Object.keys(categoryData);
   const pieData = {
-    labels: Object.keys(categoryData),
+    labels: pieLabels,
     datasets: [{
       data: Object.values(categoryData),
-      backgroundColor: ['#f87171', '#fb923c', '#fbbf24', '#4ade80', '#38bdf8', '#818cf8', '#a78bfa', '#fb7185'],
+      backgroundColor: pieLabels.map(label => groupColorMap[label] || '#94a3b8'),
     }]
   };
 
@@ -52,12 +67,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     }, {});
 
     const labels = Object.keys(grouped).sort();
-    const allGroups = Array.from(new Set(Object.values(categoryToGroupMap)));
     
-    const datasets = allGroups.map((group, idx) => ({
+    const datasets = allGroups.map((group) => ({
       label: group,
       data: labels.map(label => grouped[label][group] || 0),
-      backgroundColor: `hsl(${(idx * 360) / allGroups.length}, 70%, 60%)`,
+      backgroundColor: groupColorMap[group],
     }));
 
     return { labels, datasets };
