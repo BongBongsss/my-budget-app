@@ -245,7 +245,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <Trash2 size={16} />
             </button>
             <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
-            
             <select value={bulkType} onChange={(e) => setBulkType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '80px' }}>
                 <option value="">타입</option>
                 <option value="expense">지출</option>
