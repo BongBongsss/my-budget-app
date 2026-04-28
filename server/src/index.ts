@@ -7,6 +7,7 @@ import transactionRoutes from './routes/transactionRoutes';
 import ruleRoutes from './routes/ruleRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import recurringRoutes from './routes/recurringRoutes';
+import paymentRoutes from './routes/paymentRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
