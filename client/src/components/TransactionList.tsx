@@ -149,12 +149,49 @@ const TransactionList: React.FC<TransactionListProps> = ({
             
             {filterType === 'date' ? (
               <div className="flex gap-1 items-center">
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input 
+                  type="date" 
+                  value={startDate} 
+                  onChange={e => setStartDate(e.target.value)} 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchQuery(search);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="edit-input" 
+                  style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
+                />
                 <span>~</span>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input 
+                  type="date" 
+                  value={endDate} 
+                  onChange={e => setEndDate(e.target.value)} 
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      setSearchQuery(search);
+                      setCurrentPage(1);
+                    }
+                  }}
+                  className="edit-input" 
+                  style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
+                />
               </div>
             ) : (
-              <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+              <input 
+                type="text" 
+                placeholder="검색어..." 
+                value={search} 
+                onChange={e => setSearch(e.target.value)} 
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    setSearchQuery(search);
+                    setCurrentPage(1);
+                  }
+                }}
+                className="edit-input" 
+                style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} 
+              />
             )}
             
             <button 
