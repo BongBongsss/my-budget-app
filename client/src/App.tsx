@@ -56,6 +56,7 @@ function App() {
   };
 
   const handleBulkDelete = async (ids: string[]) => {
+    if (!window.confirm(`Delete ${ids.length} selected items?`)) return;
     await bulkDeleteTransactions(ids);
     fetchData();
   };

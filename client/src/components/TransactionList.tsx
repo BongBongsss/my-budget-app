@@ -233,7 +233,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
       {selectedIds.length > 0 && (
         <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
-            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => onBulkDelete(selectedIds)} title="Delete Selected">
+            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} 
+              onClick={() => {
+                onBulkDelete(selectedIds);
+                setSelectedIds([]); // 삭제 후 선택 목록 비우기
+              }} 
+              title="Delete Selected"
+            >
                 <Trash2 size={16} />
             </button>
             <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
