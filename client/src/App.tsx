@@ -16,7 +16,7 @@ function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'recurring'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'card' | 'transfer'>('all');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // 상태 끌어올리기: 필터링 조건
@@ -96,9 +96,10 @@ function App() {
     return true;
   });
 
-  const filteredTransactions = (activeTab === 'all' 
-    ? filteredData.filter(t => t.type !== 'recurring')
-    : filteredData.filter(t => t.type === 'recurring')
+  const filteredTransactions = (
+    activeTab === 'all' ? filteredData :
+    activeTab === 'card' ? filteredData.filter(t => t.source?.toLowerCase().includes('카드')) :
+    filteredData.filter(t => t.source?.toLowerCase().includes('이체'))
   );
 
   if (!isAuthenticated) {
@@ -124,17 +125,18 @@ function App() {
       </header>
 
       <Summary 
-        transactions={filteredData} 
+        transactions={filteredTransactions} 
         period={period} setPeriod={setPeriod} 
         year={year} setYear={setYear} 
         month={month} setMonth={setMonth} 
       />
-      <SummaryCharts transactions={filteredData} categories={categories} period={period} />
+      <SummaryCharts transactions={filteredTransactions} categories={categories} period={period} />
       <TransactionForm onSuccess={fetchData} categories={categories} />
       
       <div className="tabs" style={{ marginBottom: '20px' }}>
-        <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>Transactions</button>
-        <button className={activeTab === 'recurring' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('recurring')} style={{ marginLeft: '10px' }}>Recurring Expenses</button>
+        <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
+        <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
+        <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
       </div>
 
       <TransactionList 
