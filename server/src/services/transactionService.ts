@@ -3,16 +3,26 @@ import { autoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수
+// 데이터의 고유 지문(hash) 생성 함수 - 정규화 적용
 const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
+  const normalizedVendor = (vendor || 'Unknown').trim();
+  const normalizedAmount = Math.abs(amount);
+  const normalizedTime = time || '';
+  
   return createHash('sha256')
-    .update(`${date}-${time}-${amount}-${vendor}-${sequence}`)
+    .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
     .digest('hex');
 };
 
+// 기존 데이터 정리 및 중복 제거
 export const cleanupTransactions = async () => {
+  // 날짜 순으로 정렬하여 일관된 sequence 부여
   const allTransactions = await prisma.transaction.findMany({
-    orderBy: { date: 'asc' }
+    orderBy: [
+      { date: 'asc' },
+      { time: 'asc' },
+      { id: 'asc' } // 동일 시간 내 순서 보장
+    ]
   });
 
   const occurrenceMap: Record<string, number> = {};
@@ -20,21 +30,30 @@ export const cleanupTransactions = async () => {
   let deletedCount = 0;
 
   for (const tx of allTransactions) {
-    const baseKey = `${tx.date}-${tx.time || ''}-${tx.amount}-${tx.vendor}`;
+    const normalizedVendor = (tx.vendor || 'Unknown').trim();
+    const normalizedAmount = Math.abs(tx.amount);
+    const normalizedTime = tx.time || '';
+    
+    const baseKey = `${tx.date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}`;
     const sequence = occurrenceMap[baseKey] || 0;
     occurrenceMap[baseKey] = sequence + 1;
 
     const correctHash = generateHash(tx.date, tx.amount, tx.vendor, tx.time || '', sequence);
 
+    // Hash가 없거나 틀린 경우 업데이트 시도
     if (!tx.hash || tx.hash !== correctHash) {
       try {
         await prisma.transaction.update({
           where: { id: tx.id },
-          data: { hash: correctHash }
+          data: { 
+            hash: correctHash,
+            amount: normalizedAmount, // 금액 양수화 (일관성)
+            vendor: normalizedVendor  // 공백 제거
+          }
         });
         updatedCount++;
       } catch (err) {
-        // 만약 이미 해당 hash가 존재한다면 중복 데이터이므로 삭제
+        // 이미 해당 hash가 존재한다면 완전 중복이므로 삭제
         await prisma.transaction.delete({
           where: { id: tx.id }
         });
@@ -52,17 +71,12 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 };
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
-  // 1. 모든 거래의 카테고리를 미리 확인 및 자동 분류
-  interface ProcessedTx extends Partial<Transaction> {
-    finalCategory: string;
-  }
-
-  const processedTransactions: ProcessedTx[] = await Promise.all(transactions.map(async (t) => ({
+  const processedTransactions = await Promise.all(transactions.map(async (t) => ({
     ...t,
     finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
   })));
 
-  // 2. 고유 카테고리 목록 추출 후 일괄 등록 (중복 방지 upsert)
+  // 카테고리 일괄 등록
   const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory)));
   for (const name of uniqueCategories) {
     await prisma.category.upsert({
@@ -72,28 +86,39 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     });
   }
 
-  // 3. 현재 가져오기 작업(Batch) 내에서의 순번을 관리하기 위한 맵
   const batchOccurrenceMap: Record<string, number> = {};
-  
-  // 4. 거래 내역 데이터 생성 및 중복 방지용 해시 생성
-  const data = [];
+  const dataToInsert = [];
+
   for (const transaction of processedTransactions) {
     const date = transaction.date || new Date().toISOString().split('T')[0];
-    const amount = transaction.amount || 0;
-    const vendor = transaction.vendor || 'Unknown';
+    const amount = Math.abs(transaction.amount || 0);
+    const vendor = (transaction.vendor || 'Unknown').trim();
     const time = transaction.time || '';
     
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
     
-    // 이 파일(Batch) 안에서 몇 번째로 나타난 동일 내역인지 계산
-    if (batchOccurrenceMap[baseKey] === undefined) {
-      batchOccurrenceMap[baseKey] = 0;
+    // 1. DB에 이미 승인되어 있는 동일한 내역의 개수 확인
+    const existingVerifiedCount = await prisma.transaction.count({
+      where: { 
+        date, 
+        time, 
+        amount: { in: [amount, -amount] },
+        vendor: { equals: vendor, mode: 'insensitive' },
+        isVerified: true 
+      }
+    });
+
+    // 2. 현재 배치에서 이 항목이 몇 번째로 등장하는지 계산
+    const batchIndex = batchOccurrenceMap[baseKey] || 0;
+    batchOccurrenceMap[baseKey] = batchIndex + 1;
+
+    // 3. 만약 이미 DB에 승인된 개수보다 적은 순서라면, 이미 있는 데이터이므로 건너뜀
+    if (batchIndex < existingVerifiedCount) {
+      continue;
     }
     
-    const sequence = batchOccurrenceMap[baseKey];
-    batchOccurrenceMap[baseKey] = sequence + 1;
-    
-    data.push({
+    // 4. 실제로 추가해야 할 새로운 내역인 경우
+    dataToInsert.push({
       id: randomUUID(),
       date,
       time,
@@ -105,15 +130,15 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       currency: transaction.currency || 'KRW',
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
-      hash: generateHash(date, amount, vendor, time, sequence),
+      hash: generateHash(date, amount, vendor, time, batchIndex),
       isVerified: false, 
     });
   }
 
-  // 5. Prisma createMany의 skipDuplicates 기능을 활용
-  // 이미 동일한 해시(날짜+시간+금액+내용+순번)가 DB에 있다면 무시하고 새 내역만 저장합니다.
+  if (dataToInsert.length === 0) return { count: 0 };
+
   return await prisma.transaction.createMany({
-    data: data as any,
+    data: dataToInsert as any,
     skipDuplicates: true,
   });
 };
@@ -128,8 +153,8 @@ export const verifyTransactions = async (ids: string[]) => {
 export const addTransaction = async (transaction: Partial<Transaction>) => {
   const date = transaction.date || new Date().toISOString().split('T')[0];
   const time = transaction.time || '';
-  const amount = transaction.amount || 0;
-  const vendor = transaction.vendor || 'Unknown';
+  const amount = Math.abs(transaction.amount || 0);
+  const vendor = (transaction.vendor || 'Unknown').trim();
   const category = transaction.category || await autoCategorize(vendor);
   
   const existingCount = await prisma.transaction.count({
@@ -154,7 +179,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash,
-      isVerified: true, // 직접 추가한 내역은 바로 승인 상태
+      isVerified: true, 
     },
   });
 };
