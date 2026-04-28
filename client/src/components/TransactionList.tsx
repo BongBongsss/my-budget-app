@@ -34,6 +34,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
+  const [bulkMemo, setBulkMemo] = useState('');
 
   const handleBulkUpdate = async () => {
     if (selectedIds.length === 0) return;
@@ -42,6 +43,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (bulkCategory) updates.category = bulkCategory;
     if (bulkType) updates.type = bulkType;
     if (bulkSubcategory !== undefined && bulkSubcategory !== '') updates.subcategory = bulkSubcategory;
+    if (bulkMemo !== undefined && bulkMemo !== '') updates.memo = bulkMemo;
 
     if (Object.keys(updates).length === 0) {
       alert('Please select at least one field to update.');
@@ -55,6 +57,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
     setBulkCategory('');
     setBulkType('');
     setBulkSubcategory('');
+    setBulkMemo('');
     setSelectedIds([]);
   };
 
@@ -259,11 +262,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
             <input 
               type="text" 
-              placeholder="소분류 일괄 입력" 
+              placeholder="소분류 입력" 
               value={bulkSubcategory} 
               onChange={(e) => setBulkSubcategory(e.target.value)} 
               className="edit-input" 
-              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} 
+              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} 
+            />
+
+            <input 
+              type="text" 
+              placeholder="메모 일괄 입력" 
+              value={bulkMemo} 
+              onChange={(e) => setBulkMemo(e.target.value)} 
+              className="edit-input" 
+              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} 
             />
 
             <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes">
