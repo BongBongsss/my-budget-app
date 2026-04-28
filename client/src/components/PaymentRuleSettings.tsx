@@ -1,11 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { getPaymentRules, addPaymentRule, deletePaymentRule, PaymentRule } from '../api';
-import { Trash2, PlusCircle } from 'lucide-react';
+import { getPaymentRules, addPaymentRule, deletePaymentRule, applyPaymentRules, PaymentRule } from '../api';
+import { Trash2, PlusCircle, RefreshCw } from 'lucide-react';
 
-const PaymentRuleSettings: React.FC = () => {
+interface PaymentRuleSettingsProps {
+  onRefresh?: () => void;
+}
+
+const PaymentRuleSettings: React.FC<PaymentRuleSettingsProps> = ({ onRefresh }) => {
   const [rules, setRules] = useState<PaymentRule[]>([]);
   const [keyword, setKeyword] = useState('');
   const [paymentType, setPaymentType] = useState<'card' | 'transfer'>('card');
+  const [isApplying, setIsApplying] = useState(false);
 
   const fetchRules = async () => {
     try {
@@ -42,9 +47,43 @@ const PaymentRuleSettings: React.FC = () => {
     }
   };
 
+  const handleApplyRules = async () => {
+    setIsApplying(true);
+    try {
+      const res = await applyPaymentRules();
+      alert(`${res.data.updatedCount}개의 내역에 결제 규칙이 적용되었습니다.`);
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Error applying payment rules:', err);
+      alert('결제 규칙 적용 중 오류가 발생했습니다.');
+    } finally {
+      setIsApplying(false);
+    }
+  };
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <h4>Payment Classification Rules</h4>
+      <h4 style={{ marginBottom: '8px' }}>Payment Classification Rules</h4>
+      
+      {/* 요청하신 위치: 제목 바로 아래 버튼 배치 */}
+      <div style={{ marginBottom: '15px' }}>
+        <button 
+          onClick={handleApplyRules} 
+          className="btn btn-primary"
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px', 
+            fontSize: '0.85rem', 
+            padding: '6px 12px' 
+          }}
+          disabled={isApplying}
+        >
+          <RefreshCw size={16} className={isApplying ? 'animate-spin' : ''} />
+          {isApplying ? '반영 중...' : '기존 내역에 결제 규칙 반영하기'}
+        </button>
+      </div>
+
       <p className="text-sm text-gray-600 mb-4">
         Define keywords to automatically classify transactions as 'Card' or 'Transfer'.
       </p>
@@ -73,7 +112,7 @@ const PaymentRuleSettings: React.FC = () => {
         </div>
       </form>
 
-      <div style={{ flex: 1, overflowY: 'auto', maxHeight: '350px', border: '1px solid #eee', borderRadius: '8px' }}>
+      <div style={{ flex: 1, overflowY: 'auto', maxHeight: '300px', border: '1px solid #eee', borderRadius: '8px' }}>
         <table className="category-table">
           <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
             <tr>
@@ -94,6 +133,13 @@ const PaymentRuleSettings: React.FC = () => {
                 </td>
               </tr>
             ))}
+            {rules.length === 0 && (
+              <tr>
+                <td colSpan={3} style={{ textAlign: 'center', color: '#999', padding: '20px' }}>
+                  등록된 규칙이 없습니다.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

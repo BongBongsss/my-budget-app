@@ -36,7 +36,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         {activeTab === 'category' && <CategorySettings categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'auto' && <AutoCategorySettings categories={categories} />}
         {activeTab === 'group' && <CategoryGroupSettings categories={categories} onRefresh={onRefresh} />}
-        {activeTab === 'payment' && <PaymentRuleSettings />}
+        {activeTab === 'payment' && <PaymentRuleSettings onRefresh={onRefresh} />}
         {activeTab === 'password' && <ChangePassword onClose={onClose} />}
       </div>
     </div>

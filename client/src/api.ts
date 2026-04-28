@@ -74,6 +74,7 @@ export interface PaymentRule {
 export const getPaymentRules = () => axios.get<PaymentRule[]>(`${API_BASE}/payment-rules`);
 export const addPaymentRule = (rule: Partial<PaymentRule>) => axios.post<PaymentRule>(`${API_BASE}/payment-rules`, rule);
 export const deletePaymentRule = (id: string) => axios.delete(`${API_BASE}/payment-rules/${id}`);
+export const applyPaymentRules = () => axios.post<{ success: boolean, updatedCount: number }>(`${API_BASE}/payment-rules/apply`);
 
 export const getCategories = () => axios.get<CategoryItem[]>(`${API_BASE}/categories`);
 export const autoCategorizeVendor = (vendor: string) => axios.get<{ category: string }>(`${API_BASE}/categories/auto`, { params: { vendor } });

@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getPaymentRules, addPaymentRule, deletePaymentRule } from '../services/paymentService';
+import { getPaymentRules, addPaymentRule, deletePaymentRule, applyPaymentRulesToExisting } from '../services/paymentService';
 
 const router = Router();
 
@@ -7,6 +7,15 @@ router.get('/', async (req, res) => {
   try {
     const rules = await getPaymentRules();
     res.json(rules);
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
+
+router.post('/apply', async (req, res) => {
+  try {
+    const count = await applyPaymentRulesToExisting();
+    res.json({ success: true, updatedCount: count });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }
