@@ -7,13 +7,23 @@ import {
   deleteTransaction,
   bulkAddTransactions,
   applyAutoRulesToExisting,
-  verifyTransactions
+  verifyTransactions,
+  cleanupTransactions
 } from '../services/transactionService';
 import { parseCSV, parseExcel } from '../services/importService';
 import prisma from '../db';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
+
+router.post('/cleanup', async (req, res) => {
+  try {
+    const result = await cleanupTransactions();
+    res.json({ success: true, ...result });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+});
 
 router.post('/verify', async (req, res) => {
   try {

@@ -39,6 +39,7 @@ export const updateTransaction = (id: string, tx: Partial<Transaction>) => axios
 export const deleteTransaction = (id: string) => axios.delete(`${API_BASE}/transactions/${id}`);
 export const bulkDeleteTransactions = (ids: string[]) => axios.delete(`${API_BASE}/transactions/bulk`, { data: { ids } });
 export const verifyTransactions = (ids: string[]) => axios.post(`${API_BASE}/transactions/verify`, { ids });
+export const cleanupTransactions = () => axios.post(`${API_BASE}/transactions/cleanup`);
 
 export const importFile = (file: File) => {
   const formData = new FormData();

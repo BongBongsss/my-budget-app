@@ -10,6 +10,41 @@ const generateHash = (date: string, amount: number, vendor: string, time: string
     .digest('hex');
 };
 
+export const cleanupTransactions = async () => {
+  const allTransactions = await prisma.transaction.findMany({
+    orderBy: { date: 'asc' }
+  });
+
+  const occurrenceMap: Record<string, number> = {};
+  let updatedCount = 0;
+  let deletedCount = 0;
+
+  for (const tx of allTransactions) {
+    const baseKey = `${tx.date}-${tx.time || ''}-${tx.amount}-${tx.vendor}`;
+    const sequence = occurrenceMap[baseKey] || 0;
+    occurrenceMap[baseKey] = sequence + 1;
+
+    const correctHash = generateHash(tx.date, tx.amount, tx.vendor, tx.time || '', sequence);
+
+    if (!tx.hash || tx.hash !== correctHash) {
+      try {
+        await prisma.transaction.update({
+          where: { id: tx.id },
+          data: { hash: correctHash }
+        });
+        updatedCount++;
+      } catch (err) {
+        // 만약 이미 해당 hash가 존재한다면 중복 데이터이므로 삭제
+        await prisma.transaction.delete({
+          where: { id: tx.id }
+        });
+        deletedCount++;
+      }
+    }
+  }
+  return { updatedCount, deletedCount };
+};
+
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
     orderBy: { date: 'desc' },
