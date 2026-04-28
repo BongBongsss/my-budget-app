@@ -20,7 +20,11 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
   const occurrenceMap: Record<string, number> = {};
 
   // 1. 모든 거래의 카테고리를 미리 확인
-  const processedTransactions = await Promise.all(transactions.map(async (t) => ({
+  interface ProcessedTx extends Partial<Transaction> {
+    finalCategory: string;
+  }
+
+  const processedTransactions: ProcessedTx[] = await Promise.all(transactions.map(async (t) => ({
     ...t,
     finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
   })));
@@ -63,7 +67,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
   });
 
   return await prisma.transaction.createMany({
-    data,
+    data: data as any, // Prisma createMany type workaround
     skipDuplicates: true,
   });
 };
