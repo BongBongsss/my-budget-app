@@ -62,7 +62,6 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     if (barRef.current) barRef.current.update();
   };
 
-  // 막대 차트용 범례 (원형 차트는 내부 라벨을 사용하므로 제외)
   const BarLegend = () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
       {activeGroups.map((group) => (
@@ -116,10 +115,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        {/* 원형 차트 영역 */}
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
           <h3>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1, padding: '10px' }}>
+          <div style={{ height: '350px', flex: 1 }}>
             <Pie 
               ref={pieRef}
               data={{
@@ -133,32 +131,46 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                layout: { padding: { left: 20, right: 20, top: 20, bottom: 20 } },
+                layout: { padding: { left: 40, right: 40, top: 20, bottom: 20 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
                   datalabels: {
-                    color: '#000', // 검은색 글씨
-                    font: { weight: 'bold', size: 11 },
                     formatter: (value, ctx) => {
                       const label = ctx.chart.data.labels?.[ctx.dataIndex];
                       const percentage = ((value / totalAmount) * 100).toFixed(1);
                       return `${label}\n${percentage}%`;
                     },
+                    color: (ctx) => {
+                        const value = ctx.dataset.data[ctx.dataIndex] as number;
+                        const percentage = (value / totalAmount) * 100;
+                        return percentage >= 10 ? '#fff' : '#000'; // 10% 이상이면 흰색(내부), 미만이면 검은색(외부)
+                    },
+                    font: { weight: 'bold', size: 10 },
                     textAlign: 'center',
-                    anchor: 'end', // 외부 표시를 위해 조각 끝으로 배치
-                    align: 'end',  // 조각 바깥쪽에 정렬
-                    offset: 10,    // 원형에서 약간 띄움
-                    display: 'auto' // 겹치면 자동으로 숨김/조정
+                    anchor: (ctx) => {
+                        const value = ctx.dataset.data[ctx.dataIndex] as number;
+                        const percentage = (value / totalAmount) * 100;
+                        return percentage >= 10 ? 'center' : 'end';
+                    },
+                    align: (ctx) => {
+                        const value = ctx.dataset.data[ctx.dataIndex] as number;
+                        const percentage = (value / totalAmount) * 100;
+                        return percentage >= 10 ? 'center' : 'end';
+                    },
+                    offset: (ctx) => {
+                        const value = ctx.dataset.data[ctx.dataIndex] as number;
+                        const percentage = (value / totalAmount) * 100;
+                        return percentage >= 10 ? 0 : 10;
+                    },
+                    display: 'auto'
                   }
                 }
               }} 
             />
           </div>
-          {/* 원형 차트는 범례 삭제 */}
         </div>
 
-        {/* 막대 차트 영역 */}
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0 }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
