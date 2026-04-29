@@ -19,6 +19,11 @@ function App() {
   const [activeTab, setActiveTab] = useState<'new' | 'card' | 'transfer' | 'unclassified'>('card');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
+  // Undo 기능을 위한 상태
+  const [lastDeleted, setLastDeleted] = useState<Transaction[] | null>(null);
+  const [showUndo, setShowUndo] = useState(false);
+  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
+
   // 상태 끌어올리기: 필터링 조건
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -50,30 +55,62 @@ function App() {
     fetchData();
   }, []);
 
+  const showUndoMessage = (deletedItems: Transaction[]) => {
+    setLastDeleted(deletedItems);
+    setShowUndo(true);
+    
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => {
+      setShowUndo(false);
+      setLastDeleted(null);
+    }, 5000); // 5초간 표시
+  };
+
+  const handleUndo = async () => {
+    if (!lastDeleted) return;
+    try {
+      // 삭제된 항목들을 다시 벌크 추가 (ID와 해시를 포함하여 원래대로 복구)
+      await bulkAddTransactions(lastDeleted);
+      setShowUndo(false);
+      setLastDeleted(null);
+      fetchData();
+    } catch (err) {
+      alert('복구에 실패했습니다.');
+    }
+  };
+
   const handleDelete = async (id: string) => {
+    const itemToDelete = transactions.find(t => t.id === id);
+    if (!itemToDelete) return;
+
     await deleteTransaction(id);
+    showUndoMessage([itemToDelete]);
     fetchData();
   };
 
   const handleBulkDelete = async (ids: string[]) => {
-    if (!window.confirm(`Delete ${ids.length} selected items?`)) return;
+    const itemsToDelete = transactions.filter(t => ids.includes(t.id!));
+    if (itemsToDelete.length === 0) return;
+
+    if (!window.confirm(`${ids.length}개의 항목을 삭제하시겠습니까?`)) return;
+    
     await bulkDeleteTransactions(ids);
+    showUndoMessage(itemsToDelete);
     fetchData();
   };
 
   const handleUpdate = async (id: string, updates: Partial<Transaction>) => {
     try {
       await updateTransaction(id, updates);
-      // 서버에서 다시 가져오지 않고, 현재 상태에서 해당 데이터만 수정 (순서 유지)
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
     } catch (err) {
       console.error('Update failed', err);
-      fetchData(); // 에러 시에만 서버 데이터와 동기화
+      fetchData();
     }
   };
 
   const handleRefresh = () => {
-    fetchData(); // 수동 새로고침 시 정렬 적용
+    fetchData();
   };
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -83,7 +120,7 @@ function App() {
       const res = await importFile(file);
       await bulkAddTransactions(res.data);
       await fetchData();
-      setActiveTab('new'); // 가져오기 성공 후 신규 내역 탭으로 이동
+      setActiveTab('new');
     } catch (err: any) {
       alert('Error importing file');
     }
@@ -93,7 +130,6 @@ function App() {
     try {
       await verifyTransactions(ids);
       await fetchData();
-      // 신규 내역 탭에서 승인 후, 데이터가 없으면 카드 탭으로 이동
       const remainingNew = transactions.filter(t => t.isVerified === false).length - ids.length;
       if (remainingNew <= 0) setActiveTab('card');
     } catch (err) {
@@ -108,7 +144,6 @@ function App() {
     return true;
   });
 
-  // 차트와 요약에 사용할 "전체 승인 내역" (탭 필터 무시)
   const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
 
   const filteredTransactions = filteredByPeriod.filter(t => {
@@ -117,10 +152,7 @@ function App() {
     const isTransfer = source.includes('이체');
 
     if (activeTab === 'new') return t.isVerified === false;
-    
-    // 일반 탭에서는 승인된(verified) 내역만 보여줌
     if (t.isVerified === false) return false;
-
     if (activeTab === 'card') return isCard;
     if (activeTab === 'transfer') return isTransfer;
     if (activeTab === 'unclassified') return !isCard && !isTransfer;
@@ -212,6 +244,14 @@ function App() {
         categories={categories}
         onRefresh={fetchData}
       />
+
+      {/* Undo 알림바 추가 */}
+      {showUndo && lastDeleted && (
+        <div className="undo-toast">
+          <span>{lastDeleted.length}개의 항목이 삭제되었습니다.</span>
+          <button onClick={handleUndo} className="undo-btn">삭제 취소</button>
+        </div>
+      )}
     </div>
   );
 }
