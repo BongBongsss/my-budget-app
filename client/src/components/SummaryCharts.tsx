@@ -44,13 +44,43 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       return acc;
     }, {});
 
-  const pieLabels = Object.keys(categoryData);
+  const totalExpense = Object.values(categoryData).reduce((sum: any, val: any) => sum + val, 0);
+
+  const pieLabels = Object.keys(categoryData).map(name => {
+    const amount = categoryData[name];
+    return `${name} (${amount.toLocaleString()}원)`;
+  });
+
   const pieData = {
     labels: pieLabels,
     datasets: [{
       data: Object.values(categoryData),
-      backgroundColor: pieLabels.map(label => groupColorMap[label] || '#94a3b8'),
+      backgroundColor: Object.keys(categoryData).map(label => groupColorMap[label] || '#94a3b8'),
     }]
+  };
+
+  const pieOptions = {
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom' as const,
+        labels: {
+          boxWidth: 12,
+          padding: 15,
+          font: { size: 11 }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: (context: any) => {
+            const label = context.label || '';
+            const value = context.raw || 0;
+            const percentage = ((value / (totalExpense as number)) * 100).toFixed(1);
+            return `${label}: ${value.toLocaleString()}원 (${percentage}%)`;
+          }
+        }
+      }
+    }
   };
 
   const getBarData = () => {
@@ -81,18 +111,26 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     <div className="grid grid-cols-2 gap-6 mb-8">
       <div className="card-form">
         <h3>Category Group Breakdown</h3>
-        <div style={{ height: '250px' }}>
-          <Pie data={pieData} options={{ maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } }} />
+        <div style={{ height: '300px' }}>
+          <Pie data={pieData} options={pieOptions} />
         </div>
       </div>
       <div className="card-form">
         <h3>Spending Trend (by Group)</h3>
-        <div style={{ height: '250px' }}>
+        <div style={{ height: '300px' }}>
           <Bar 
             data={getBarData()} 
             options={{ 
               maintainAspectRatio: false, 
-              scales: { x: { stacked: true }, y: { stacked: true } } 
+              scales: { x: { stacked: true }, y: { stacked: true } },
+              plugins: {
+                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
+                tooltip: {
+                  callbacks: {
+                    label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
+                  }
+                }
+              }
             }} 
           />
         </div>
