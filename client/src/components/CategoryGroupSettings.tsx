@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { CategoryItem, updateCategoryBatchGroup } from '../api';
-import { Layers, Folder, FolderPlus, Tag, GripVertical, Edit2, Check, X } from 'lucide-react';
+import { Layers, Folder, FolderPlus, Tag, GripVertical, Edit2, Check, X, Plus } from 'lucide-react';
 
 interface CategoryGroupSettingsProps {
   categories: CategoryItem[];
@@ -16,6 +16,12 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
   const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
   const [newGroupName, setNewPasswordName] = useState('');
 
+  // 빈 그룹(아직 카테고리가 없는 그룹)을 관리하기 위한 상태
+  const [emptyGroups, setEmptyGroups] = useState<string[]>([]);
+  const [isAddingNewGroup, setIsAddingNewGroup] = useState(false);
+  const [tempGroupName, setTempGroupName] = useState('');
+
+  // 그룹별로 카테고리 묶기
   const groupedCategories: Record<string, CategoryItem[]> = categories.reduce((acc, cat) => {
     const group = cat.groupName || '미분류';
     if (!acc[group]) acc[group] = [];
@@ -23,7 +29,11 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     return acc;
   }, {} as Record<string, CategoryItem[]>);
 
-  const sortedGroups = Object.keys(groupedCategories).sort((a, b) => {
+  // 실제 데이터가 있는 그룹 + 사용자가 추가한 빈 그룹 합치기
+  const allGroupNames = Array.from(new Set([...Object.keys(groupedCategories), ...emptyGroups]));
+
+  // 정렬: 미분류 -> 나머지 이름순
+  const sortedGroups = allGroupNames.sort((a, b) => {
     if (a === '미분류') return -1;
     if (b === '미분류') return 1;
     return a.localeCompare(b);
@@ -38,6 +48,8 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     setIsUpdating(true);
     try {
       await updateCategoryBatchGroup(ids, groupName.trim());
+      // 성공적으로 데이터가 이동되면 해당 이름은 더 이상 '빈 그룹' 상태가 아니어도 됨
+      setEmptyGroups(prev => prev.filter(g => g !== groupName.trim()));
       onRefresh();
     } catch (err) {
       alert('그룹 설정 중 오류가 발생했습니다.');
@@ -49,18 +61,41 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     }
   };
 
+  const addNewGroupCard = () => {
+    if (!tempGroupName.trim()) {
+      setIsAddingNewGroup(false);
+      return;
+    }
+    if (sortedGroups.includes(tempGroupName.trim())) {
+      alert('이미 존재하는 그룹 이름입니다.');
+      return;
+    }
+    setEmptyGroups(prev => [...prev, tempGroupName.trim()]);
+    setTempGroupName('');
+    setIsAddingNewGroup(false);
+  };
+
   const startEditingGroup = (group: string) => {
     setEditingGroupName(group);
     setNewPasswordName(group);
   };
 
   const saveGroupName = async (oldGroup: string) => {
-    if (!newGroupName.trim() || oldGroup === newGroupName.trim()) {
+    const trimmedNew = newGroupName.trim();
+    if (!trimmedNew || oldGroup === trimmedNew) {
       setEditingGroupName(null);
       return;
     }
-    const categoryIds = groupedCategories[oldGroup].map(c => c.id!);
-    await handleApplyGroup(categoryIds, newGroupName.trim());
+    
+    // 빈 그룹인 경우 이름만 변경
+    if (emptyGroups.includes(oldGroup)) {
+        setEmptyGroups(prev => prev.map(g => g === oldGroup ? trimmedNew : g));
+        setEditingGroupName(null);
+        return;
+    }
+
+    const categoryIds = groupedCategories[oldGroup]?.map(c => c.id!) || [];
+    await handleApplyGroup(categoryIds, trimmedNew);
   };
 
   const onDragStart = (e: React.DragEvent, id: string) => {
@@ -82,13 +117,22 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
 
   return (
     <div className="category-group-settings" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ marginBottom: '15px' }}>
-        <h4 className="flex items-center gap-2 mb-1">
-          <Folder size={20} className="text-blue-500" /> Category Grouping
-        </h4>
-        <p className="text-sm text-gray-600">
-          태그를 드래그하여 옮기거나, 이름을 수정할 수 있습니다.
-        </p>
+      <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div>
+            <h4 className="flex items-center gap-2 mb-1">
+            <Folder size={20} className="text-blue-500" /> Category Grouping
+            </h4>
+            <p className="text-sm text-gray-600">
+            대분류 태그를 드래그하여 옮기거나, 이름을 수정할 수 있습니다.
+            </p>
+        </div>
+        <button 
+            onClick={() => setIsAddingNewGroup(true)}
+            className="btn btn-primary"
+            style={{ fontSize: '0.8rem', padding: '6px 12px' }}
+        >
+            <Plus size={16} style={{ marginRight: '4px' }} /> 새 그룹 추가
+        </button>
       </div>
 
       <div style={{ 
@@ -100,7 +144,6 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
         border: '1px solid #e2e8f0',
         maxHeight: '480px'
       }}>
-        {/* 상위 카드: 한 행에 4개 배치 */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(4, 1fr)', 
@@ -144,20 +187,15 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                     />
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ fontWeight: 'bold' }}>{group} ({groupedCategories[group].length})</span>
+                      <span style={{ fontWeight: 'bold' }}>{group} ({groupedCategories[group]?.length || 0})</span>
                       {group !== '미분류' && <Edit2 size={10} onClick={() => startEditingGroup(group)} style={{ cursor: 'pointer', opacity: 0.5 }} />}
                     </div>
                   )}
                 </h5>
               </div>
               
-              {/* 내부 태그: 글자가 잘리지 않도록 Flex Wrap 사용 및 가로폭 충분히 확보 */}
-              <div style={{ 
-                display: 'flex', 
-                flexWrap: 'wrap', 
-                gap: '6px' 
-              }}>
-                {groupedCategories[group].map(cat => (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                {groupedCategories[group]?.map(cat => (
                   <div 
                     key={cat.id}
                     draggable
@@ -183,9 +221,67 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                     {cat.name}
                   </div>
                 ))}
+                {(!groupedCategories[group] || groupedCategories[group].length === 0) && (
+                    <div style={{ fontSize: '0.7rem', color: '#cbd5e1', fontStyle: 'italic', marginTop: '10px', textAlign: 'center', width: '100%' }}>
+                        태그를 여기로 드래그하세요
+                    </div>
+                )}
               </div>
             </div>
           ))}
+
+          {/* 새 그룹 추가 버튼 카드 */}
+          {isAddingNewGroup ? (
+            <div style={{ 
+                backgroundColor: '#f0f9ff', 
+                borderRadius: '10px', 
+                padding: '12px', 
+                border: '2px solid #3b82f6',
+                minHeight: '180px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: '10px'
+            }}>
+                <input 
+                    type="text" 
+                    placeholder="그룹명 입력" 
+                    value={tempGroupName}
+                    onChange={(e) => setTempGroupName(e.target.value)}
+                    autoFocus
+                    onKeyDown={(e) => e.key === 'Enter' && addNewGroupCard()}
+                    style={{ width: '100%', padding: '6px', fontSize: '0.8rem', borderRadius: '4px', border: '1px solid #3b82f6' }}
+                />
+                <div style={{ display: 'flex', gap: '5px', width: '100%' }}>
+                    <button onClick={addNewGroupCard} className="btn btn-primary" style={{ flex: 1, padding: '4px', fontSize: '0.75rem' }}>추가</button>
+                    <button onClick={() => setIsAddingNewGroup(false)} className="btn btn-secondary" style={{ flex: 1, padding: '4px', fontSize: '0.75rem' }}>취소</button>
+                </div>
+            </div>
+          ) : (
+            <div 
+              onClick={() => setIsAddingNewGroup(true)}
+              style={{ 
+                backgroundColor: 'transparent', 
+                borderRadius: '10px', 
+                padding: '12px', 
+                border: '2px dashed #e2e8f0',
+                minHeight: '180px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                alignItems: 'center',
+                cursor: 'pointer',
+                color: '#94a3b8',
+                transition: 'all 0.2s'
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.borderColor = '#3b82f6'; e.currentTarget.style.color = '#3b82f6'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#94a3b8'; }}
+            >
+              <Plus size={32} />
+              <span style={{ fontSize: '0.85rem', marginTop: '8px' }}>새 그룹 추가</span>
+            </div>
+          )}
         </div>
       </div>
 
