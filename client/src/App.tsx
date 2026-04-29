@@ -169,7 +169,7 @@ function App() {
   return (
     <div className="container">
       <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Budget Automation</h1>
+        <h1>Smart Budget Manager</h1>
         <div style={{ display: 'flex', gap: '10px' }}>
           <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
             <Upload size={18} style={{ marginRight: '5px' }} /> Import
