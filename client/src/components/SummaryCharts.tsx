@@ -117,7 +117,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       <div className="grid grid-cols-2 gap-6">
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1, paddingTop: '30px' }}> {/* 차트를 아래로 내리기 위해 상단 패딩 추가 */}
+          <div style={{ height: '350px', flex: 1, paddingTop: '40px' }}> {/* 10px 추가 하향 */}
             <Pie 
               ref={pieRef}
               data={{
@@ -131,7 +131,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '85%',
+                radius: '87%', // 약 3px 정도 확대 (85% -> 87%)
                 layout: { padding: { left: 60, right: 60, top: 10, bottom: 40 } }, // 하단 공간 확보
                 plugins: {
                   legend: { display: false },
