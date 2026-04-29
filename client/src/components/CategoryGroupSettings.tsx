@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CategoryItem, updateCategoryBatchGroup } from '../api';
-import { Layers, Folder, FolderPlus, Tag, GripVertical } from 'lucide-react';
+import { Layers, Folder, FolderPlus, Tag, GripVertical, Edit2, Check, X } from 'lucide-react';
 
 interface CategoryGroupSettingsProps {
   categories: CategoryItem[];
@@ -12,6 +12,10 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
   const [targetGroupName, setTargetGroupName] = useState('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [draggedCategoryId, setDraggedCategoryId] = useState<string | null>(null);
+  
+  // 그룹명 수정을 위한 상태
+  const [editingGroupName, setEditingGroupName] = useState<string | null>(null);
+  const [newGroupName, setNewPasswordName] = useState('');
 
   // 그룹별로 카테고리 묶기
   const groupedCategories: Record<string, CategoryItem[]> = categories.reduce((acc, cat) => {
@@ -21,7 +25,6 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     return acc;
   }, {} as Record<string, CategoryItem[]>);
 
-  // 정렬: 미분류가 가장 먼저, 나머지는 이름순
   const sortedGroups = Object.keys(groupedCategories).sort((a, b) => {
     if (a === '미분류') return -1;
     if (b === '미분류') return 1;
@@ -33,7 +36,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
   };
 
   const handleApplyGroup = async (ids: string[], groupName: string) => {
-    if (ids.length === 0 || !groupName.trim()) return;
+    if (ids.length === 0 || (!groupName.trim() && groupName !== '')) return;
 
     setIsUpdating(true);
     try {
@@ -45,21 +48,34 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
       setIsUpdating(false);
       setSelectedIds([]);
       setTargetGroupName('');
+      setEditingGroupName(null);
     }
   };
 
-  // Drag & Drop 핸들러
+  // 그룹명 수정 시작
+  const startEditingGroup = (group: string) => {
+    setEditingGroupName(group);
+    setNewPasswordName(group);
+  };
+
+  // 그룹명 수정 저장
+  const saveGroupName = async (oldGroup: string) => {
+    if (!newGroupName.trim() || oldGroup === newGroupName.trim()) {
+      setEditingGroupName(null);
+      return;
+    }
+    
+    const categoryIds = groupedCategories[oldGroup].map(c => c.id!);
+    await handleApplyGroup(categoryIds, newGroupName.trim());
+  };
+
   const onDragStart = (e: React.DragEvent, id: string) => {
     setDraggedCategoryId(id);
     e.dataTransfer.setData('categoryId', id);
-    // 선택된 항목 중 하나를 드래그하는 경우, 선택된 모든 항목을 이동 대상으로 간주할 준비
-    if (!selectedIds.includes(id)) {
-        // 드래그하는 항목이 선택되지 않았다면 해당 항목만 단독으로 드래그
-    }
   };
 
   const onDragOver = (e: React.DragEvent) => {
-    e.preventDefault(); // 드롭 허용
+    e.preventDefault();
   };
 
   const onDrop = (e: React.DragEvent, targetGroup: string) => {
@@ -67,9 +83,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     const id = e.dataTransfer.getData('categoryId') || draggedCategoryId;
     if (!id) return;
 
-    // 만약 드래그한 항목이 선택된 항목들 중 하나라면, 선택된 전체를 이동
     const movingIds = selectedIds.includes(id) ? selectedIds : [id];
-    
     const finalGroupName = targetGroup === '미분류' ? '' : targetGroup;
     handleApplyGroup(movingIds, finalGroupName);
     setDraggedCategoryId(null);
@@ -79,15 +93,13 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
     <div className="category-group-settings" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
       <div style={{ marginBottom: '20px' }}>
         <h4 className="flex items-center gap-2 mb-2">
-          <Folder size={20} className="text-blue-500" /> Category Grouping (Drag & Drop)
+          <Folder size={20} className="text-blue-500" /> Category Grouping
         </h4>
         <p className="text-sm text-gray-600">
-          대분류 태그를 원하는 그룹 카드로 **드래그**하여 옮길 수 있습니다. 
-          여러 개를 한꺼번에 옮기려면 먼저 클릭하여 선택한 후 드래그하세요.
+          대분류 태그를 드래그하여 옮기거나, 그룹 이름을 수정할 수 있습니다.
         </p>
       </div>
 
-      {/* 카드형 그룹 목록 영역 */}
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
@@ -109,25 +121,52 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                 padding: '15px', 
                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 border: group === '미분류' ? '1px dashed #f87171' : '1px solid #e2e8f0',
-                minHeight: '100px',
+                minHeight: '120px',
                 transition: 'background-color 0.2s'
               }}
-              onDragEnter={(e) => (e.currentTarget.style.backgroundColor = '#f0f9ff')}
-              onDragLeave={(e) => (e.currentTarget.style.backgroundColor = 'white')}
             >
-              <h5 style={{ 
-                margin: '0 0 10px 0', 
-                fontSize: '0.9rem', 
-                color: group === '미분류' ? '#ef4444' : '#334155',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px'
-              }}>
-                <FolderPlus size={16} /> {group}
-                <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#94a3b8' }}>
-                  ({groupedCategories[group].length})
-                </span>
-              </h5>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h5 style={{ 
+                  margin: 0, 
+                  fontSize: '0.9rem', 
+                  color: group === '미분류' ? '#ef4444' : '#334155',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  flex: 1
+                }}>
+                  <FolderPlus size={16} />
+                  {editingGroupName === group ? (
+                    <div style={{ display: 'flex', gap: '4px', width: '100%' }}>
+                      <input 
+                        type="text" 
+                        value={newGroupName} 
+                        onChange={(e) => setNewPasswordName(e.target.value)}
+                        autoFocus
+                        style={{ fontSize: '0.85rem', padding: '2px 6px', border: '1px solid #3b82f6', borderRadius: '4px', width: '100%' }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') saveGroupName(group);
+                            if (e.key === 'Escape') setEditingGroupName(null);
+                        }}
+                      />
+                      <button onClick={() => saveGroupName(group)} style={{ color: '#16a34a' }} className="btn-icon"><Check size={16}/></button>
+                      <button onClick={() => setEditingGroupName(null)} style={{ color: '#ef4444' }} className="btn-icon"><X size={16}/></button>
+                    </div>
+                  ) : (
+                    <>
+                      {group}
+                      <span style={{ fontSize: '0.75rem', fontWeight: 'normal', color: '#94a3b8' }}>
+                        ({groupedCategories[group].length})
+                      </span>
+                      {group !== '미분류' && (
+                        <button onClick={() => startEditingGroup(group)} className="btn-icon" style={{ marginLeft: '4px', opacity: 0.5 }}>
+                          <Edit2 size={12} />
+                        </button>
+                      )}
+                    </>
+                  )}
+                </h5>
+              </div>
               
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {groupedCategories[group].map(cat => (
@@ -148,11 +187,10 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                       transition: 'all 0.2s',
                       backgroundColor: selectedIds.includes(cat.id!) ? '#3b82f6' : '#fff',
                       color: selectedIds.includes(cat.id!) ? '#fff' : '#64748b',
-                      borderColor: selectedIds.includes(cat.id!) ? '#2563eb' : '#e2e8f0',
-                      opacity: isUpdating && (selectedIds.includes(cat.id!) || draggedCategoryId === cat.id) ? 0.5 : 1
+                      borderColor: selectedIds.includes(cat.id!) ? '#2563eb' : '#e2e8f0'
                     }}
                   >
-                    <Tag size={12} />
+                    <GripVertical size={12} style={{ opacity: 0.4 }} />
                     {cat.name}
                   </div>
                 ))}
@@ -162,7 +200,6 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
         </div>
       </div>
 
-      {/* 하단 고정 액션바 (선택 일괄 변경용으로 유지) */}
       <div style={{ 
         marginTop: '20px', 
         padding: '15px', 
@@ -183,19 +220,12 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
             value={targetGroupName} 
             onChange={(e) => setTargetGroupName(e.target.value)}
             placeholder="직접 그룹명 입력 (드래그 대신 사용 가능)"
-            style={{ 
-              width: '100%', 
-              padding: '8px 12px', 
-              borderRadius: '6px', 
-              border: '1px solid #cbd5e1',
-              fontSize: '0.85rem'
-            }}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
           />
           <datalist id="existing-groups-list">
             {sortedGroups.filter(g => g !== '미분류').map(g => <option key={g} value={g} />)}
           </datalist>
         </div>
-        
         <button 
           onClick={() => handleApplyGroup(selectedIds, targetGroupName)} 
           className="btn btn-primary"
@@ -203,7 +233,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
           disabled={isUpdating || selectedIds.length === 0 || !targetGroupName.trim()}
         >
           <Layers size={18} style={{ marginRight: '8px' }} />
-          {isUpdating ? '처리 중...' : '그룹 변경 적용'}
+          적용
         </button>
       </div>
     </div>
