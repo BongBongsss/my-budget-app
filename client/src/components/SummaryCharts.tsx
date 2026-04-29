@@ -7,49 +7,6 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title, ChartDataLabels);
 
-// 지시선(Leader Line)을 그리기 위한 커스텀 플러그인
-const leaderLinePlugin = {
-  id: 'leaderLine',
-  afterDraw: (chart: any) => {
-    const { ctx, data } = chart;
-    if (chart.config.type !== 'pie') return;
-
-    const dataset = data.datasets[0];
-    const total = dataset.data.reduce((a: number, b: number) => a + b, 0);
-
-    chart.getDatasetMeta(0).data.forEach((arc: any, index: number) => {
-      const value = dataset.data[index];
-      const percentage = (value / total) * 100;
-
-      // 8% 미만인 경우만 지시선을 그림
-      if (percentage < 8) {
-        const centerAngle = arc.startAngle + (arc.endAngle - arc.startAngle) / 2;
-        const xDir = Math.cos(centerAngle);
-        const yDir = Math.sin(centerAngle);
-
-        // 아크의 바깥쪽 테두리 시작점
-        const startX = arc.x + xDir * arc.outerRadius;
-        const startY = arc.y + yDir * arc.outerRadius;
-
-        // 지시선 끝점 (라벨이 위치한 곳 근처)
-        const endX = arc.x + xDir * (arc.outerRadius + 20);
-        const endY = arc.y + yDir * (arc.outerRadius + 20);
-
-        ctx.save();
-        ctx.strokeStyle = '#94a3b8'; // 차분한 회색 선
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(startX, startY);
-        ctx.lineTo(endX, endY);
-        ctx.stroke();
-        ctx.restore();
-      }
-    });
-  }
-};
-
-ChartJS.register(leaderLinePlugin);
-
 interface SummaryChartsProps {
   transactions: Transaction[];
   categories: CategoryItem[];
@@ -167,9 +124,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '500px', padding: '15px', position: 'relative', overflow: 'visible' }}>
           <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', position: 'absolute', top: '15px', left: '15px', zIndex: 10 }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '420px', flex: 1, marginTop: '50px', position: 'relative', overflow: 'visible' }}>
+          <div style={{ height: '420px', flex: 1, marginTop: '30px', position: 'relative', overflow: 'visible' }}>
             <Pie 
               ref={pieRef}
               data={{
@@ -183,8 +140,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '90%', // 충분히 크면서 선을 그릴 공간 확보
-                layout: { padding: { left: 80, right: 80, top: 40, bottom: 40 } }, // 대폭 늘린 여백
+                radius: '95%', // 차트 크기 큼직하게 복구
+                layout: { padding: { left: 45, right: 45, top: 45, bottom: 45 } }, // 캔버스 내부 여백 충분히 확보
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -195,24 +152,16 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                       return `${label}\n${percentage}%`;
                     },
                     color: '#000',
-                    font: { weight: 'bold', size: 12 },
+                    font: { weight: 'bold', size: 12 }, // 10px -> 12px 확대
                     textAlign: 'center',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
-                    anchor: (ctx) => {
-                        const value = ctx.dataset.data[ctx.dataIndex] as number;
-                        const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 'end' : 'end';
-                    },
-                    align: (ctx) => {
-                        const value = ctx.dataset.data[ctx.dataIndex] as number;
-                        const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 'start' : 'end'; // 8% 이상은 내부 끝, 미만은 외부 끝
-                    },
+                    anchor: 'end', 
+                    align: 'start',
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 20 : 25; // 선 길이에 맞춰 오프셋 조정
+                        return percentage >= 8 ? 30 : -45; // 글씨가 커진 만큼 오프셋 조정
                     },
                     display: 'auto'
                   }
@@ -222,12 +171,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           </div>
         </div>
 
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '500px', padding: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
             {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
           </div>
-          <div style={{ height: '400px', flex: 1 }}>
+          <div style={{ height: '350px', flex: 1 }}>
             <Bar 
               ref={barRef}
               data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
