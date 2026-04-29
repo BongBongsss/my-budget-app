@@ -16,7 +16,7 @@ function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'new' | 'card' | 'transfer' | 'unclassified'>('card');
+  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'card' | 'transfer' | 'unclassified'>('all');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
   // Undo 기능을 위한 상태
@@ -130,8 +130,9 @@ function App() {
     try {
       await verifyTransactions(ids);
       await fetchData();
+      // 신규 내역 탭에서 승인 후, 데이터가 없으면 '전체' 탭으로 이동
       const remainingNew = transactions.filter(t => t.isVerified === false).length - ids.length;
-      if (remainingNew <= 0) setActiveTab('card');
+      if (remainingNew <= 0) setActiveTab('all');
     } catch (err) {
       alert('승인 중 오류가 발생했습니다.');
     }
@@ -156,7 +157,7 @@ function App() {
     if (activeTab === 'card') return isCard;
     if (activeTab === 'transfer') return isTransfer;
     if (activeTab === 'unclassified') return !isCard && !isTransfer;
-    return true;
+    return true; // handles 'all'
   });
 
   if (!isAuthenticated) {
@@ -203,7 +204,8 @@ function App() {
           </button>
         )}
         <div style={{ borderLeft: unverifiedCount > 0 ? '2px solid #ddd' : 'none', paddingLeft: unverifiedCount > 0 ? '10px' : '0', display: 'flex' }}>
-          <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')}>카드결제</button>
+          <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
+          <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
           <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
           <button className={activeTab === 'unclassified' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('unclassified')} style={{ marginLeft: '10px' }}>미분류</button>
         </div>
