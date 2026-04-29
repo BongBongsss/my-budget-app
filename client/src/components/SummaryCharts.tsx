@@ -115,8 +115,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
-          <h3>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
+          {/* 요청: 제목을 최상단 좌측으로 밀착 */}
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
           <div style={{ height: '350px', flex: 1 }}>
             <Pie 
               ref={pieRef}
@@ -131,8 +132,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '85%', // 요청: 지름을 85%로 축소하여 외부 글자 공간 확보
-                layout: { padding: { left: 50, right: 50, top: 20, bottom: 20 } },
+                radius: '85%',
+                layout: { padding: { left: 50, right: 50, top: 10, bottom: 10 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -142,26 +143,25 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                       const percentage = ((value / totalAmount) * 100).toFixed(1);
                       return `${label}\n${percentage}%`;
                     },
-                    color: '#000', // 요청: 모든 글씨 검은색 유지
+                    color: '#000',
                     font: { weight: 'bold', size: 10 },
                     textAlign: 'center',
-                    // 글씨가 잘 보이도록 배경에 미세한 효과 추가
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
                     anchor: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 5 ? 'center' : 'end'; // 요청: 5% 이상이면 내부(center)
+                        return percentage >= 8 ? 'center' : 'end'; // 요청: 8% 이상이면 내부
                     },
                     align: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 5 ? 'center' : 'end'; // 요청: 5% 이상이면 내부(center)
+                        return percentage >= 8 ? 'center' : 'end'; // 요청: 8% 이상이면 내부
                     },
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 5 ? 0 : 15;
+                        return percentage >= 8 ? 0 : 15;
                     },
                     display: 'auto'
                   }
@@ -171,9 +171,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           </div>
         </div>
 
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0 }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
             {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
           </div>
           <div style={{ height: '300px', flex: 1 }}>
