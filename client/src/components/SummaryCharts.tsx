@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Transaction, CategoryItem } from '../api';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title);
 
 interface SummaryChartsProps {
   transactions: Transaction[];
@@ -66,12 +66,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const CustomLegend = () => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginTop: '20px', padding: '0 10px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px', marginTop: '15px', padding: '0 10px' }}>
       {activeGroups.map((group) => (
-        <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
-          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
-          <span style={{ fontSize: '0.75rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
-            {group}{hoveredGroup === group && <span style={{ marginLeft: '4px', color: '#3b82f6' }}>({categoryData[group].toLocaleString()}원)</span>}
+        <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
+          <span style={{ fontSize: '0.7rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
+            {group}{hoveredGroup === group && <span style={{ marginLeft: '3px', color: '#3b82f6' }}>({categoryData[group].toLocaleString()}원)</span>}
           </span>
         </div>
       ))}
@@ -79,12 +79,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   );
 
   const getBarData = () => {
-    // 1. 기간에 따른 그룹화 키 결정
     const grouped = transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => {
       let key;
-      if (period === 'all') key = t.date.substring(0, 4); // 연도별
-      else if (period === 'year') key = t.date.substring(0, 7); // 월별
-      else key = t.date; // 일별
+      if (period === 'all') key = t.date.substring(0, 4);
+      else if (period === 'year') key = t.date.substring(0, 7);
+      else key = t.date;
       
       const groupName = getGroupName(t.category);
       if (!acc[key]) acc[key] = {};
@@ -94,14 +93,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
     const sortedKeys = Object.keys(grouped).sort();
     
-    // 2. X축 레이블 가공
     const labels = sortedKeys.map(key => {
       if (period === 'all') return key + '년';
       if (period === 'year') return key.substring(5, 7) + '월';
-      return key.split('-')[2]; // '일'
+      return key.split('-')[2];
     });
     
-    // 3. 데이터셋 생성
     const datasets = activeGroups.map((group) => ({
       label: group,
       data: sortedKeys.map(key => grouped[key][group] || 0),
@@ -117,9 +114,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   return (
     <div className="grid grid-cols-2 gap-6 mb-8">
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px' }}>
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
         <h3>Category Group Breakdown</h3>
-        <div style={{ height: '450px', flex: 1 }}>
+        <div style={{ height: '300px', flex: 1 }}>
           <Pie 
             ref={pieRef}
             data={{
@@ -148,12 +145,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         </div>
         <CustomLegend />
       </div>
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px' }}>
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <h3 style={{ margin: 0 }}>Spending Trend</h3>
-          {getCurrentPeriodInfo() && <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
+          {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
         </div>
-        <div style={{ height: '450px', flex: 1 }}>
+        <div style={{ height: '300px', flex: 1 }}>
           <Bar 
             ref={barRef}
             data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
@@ -161,7 +158,18 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               maintainAspectRatio: false, 
               scales: { 
                 x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
-                y: { stacked: true, ticks: { font: { size: 10 }, callback: (val) => val.toLocaleString() } } 
+                y: { 
+                    type: 'logarithmic', // 로그 스케일 적용: 큰 금액 편차 극복
+                    stacked: true, 
+                    ticks: { 
+                        font: { size: 10 }, 
+                        callback: (val) => {
+                            if (val === 0) return '0';
+                            if (Math.log10(val as number) % 1 === 0) return val.toLocaleString(); // 10, 100, 1000 단위만 표시
+                            return '';
+                        }
+                    } 
+                } 
               },
               plugins: {
                 legend: { display: false },
