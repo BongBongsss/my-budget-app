@@ -125,9 +125,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1, paddingTop: '40px' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px', position: 'relative' }}>
+          {/* 요청: 제목이 차트에 가려지지 않도록 z-index 부여 */}
+          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', position: 'relative', zIndex: 10 }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
+          <div style={{ height: '350px', flex: 1, paddingTop: '45px' }}> {/* 5px 추가 하향 */}
             <Pie 
               ref={pieRef}
               data={{
