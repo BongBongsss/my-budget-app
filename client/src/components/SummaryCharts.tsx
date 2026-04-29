@@ -131,7 +131,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                layout: { padding: { left: 40, right: 40, top: 20, bottom: 20 } },
+                radius: '85%', // 요청: 지름을 85%로 축소하여 외부 글자 공간 확보
+                layout: { padding: { left: 50, right: 50, top: 20, bottom: 20 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -141,27 +142,26 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                       const percentage = ((value / totalAmount) * 100).toFixed(1);
                       return `${label}\n${percentage}%`;
                     },
-                    color: (ctx) => {
-                        const value = ctx.dataset.data[ctx.dataIndex] as number;
-                        const percentage = (value / totalAmount) * 100;
-                        return percentage >= 10 ? '#fff' : '#000'; // 10% 이상이면 흰색(내부), 미만이면 검은색(외부)
-                    },
+                    color: '#000', // 요청: 모든 글씨 검은색 유지
                     font: { weight: 'bold', size: 10 },
                     textAlign: 'center',
+                    // 글씨가 잘 보이도록 배경에 미세한 효과 추가
+                    textStrokeColor: '#fff',
+                    textStrokeWidth: 2,
                     anchor: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 10 ? 'center' : 'end';
+                        return percentage >= 5 ? 'center' : 'end'; // 요청: 5% 이상이면 내부(center)
                     },
                     align: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 10 ? 'center' : 'end';
+                        return percentage >= 5 ? 'center' : 'end'; // 요청: 5% 이상이면 내부(center)
                     },
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 10 ? 0 : 10;
+                        return percentage >= 5 ? 0 : 15;
                     },
                     display: 'auto'
                   }
