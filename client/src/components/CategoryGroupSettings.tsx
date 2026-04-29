@@ -109,7 +109,11 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
         border: '1px solid #e2e8f0',
         maxHeight: '400px'
       }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', 
+          gap: '15px' 
+        }}>
           {sortedGroups.map(group => (
             <div 
               key={group} 

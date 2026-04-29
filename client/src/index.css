@@ -83,8 +83,8 @@ td { padding: 0.75rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   background: white;
   padding: 2rem;
   border-radius: 12px;
-  width: 90%;
-  max-width: 500px;
+  width: 95%;
+  max-width: 1000px;
 }
 
 .modal-header {
