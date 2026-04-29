@@ -21,7 +21,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ width: '600px' }}>
+      <div className="modal-content">
         <div className="modal-header">
           <h3>Settings</h3>
           <button onClick={onClose} className="btn-icon"><X size={20} /></button>
