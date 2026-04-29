@@ -116,9 +116,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
       <div className="grid grid-cols-2 gap-6">
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
-          {/* 요청: 제목을 최상단 좌측으로 밀착 */}
           <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1 }}>
+          <div style={{ height: '350px', flex: 1, paddingTop: '30px' }}> {/* 차트를 아래로 내리기 위해 상단 패딩 추가 */}
             <Pie 
               ref={pieRef}
               data={{
@@ -133,7 +132,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               options={{ 
                 maintainAspectRatio: false,
                 radius: '85%',
-                layout: { padding: { left: 50, right: 50, top: 10, bottom: 10 } },
+                layout: { padding: { left: 60, right: 60, top: 10, bottom: 40 } }, // 하단 공간 확보
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -148,20 +147,13 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     textAlign: 'center',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
-                    anchor: (ctx) => {
-                        const value = ctx.dataset.data[ctx.dataIndex] as number;
-                        const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 'center' : 'end'; // 요청: 8% 이상이면 내부
-                    },
-                    align: (ctx) => {
-                        const value = ctx.dataset.data[ctx.dataIndex] as number;
-                        const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 'center' : 'end'; // 요청: 8% 이상이면 내부
-                    },
+                    // 요청: 라벨을 원의 외곽쪽(조각의 끝)으로 배치
+                    anchor: 'end', 
+                    align: 'start', // 내부 조각의 끝부분에 맞춤
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 0 : 15;
+                        return percentage >= 8 ? 25 : -35; // 8% 이상은 안쪽 외곽에, 미만은 바깥쪽 외곽에 배치
                     },
                     display: 'auto'
                   }
