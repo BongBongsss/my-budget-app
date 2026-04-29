@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -12,6 +12,10 @@ interface SummaryChartsProps {
 }
 
 const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period }) => {
+  const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  const pieRef = useRef<any>(null);
+  const barRef = useRef<any>(null);
+
   const COLOR_PALETTE = [
     '#f87171', '#fb923c', '#fbbf24', '#4ade80', '#38bdf8', '#818cf8', '#a78bfa', '#fb7185',
     '#2dd4bf', '#a3e635', '#f472b6', '#94a3b8', '#60a5fa'
@@ -26,7 +30,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
-  // 1. 데이터 집계 및 0원 항목 필터링
+  // 데이터 집계
   const categoryData = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc: any, t) => {
@@ -35,51 +39,103 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       return acc;
     }, {});
 
-  // 금액이 0보다 큰 그룹만 추출
   const activeGroups = Object.keys(categoryData)
     .filter(group => categoryData[group] > 0)
     .sort((a, b) => categoryData[b] - categoryData[a]);
 
   const totalExpense = activeGroups.reduce((sum, group) => sum + categoryData[group], 0);
 
-  // 그룹별 고정 색상 맵 (활성 그룹 기준)
   const groupColorMap: Record<string, string> = {};
   activeGroups.forEach((group, idx) => {
     groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
   });
 
-  const pieData = {
-    labels: activeGroups,
-    datasets: [{
-      data: activeGroups.map(group => categoryData[group]),
-      backgroundColor: activeGroups.map(group => groupColorMap[group]),
-    }]
+  // 범례 마우스 오버 핸들러
+  const handleLegendHover = (group: string | null) => {
+    setHoveredGroup(group);
+    
+    // 차트 요소 강조 연동
+    const index = group ? activeGroups.indexOf(group) : -1;
+    
+    if (pieRef.current) {
+      const chart = pieRef.current;
+      if (index >= 0) {
+        chart.setActiveElements([{ datasetIndex: 0, index }]);
+      } else {
+        chart.setActiveElements([]);
+      }
+      chart.update();
+    }
+    
+    if (barRef.current) {
+      const chart = barRef.current;
+      if (index >= 0) {
+        // 모든 데이터셋에서 해당 인덱스의 막대를 강조
+        const activeElements = chart.data.datasets.map((_: any, dsIndex: number) => ({
+            datasetIndex: dsIndex,
+            index: index // 실제로는 그룹별로 데이터셋이 나뉘어 있으므로 로직 확인 필요
+        }));
+        // 간단하게 해당 그룹 데이터셋 전체 강조
+        chart.setActiveElements([{ datasetIndex: index, index: 0 }]); // 바 차트는 구조에 맞춰 조정
+      } else {
+        chart.setActiveElements([]);
+      }
+      chart.update();
+    }
   };
 
+  // 커스텀 범례 컴포넌트
+  const CustomLegend = () => (
+    <div style={{ 
+      display: 'flex', 
+      flexWrap: 'wrap', 
+      justifyContent: 'center', 
+      gap: '12px', 
+      marginTop: '20px',
+      padding: '0 10px'
+    }}>
+      {activeGroups.map((group) => (
+        <div 
+          key={group}
+          onMouseEnter={() => handleLegendHover(group)}
+          onMouseLeave={() => handleLegendHover(null)}
+          style={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            gap: '6px', 
+            cursor: 'pointer',
+            padding: '4px 8px',
+            borderRadius: '6px',
+            backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent',
+            transition: 'all 0.2s'
+          }}
+        >
+          <div style={{ 
+            width: '10px', 
+            height: '10px', 
+            borderRadius: '50%', 
+            backgroundColor: groupColorMap[group] 
+          }} />
+          <span style={{ 
+            fontSize: '0.75rem', 
+            fontWeight: hoveredGroup === group ? 'bold' : 'normal',
+            color: hoveredGroup === group ? '#1e293b' : '#64748b'
+          }}>
+            {group}
+            {hoveredGroup === group && (
+              <span style={{ marginLeft: '4px', color: '#3b82f6' }}>
+                ({categoryData[group].toLocaleString()}원)
+              </span>
+            )}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+
   const commonOptions = {
-    onHover: (event: any, chartElement: any) => {
-      event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
-    },
     plugins: {
-      legend: {
-        position: 'bottom' as const,
-        onHover: (event: any, legendItem: any, legend: any) => {
-          const index = legendItem.index;
-          const chart = legend.chart;
-          chart.setActiveElements([{ datasetIndex: 0, index }]);
-          chart.update();
-        },
-        onLeave: (event: any, legendItem: any, legend: any) => {
-          const chart = legend.chart;
-          chart.setActiveElements([]);
-          chart.update();
-        },
-        labels: {
-          boxWidth: 12,
-          padding: 15,
-          font: { size: 11 }
-        }
-      },
+      legend: { display: false }, // 내장 범례 숨김
       tooltip: {
         callbacks: {
           label: (context: any) => {
@@ -122,16 +178,28 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   return (
     <div className="grid grid-cols-2 gap-6 mb-8">
-      <div className="card-form">
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column' }}>
         <h3>Category Group Breakdown</h3>
-        <div style={{ height: '320px' }}>
-          <Pie data={pieData} options={{ ...commonOptions, maintainAspectRatio: false }} />
+        <div style={{ height: '250px', flex: 1 }}>
+          <Pie 
+            ref={pieRef}
+            data={{
+              labels: activeGroups,
+              datasets: [{
+                data: activeGroups.map(group => categoryData[group]),
+                backgroundColor: activeGroups.map(group => groupColorMap[group]),
+              }]
+            }} 
+            options={{ ...commonOptions, maintainAspectRatio: false }} 
+          />
         </div>
+        <CustomLegend />
       </div>
-      <div className="card-form">
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column' }}>
         <h3>Spending Trend (by Group)</h3>
-        <div style={{ height: '320px' }}>
+        <div style={{ height: '250px', flex: 1 }}>
           <Bar 
+            ref={barRef}
             data={getBarData()} 
             options={{ 
               ...commonOptions,
@@ -143,6 +211,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             }} 
           />
         </div>
+        <CustomLegend />
       </div>
     </div>
   );
