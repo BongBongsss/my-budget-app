@@ -85,11 +85,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
     const sortedKeys = Object.keys(grouped).sort();
     
-    // 요청 사항: X축 레이블 단축 로직 복구
     const labels = sortedKeys.map(key => {
         if (period === 'all') return key + '년';
         if (period === 'year') return key.substring(5, 7) + '월';
-        return key.split('-')[2]; // 'Month' 모드 시 '일'만 표시
+        return key.split('-')[2];
     });
 
     return {
@@ -125,10 +124,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '450px', padding: '15px', position: 'relative' }}>
-          {/* 요청: 제목이 차트에 가려지지 않도록 z-index 부여 */}
-          <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', position: 'relative', zIndex: 10 }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '400px', flex: 1, paddingTop: '60px' }}> {/* 높이 확대 및 상단 여백 대폭 추가 */}
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '500px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+          <h3 style={{ margin: '0 0 5px 0', fontSize: '1.1rem', position: 'absolute', top: '15px', left: '15px', zIndex: 10 }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
+          <div style={{ height: '420px', flex: 1, marginTop: '30px', position: 'relative', overflow: 'visible' }}>
             <Pie 
               ref={pieRef}
               data={{
@@ -142,8 +140,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '85%', // 안전한 최대 크기인 85%로 조정
-                layout: { padding: { left: 50, right: 50, top: 50, bottom: 50 } }, // 라벨 공간 확보
+                radius: '95%', // 차트 크기 큼직하게 복구
+                layout: { padding: { left: 45, right: 45, top: 45, bottom: 45 } }, // 캔버스 내부 여백 충분히 확보
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -163,7 +161,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 25 : -35;
+                        return percentage >= 8 ? 20 : -35;
                     },
                     display: 'auto'
                   }
@@ -173,12 +171,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           </div>
         </div>
 
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '500px', padding: '15px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
             {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
           </div>
-          <div style={{ height: '300px', flex: 1 }}>
+          <div style={{ height: '350px', flex: 1 }}>
             <Bar 
               ref={barRef}
               data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
