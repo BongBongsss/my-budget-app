@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { CategoryItem, updateCategoryBatchGroup } from '../api';
-import { Layers, Folder, FolderPlus, Tag, G單p } from 'lucide-react';
+import { Layers, Folder, FolderPlus, Tag, GripVertical } from 'lucide-react';
 
 interface CategoryGroupSettingsProps {
   categories: CategoryItem[];
