@@ -167,13 +167,16 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                             const numericVal = val as number;
                             if (numericVal === 0) return '0';
                             
-                            // 로그 스케일에서 눈금을 1, 2, 5 단위로 표시 (예: 1M, 2M, 5M, 10M...)
+                            // 100만 원 미만은 숫자를 표시하지 않음 (눈금선만 유지)
+                            if (numericVal < 1000000) return '';
+                            
                             const log10 = Math.log10(numericVal);
                             const base = Math.pow(10, Math.floor(log10));
                             const ratio = numericVal / base;
                             
+                            // 1, 2, 5 단위에서만 레이블 표시
                             if ([1, 2, 5].includes(Math.round(ratio))) {
-                                return numericVal.toLocaleString();
+                                return `${numericVal / 1000000}M`;
                             }
                             return '';
                         }
