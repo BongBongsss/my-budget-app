@@ -167,15 +167,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                             const numericVal = val as number;
                             if (numericVal === 0) return '0';
                             
-                            // 100만 원 미만은 숫자를 표시하지 않음 (눈금선만 유지)
+                            // 100만 원 미만은 숫자를 표시하지 않음
                             if (numericVal < 1000000) return '';
                             
-                            const log10 = Math.log10(numericVal);
-                            const base = Math.pow(10, Math.floor(log10));
-                            const ratio = numericVal / base;
-                            
-                            // 1, 2, 5 단위에서만 레이블 표시
-                            if ([1, 2, 5].includes(Math.round(ratio))) {
+                            // 정확히 백만 단위(Integer)인 경우만 표시
+                            if (numericVal % 1000000 === 0) {
                                 return `${numericVal / 1000000}M`;
                             }
                             return '';
