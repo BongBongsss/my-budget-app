@@ -3,8 +3,9 @@ import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title, ChartDataLabels);
 
 interface SummaryChartsProps {
   transactions: Transaction[];
@@ -68,21 +69,14 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const CustomLegend = () => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px', marginTop: '15px', padding: '0 10px' }}>
-      {activeGroups.map((group) => {
-        const amount = categoryData[group];
-        const percentage = ((amount / totalAmount) * 100).toFixed(1);
-        return (
-          <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', padding: '2px 8px', borderRadius: '6px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
-            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
-            <span style={{ fontSize: '0.7rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
-              {group} <span style={{ opacity: 0.7 }}>({percentage}%)</span>
-              {hoveredGroup === group && <span style={{ marginLeft: '4px', color: chartType === 'expense' ? '#ef4444' : '#10b981' }}>- {amount.toLocaleString()}원</span>}
-            </span>
-          </div>
-        );
-      })}
-      {activeGroups.length === 0 && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>표시할 데이터가 없습니다.</span>}
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
+      {activeGroups.map((group) => (
+        <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.1s' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: groupColorMap[group] }} />
+          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{group}</span>
+          {hoveredGroup === group && <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: '#3b82f6' }}>({categoryData[group].toLocaleString()}원)</span>}
+        </div>
+      ))}
     </div>
   );
 
@@ -134,7 +128,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       <div className="grid grid-cols-2 gap-6">
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
           <h3>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '300px', flex: 1 }}>
+          <div style={{ height: '320px', flex: 1 }}>
             <Pie 
               ref={pieRef}
               data={{
@@ -148,14 +142,18 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 maintainAspectRatio: false,
                 plugins: {
                   legend: { display: false },
-                  tooltip: {
-                    callbacks: {
-                      label: (context: any) => {
-                        const value = context.raw || 0;
-                        const percentage = ((value / totalAmount) * 100).toFixed(1);
-                        return `${context.label}: ${value.toLocaleString()}원 (${percentage}%)`;
-                      }
-                    }
+                  tooltip: { enabled: true },
+                  datalabels: {
+                    color: '#fff',
+                    font: { weight: 'bold', size: 11 },
+                    formatter: (value, ctx) => {
+                      const label = ctx.chart.data.labels?.[ctx.dataIndex];
+                      const percentage = ((value / totalAmount) * 100).toFixed(1);
+                      // 비중이 5% 이상인 경우에만 텍스트 표시 (가독성 위해)
+                      return parseFloat(percentage) > 5 ? `${label}\n${percentage}%` : '';
+                    },
+                    textAlign: 'center',
+                    display: 'auto'
                   }
                 }
               }} 
@@ -168,7 +166,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             <h3 style={{ margin: 0 }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
             {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
           </div>
-          <div style={{ height: '300px', flex: 1 }}>
+          <div style={{ height: '320px', flex: 1 }}>
             <Bar 
               ref={barRef}
               data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
@@ -193,6 +191,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 },
                 plugins: {
                   legend: { display: false },
+                  datalabels: { display: false }, // 막대 차트에는 라벨 숨김
                   tooltip: {
                     callbacks: {
                       title: (items: any) => barDataObj.originalKeys[items[0].dataIndex],
