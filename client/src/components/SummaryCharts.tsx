@@ -152,7 +152,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                       return `${label}\n${percentage}%`;
                     },
                     color: '#000',
-                    font: { weight: 'bold', size: 10 },
+                    font: { weight: 'bold', size: 12 }, // 10px -> 12px 확대
                     textAlign: 'center',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
@@ -161,7 +161,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 20 : -35;
+                        return percentage >= 8 ? 30 : -45; // 글씨가 커진 만큼 오프셋 조정
                     },
                     display: 'auto'
                   }
