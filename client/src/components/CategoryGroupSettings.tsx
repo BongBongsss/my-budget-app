@@ -82,29 +82,29 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
 
   return (
     <div className="category-group-settings" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ marginBottom: '20px' }}>
-        <h4 className="flex items-center gap-2 mb-2">
+      <div style={{ marginBottom: '15px' }}>
+        <h4 className="flex items-center gap-2 mb-1">
           <Folder size={20} className="text-blue-500" /> Category Grouping
         </h4>
         <p className="text-sm text-gray-600">
-          대분류 태그를 드래그하여 옮기거나, 이름을 수정할 수 있습니다. (태그 클릭 시 다중 선택 가능)
+          태그를 드래그하여 옮기거나, 이름을 수정할 수 있습니다.
         </p>
       </div>
 
       <div style={{ 
         flex: 1, 
         overflowY: 'auto', 
-        padding: '10px', 
+        padding: '12px', 
         backgroundColor: '#f8fafc', 
         borderRadius: '12px',
         border: '1px solid #e2e8f0',
-        maxHeight: '450px'
+        maxHeight: '480px'
       }}>
-        {/* 요청: 최상위 카드 한 행에 4개 배치 */}
+        {/* 상위 카드: 한 행에 4개 배치 */}
         <div style={{ 
           display: 'grid', 
           gridTemplateColumns: 'repeat(4, 1fr)', 
-          gap: '12px' 
+          gap: '15px' 
         }}>
           {sortedGroups.map(group => (
             <div 
@@ -117,12 +117,12 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                 padding: '12px', 
                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 border: group === '미분류' ? '1px dashed #f87171' : '1px solid #e2e8f0',
-                minHeight: '150px',
+                minHeight: '180px',
                 display: 'flex',
                 flexDirection: 'column'
               }}
             >
-              <div style={{ marginBottom: '10px' }}>
+              <div style={{ marginBottom: '12px' }}>
                 <h5 style={{ 
                   margin: 0, 
                   fontSize: '0.85rem', 
@@ -133,29 +133,28 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                 }}>
                   <FolderPlus size={14} />
                   {editingGroupName === group ? (
-                    <div style={{ display: 'flex', gap: '2px', width: '100%' }}>
-                      <input 
-                        type="text" 
-                        value={newGroupName} 
-                        onChange={(e) => setNewPasswordName(e.target.value)}
-                        autoFocus
-                        style={{ fontSize: '0.75rem', padding: '1px 4px', border: '1px solid #3b82f6', borderRadius: '4px', width: '100%' }}
-                        onKeyDown={(e) => e.key === 'Enter' && saveGroupName(group)}
-                      />
-                    </div>
+                    <input 
+                      type="text" 
+                      value={newGroupName} 
+                      onChange={(e) => setNewPasswordName(e.target.value)}
+                      autoFocus
+                      style={{ fontSize: '0.75rem', padding: '2px 4px', border: '1px solid #3b82f6', borderRadius: '4px', width: '100%' }}
+                      onKeyDown={(e) => e.key === 'Enter' && saveGroupName(group)}
+                      onBlur={() => setEditingGroupName(null)}
+                    />
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{group} ({groupedCategories[group].length})</span>
+                      <span style={{ fontWeight: 'bold' }}>{group} ({groupedCategories[group].length})</span>
                       {group !== '미분류' && <Edit2 size={10} onClick={() => startEditingGroup(group)} style={{ cursor: 'pointer', opacity: 0.5 }} />}
                     </div>
                   )}
                 </h5>
               </div>
               
-              {/* 요청: 내부 태그 한 행에 3개씩 정렬 */}
+              {/* 내부 태그: 글자가 잘리지 않도록 Flex Wrap 사용 및 가로폭 충분히 확보 */}
               <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(3, 1fr)', 
+                display: 'flex', 
+                flexWrap: 'wrap', 
                 gap: '6px' 
               }}>
                 {groupedCategories[group].map(cat => (
@@ -166,18 +165,19 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                     onClick={() => toggleSelect(cat.id!)}
                     title={cat.name}
                     style={{ 
-                      padding: '4px 2px',
-                      borderRadius: '6px',
-                      fontSize: '0.7rem',
+                      padding: '4px 10px',
+                      borderRadius: '20px',
+                      fontSize: '0.75rem',
                       cursor: 'grab',
-                      textAlign: 'center',
                       border: '1px solid',
                       whiteSpace: 'nowrap',
+                      backgroundColor: selectedIds.includes(cat.id!) ? '#3b82f6' : '#fff',
+                      color: selectedIds.includes(cat.id!) ? '#fff' : '#64748b',
+                      borderColor: selectedIds.includes(cat.id!) ? '#2563eb' : '#e2e8f0',
+                      transition: 'all 0.2s',
+                      maxWidth: '100%',
                       overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      backgroundColor: selectedIds.includes(cat.id!) ? '#3b82f6' : '#f9fafb',
-                      color: selectedIds.includes(cat.id!) ? '#fff' : '#475569',
-                      borderColor: selectedIds.includes(cat.id!) ? '#2563eb' : '#e5e7eb'
+                      textOverflow: 'ellipsis'
                     }}
                   >
                     {cat.name}
@@ -190,14 +190,14 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
       </div>
 
       <div style={{ 
-        marginTop: '15px', 
+        marginTop: '20px', 
         padding: '12px', 
         backgroundColor: '#fff', 
         border: '2px solid #3b82f6', 
-        borderRadius: '10px',
+        borderRadius: '12px',
         display: 'flex',
         alignItems: 'center',
-        gap: '10px'
+        gap: '12px'
       }}>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: '0.75rem', fontWeight: 'bold', color: '#3b82f6' }}>{selectedIds.length}개 선택됨</div>
@@ -207,7 +207,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
             value={targetGroupName} 
             onChange={(e) => setTargetGroupName(e.target.value)}
             placeholder="이동할 그룹명 입력"
-            style={{ width: '100%', padding: '6px 10px', borderRadius: '4px', border: '1px solid #cbd5e1', fontSize: '0.8rem' }}
+            style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.85rem' }}
           />
           <datalist id="existing-groups-list">
             {sortedGroups.filter(g => g !== '미분류').map(g => <option key={g} value={g} />)}
@@ -216,7 +216,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
         <button 
           onClick={() => handleApplyGroup(selectedIds, targetGroupName)} 
           className="btn btn-primary"
-          style={{ height: '36px', padding: '0 15px', fontSize: '0.85rem' }}
+          style={{ height: '40px', padding: '0 20px' }}
           disabled={isUpdating || selectedIds.length === 0 || !targetGroupName.trim()}
         >
           적용
