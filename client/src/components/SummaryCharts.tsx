@@ -125,10 +125,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       <div className="grid grid-cols-2 gap-6">
-        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px', position: 'relative' }}>
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '450px', padding: '15px', position: 'relative' }}>
           {/* 요청: 제목이 차트에 가려지지 않도록 z-index 부여 */}
           <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem', position: 'relative', zIndex: 10 }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1, paddingTop: '45px' }}> {/* 5px 추가 하향 */}
+          <div style={{ height: '400px', flex: 1, paddingTop: '60px' }}> {/* 높이 확대 및 상단 여백 대폭 추가 */}
             <Pie 
               ref={pieRef}
               data={{
@@ -142,8 +142,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '100%',
-                layout: { padding: { left: 40, right: 40, top: 10, bottom: 10 } },
+                radius: '85%', // 안전한 최대 크기인 85%로 조정
+                layout: { padding: { left: 50, right: 50, top: 50, bottom: 50 } }, // 라벨 공간 확보
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
