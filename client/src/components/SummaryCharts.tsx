@@ -32,7 +32,6 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
-  // 현재 선택된 타입(지출/수입)에 따른 데이터 집계
   const filteredData = transactions.filter(t => t.type === chartType);
   
   const categoryData = filteredData.reduce((acc: any, t) => {
@@ -70,14 +69,19 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   const CustomLegend = () => (
     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '10px', marginTop: '15px', padding: '0 10px' }}>
-      {activeGroups.map((group) => (
-        <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
-          <span style={{ fontSize: '0.7rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
-            {group}{hoveredGroup === group && <span style={{ marginLeft: '3px', color: chartType === 'expense' ? '#ef4444' : '#10b981' }}>({categoryData[group].toLocaleString()}원)</span>}
-          </span>
-        </div>
-      ))}
+      {activeGroups.map((group) => {
+        const amount = categoryData[group];
+        const percentage = ((amount / totalAmount) * 100).toFixed(1);
+        return (
+          <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', padding: '2px 8px', borderRadius: '6px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
+            <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
+            <span style={{ fontSize: '0.7rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
+              {group} <span style={{ opacity: 0.7 }}>({percentage}%)</span>
+              {hoveredGroup === group && <span style={{ marginLeft: '4px', color: chartType === 'expense' ? '#ef4444' : '#10b981' }}>- {amount.toLocaleString()}원</span>}
+            </span>
+          </div>
+        );
+      })}
       {activeGroups.length === 0 && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>표시할 데이터가 없습니다.</span>}
     </div>
   );
@@ -118,30 +122,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   return (
     <div style={{ marginBottom: '32px' }}>
-      {/* 지출/수입 전환 스위치 */}
       <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', gap: '10px' }}>
-        <button 
-          onClick={() => setChartType('expense')}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-            backgroundColor: chartType === 'expense' ? '#fee2e2' : '#f1f5f9',
-            color: chartType === 'expense' ? '#ef4444' : '#64748b',
-            fontWeight: chartType === 'expense' ? 'bold' : 'normal',
-            transition: 'all 0.2s'
-          }}
-        >
+        <button onClick={() => setChartType('expense')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: chartType === 'expense' ? '#fee2e2' : '#f1f5f9', color: chartType === 'expense' ? '#ef4444' : '#64748b', fontWeight: chartType === 'expense' ? 'bold' : 'normal', transition: 'all 0.2s' }}>
           <ArrowDownCircle size={18} /> 지출 분석
         </button>
-        <button 
-          onClick={() => setChartType('income')}
-          style={{ 
-            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer',
-            backgroundColor: chartType === 'income' ? '#dcfce7' : '#f1f5f9',
-            color: chartType === 'income' ? '#10b981' : '#64748b',
-            fontWeight: chartType === 'income' ? 'bold' : 'normal',
-            transition: 'all 0.2s'
-          }}
-        >
+        <button onClick={() => setChartType('income')} style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer', backgroundColor: chartType === 'income' ? '#dcfce7' : '#f1f5f9', color: chartType === 'income' ? '#10b981' : '#64748b', fontWeight: chartType === 'income' ? 'bold' : 'normal', transition: 'all 0.2s' }}>
           <ArrowUpCircle size={18} /> 수입 분석
         </button>
       </div>
