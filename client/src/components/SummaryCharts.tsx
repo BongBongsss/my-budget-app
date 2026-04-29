@@ -12,13 +12,11 @@ interface SummaryChartsProps {
 }
 
 const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period }) => {
-  // 공통 색상 팔레트
   const COLOR_PALETTE = [
     '#f87171', '#fb923c', '#fbbf24', '#4ade80', '#38bdf8', '#818cf8', '#a78bfa', '#fb7185',
-    '#2dd4bf', '#a3e635', '#f472b6', '#94a3b8', '#fb923c', '#60a5fa', '#f87171'
+    '#2dd4bf', '#a3e635', '#f472b6', '#94a3b8', '#60a5fa'
   ];
 
-  // 카테고리 이름을 그룹 이름으로 변환하는 맵 생성
   const categoryToGroupMap: Record<string, string> = {};
   categories.forEach(cat => {
     categoryToGroupMap[cat.name] = cat.groupName || '기타';
@@ -28,14 +26,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
-  const allGroups = Array.from(new Set(Object.values(categoryToGroupMap))).sort();
-  
-  // 그룹별 고정 색상 맵 생성
-  const groupColorMap: Record<string, string> = {};
-  allGroups.forEach((group, idx) => {
-    groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
-  });
-
+  // 1. 데이터 집계 및 0원 항목 필터링
   const categoryData = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc: any, t) => {
@@ -44,26 +35,45 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       return acc;
     }, {});
 
-  const totalExpense = Object.values(categoryData).reduce((sum: any, val: any) => sum + val, 0);
+  // 금액이 0보다 큰 그룹만 추출
+  const activeGroups = Object.keys(categoryData)
+    .filter(group => categoryData[group] > 0)
+    .sort((a, b) => categoryData[b] - categoryData[a]);
 
-  const pieLabels = Object.keys(categoryData).map(name => {
-    const amount = categoryData[name];
-    return `${name} (${amount.toLocaleString()}원)`;
+  const totalExpense = activeGroups.reduce((sum, group) => sum + categoryData[group], 0);
+
+  // 그룹별 고정 색상 맵 (활성 그룹 기준)
+  const groupColorMap: Record<string, string> = {};
+  activeGroups.forEach((group, idx) => {
+    groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
   });
 
   const pieData = {
-    labels: pieLabels,
+    labels: activeGroups,
     datasets: [{
-      data: Object.values(categoryData),
-      backgroundColor: Object.keys(categoryData).map(label => groupColorMap[label] || '#94a3b8'),
+      data: activeGroups.map(group => categoryData[group]),
+      backgroundColor: activeGroups.map(group => groupColorMap[group]),
     }]
   };
 
-  const pieOptions = {
-    maintainAspectRatio: false,
+  const commonOptions = {
+    onHover: (event: any, chartElement: any) => {
+      event.native.target.style.cursor = chartElement.length ? 'pointer' : 'default';
+    },
     plugins: {
       legend: {
         position: 'bottom' as const,
+        onHover: (event: any, legendItem: any, legend: any) => {
+          const index = legendItem.index;
+          const chart = legend.chart;
+          chart.setActiveElements([{ datasetIndex: 0, index }]);
+          chart.update();
+        },
+        onLeave: (event: any, legendItem: any, legend: any) => {
+          const chart = legend.chart;
+          chart.setActiveElements([]);
+          chart.update();
+        },
         labels: {
           boxWidth: 12,
           padding: 15,
@@ -73,10 +83,13 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       tooltip: {
         callbacks: {
           label: (context: any) => {
-            const label = context.label || '';
+            const label = context.label || context.dataset.label || '';
             const value = context.raw || 0;
-            const percentage = ((value / (totalExpense as number)) * 100).toFixed(1);
-            return `${label}: ${value.toLocaleString()}원 (${percentage}%)`;
+            if (context.chart.config.type === 'pie') {
+              const percentage = ((value / totalExpense) * 100).toFixed(1);
+              return `${label}: ${value.toLocaleString()}원 (${percentage}%)`;
+            }
+            return `${label}: ${value.toLocaleString()}원`;
           }
         }
       }
@@ -98,7 +111,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
     const labels = Object.keys(grouped).sort();
     
-    const datasets = allGroups.map((group) => ({
+    const datasets = activeGroups.map((group) => ({
       label: group,
       data: labels.map(label => grouped[label][group] || 0),
       backgroundColor: groupColorMap[group],
@@ -111,25 +124,21 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     <div className="grid grid-cols-2 gap-6 mb-8">
       <div className="card-form">
         <h3>Category Group Breakdown</h3>
-        <div style={{ height: '300px' }}>
-          <Pie data={pieData} options={pieOptions} />
+        <div style={{ height: '320px' }}>
+          <Pie data={pieData} options={{ ...commonOptions, maintainAspectRatio: false }} />
         </div>
       </div>
       <div className="card-form">
         <h3>Spending Trend (by Group)</h3>
-        <div style={{ height: '300px' }}>
+        <div style={{ height: '320px' }}>
           <Bar 
             data={getBarData()} 
             options={{ 
+              ...commonOptions,
               maintainAspectRatio: false, 
-              scales: { x: { stacked: true }, y: { stacked: true } },
-              plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } },
-                tooltip: {
-                  callbacks: {
-                    label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
-                  }
-                }
+              scales: { 
+                x: { stacked: true }, 
+                y: { stacked: true, ticks: { callback: (val) => val.toLocaleString() } } 
               }
             }} 
           />
