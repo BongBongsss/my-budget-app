@@ -159,13 +159,22 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               scales: { 
                 x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
                 y: { 
-                    type: 'logarithmic', // 로그 스케일 적용: 큰 금액 편차 극복
+                    type: 'logarithmic',
                     stacked: true, 
                     ticks: { 
                         font: { size: 10 }, 
                         callback: (val) => {
-                            if (val === 0) return '0';
-                            if (Math.log10(val as number) % 1 === 0) return val.toLocaleString(); // 10, 100, 1000 단위만 표시
+                            const numericVal = val as number;
+                            if (numericVal === 0) return '0';
+                            
+                            // 로그 스케일에서 눈금을 1, 2, 5 단위로 표시 (예: 1M, 2M, 5M, 10M...)
+                            const log10 = Math.log10(numericVal);
+                            const base = Math.pow(10, Math.floor(log10));
+                            const ratio = numericVal / base;
+                            
+                            if ([1, 2, 5].includes(Math.round(ratio))) {
+                                return numericVal.toLocaleString();
+                            }
                             return '';
                         }
                     } 
