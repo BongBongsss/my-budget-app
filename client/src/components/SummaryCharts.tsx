@@ -141,8 +141,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '87%',
-                layout: { padding: { left: 60, right: 60, top: 10, bottom: 40 } },
+                radius: '100%',
+                layout: { padding: { left: 40, right: 40, top: 10, bottom: 10 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
