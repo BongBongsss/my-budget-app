@@ -50,127 +50,61 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
   });
 
-  // 범례 마우스 오버 핸들러
-  const handleLegendHover = (group: string | null) => {
-    setHoveredGroup(group);
-    
-    // 차트 요소 강조 연동
-    const index = group ? activeGroups.indexOf(group) : -1;
-    
-    if (pieRef.current) {
-      const chart = pieRef.current;
-      if (index >= 0) {
-        chart.setActiveElements([{ datasetIndex: 0, index }]);
-      } else {
-        chart.setActiveElements([]);
-      }
-      chart.update();
-    }
-    
-    if (barRef.current) {
-      const chart = barRef.current;
-      if (index >= 0) {
-        // 모든 데이터셋에서 해당 인덱스의 막대를 강조
-        const activeElements = chart.data.datasets.map((_: any, dsIndex: number) => ({
-            datasetIndex: dsIndex,
-            index: index // 실제로는 그룹별로 데이터셋이 나뉘어 있으므로 로직 확인 필요
-        }));
-        // 간단하게 해당 그룹 데이터셋 전체 강조
-        chart.setActiveElements([{ datasetIndex: index, index: 0 }]); // 바 차트는 구조에 맞춰 조정
-      } else {
-        chart.setActiveElements([]);
-      }
-      chart.update();
-    }
+  // 현재 기간 정보 추출 (차트 제목용)
+  const getCurrentPeriodInfo = () => {
+    if (transactions.length === 0) return "";
+    const firstDate = transactions[0].date;
+    if (period === 'month') return firstDate.substring(0, 7); // YYYY-MM
+    if (period === 'year') return firstDate.substring(0, 4); // YYYY
+    return "";
   };
 
-  // 커스텀 범례 컴포넌트
+  const handleLegendHover = (group: string | null) => {
+    setHoveredGroup(group);
+    const index = group ? activeGroups.indexOf(group) : -1;
+    if (pieRef.current && index >= 0) pieRef.current.setActiveElements([{ datasetIndex: 0, index }]);
+    else if (pieRef.current) pieRef.current.setActiveElements([]);
+    if (barRef.current) barRef.current.update();
+  };
+
   const CustomLegend = () => (
-    <div style={{ 
-      display: 'flex', 
-      flexWrap: 'wrap', 
-      justifyContent: 'center', 
-      gap: '12px', 
-      marginTop: '20px',
-      padding: '0 10px'
-    }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '12px', marginTop: '20px', padding: '0 10px' }}>
       {activeGroups.map((group) => (
-        <div 
-          key={group}
-          onMouseEnter={() => handleLegendHover(group)}
-          onMouseLeave={() => handleLegendHover(null)}
-          style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            gap: '6px', 
-            cursor: 'pointer',
-            padding: '4px 8px',
-            borderRadius: '6px',
-            backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent',
-            transition: 'all 0.2s'
-          }}
-        >
-          <div style={{ 
-            width: '10px', 
-            height: '10px', 
-            borderRadius: '50%', 
-            backgroundColor: groupColorMap[group] 
-          }} />
-          <span style={{ 
-            fontSize: '0.75rem', 
-            fontWeight: hoveredGroup === group ? 'bold' : 'normal',
-            color: hoveredGroup === group ? '#1e293b' : '#64748b'
-          }}>
-            {group}
-            {hoveredGroup === group && (
-              <span style={{ marginLeft: '4px', color: '#3b82f6' }}>
-                ({categoryData[group].toLocaleString()}원)
-              </span>
-            )}
+        <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', padding: '4px 8px', borderRadius: '6px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
+          <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
+          <span style={{ fontSize: '0.75rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
+            {group}{hoveredGroup === group && <span style={{ marginLeft: '4px', color: '#3b82f6' }}>({categoryData[group].toLocaleString()}원)</span>}
           </span>
         </div>
       ))}
     </div>
   );
 
-  const commonOptions = {
-    plugins: {
-      legend: { display: false }, // 내장 범례 숨김
-      tooltip: {
-        callbacks: {
-          label: (context: any) => {
-            const label = context.label || context.dataset.label || '';
-            const value = context.raw || 0;
-            if (context.chart.config.type === 'pie') {
-              const percentage = ((value / totalExpense) * 100).toFixed(1);
-              return `${label}: ${value.toLocaleString()}원 (${percentage}%)`;
-            }
-            return `${label}: ${value.toLocaleString()}원`;
-          }
-        }
-      }
-    }
-  };
-
   const getBarData = () => {
     const grouped = transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => {
-      let key;
-      if (period === 'all') key = t.date.substring(0, 4); 
-      else if (period === 'year') key = t.date.substring(0, 7); 
-      else key = t.date.substring(0, 10);
-      
+      let key = t.date;
       const groupName = getGroupName(t.category);
       if (!acc[key]) acc[key] = {};
       acc[key][groupName] = (acc[key][groupName] || 0) + t.amount;
       return acc;
     }, {});
 
-    const labels = Object.keys(grouped).sort();
+    const sortedDates = Object.keys(grouped).sort();
+    
+    // X축 레이블 가공
+    const labels = sortedDates.map(date => {
+      if (period === 'month') return date.split('-')[2]; // '일'만 표시
+      if (period === 'year') return date.substring(5, 7) + '월'; // '월'만 표시
+      return date;
+    });
     
     const datasets = activeGroups.map((group) => ({
       label: group,
-      data: labels.map(label => grouped[label][group] || 0),
+      data: sortedDates.map(date => grouped[date][group] || 0),
       backgroundColor: groupColorMap[group],
+      // 범례 호버 시 해당 그룹만 강조
+      borderWidth: hoveredGroup === group ? 2 : 0,
+      borderColor: '#333'
     }));
 
     return { labels, datasets };
@@ -190,23 +124,52 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 backgroundColor: activeGroups.map(group => groupColorMap[group]),
               }]
             }} 
-            options={{ ...commonOptions, maintainAspectRatio: false }} 
+            options={{ 
+              maintainAspectRatio: false,
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    label: (context: any) => {
+                      const value = context.raw || 0;
+                      const percentage = ((value / totalExpense) * 100).toFixed(1);
+                      return `${context.label}: ${value.toLocaleString()}원 (${percentage}%)`;
+                    }
+                  }
+                }
+              }
+            }} 
           />
         </div>
         <CustomLegend />
       </div>
       <div className="card-form" style={{ display: 'flex', flexDirection: 'column' }}>
-        <h3>Spending Trend (by Group)</h3>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+          <h3 style={{ margin: 0 }}>Spending Trend</h3>
+          {getCurrentPeriodInfo() && <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
+        </div>
         <div style={{ height: '250px', flex: 1 }}>
           <Bar 
             ref={barRef}
             data={getBarData()} 
             options={{ 
-              ...commonOptions,
               maintainAspectRatio: false, 
               scales: { 
-                x: { stacked: true }, 
-                y: { stacked: true, ticks: { callback: (val) => val.toLocaleString() } } 
+                x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
+                y: { stacked: true, ticks: { font: { size: 10 }, callback: (val) => val.toLocaleString() } } 
+              },
+              plugins: {
+                legend: { display: false },
+                tooltip: {
+                  callbacks: {
+                    title: (items: any) => {
+                        const idx = items[0].dataIndex;
+                        const fullDate = Object.keys(transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => { acc[t.date] = 1; return acc; }, {})).sort()[idx];
+                        return fullDate || items[0].label;
+                    },
+                    label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
+                  }
+                }
               }
             }} 
           />
