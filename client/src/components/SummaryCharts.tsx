@@ -30,7 +30,6 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
-  // 데이터 집계
   const categoryData = transactions
     .filter(t => t.type === 'expense')
     .reduce((acc: any, t) => {
@@ -50,13 +49,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     groupColorMap[group] = COLOR_PALETTE[idx % COLOR_PALETTE.length];
   });
 
-  // 현재 기간 정보 추출 (차트 제목용)
   const getCurrentPeriodInfo = () => {
     if (transactions.length === 0) return "";
     const firstDate = transactions[0].date;
-    if (period === 'month') return firstDate.substring(0, 7); // YYYY-MM
-    if (period === 'year') return firstDate.substring(0, 4); // YYYY
-    return "";
+    if (period === 'month') return firstDate.substring(0, 7); 
+    if (period === 'year') return firstDate.substring(0, 4); 
+    return "All Time";
   };
 
   const handleLegendHover = (group: string | null) => {
@@ -81,34 +79,41 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   );
 
   const getBarData = () => {
+    // 1. 기간에 따른 그룹화 키 결정
     const grouped = transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => {
-      let key = t.date;
+      let key;
+      if (period === 'all') key = t.date.substring(0, 4); // 연도별
+      else if (period === 'year') key = t.date.substring(0, 7); // 월별
+      else key = t.date; // 일별
+      
       const groupName = getGroupName(t.category);
       if (!acc[key]) acc[key] = {};
       acc[key][groupName] = (acc[key][groupName] || 0) + t.amount;
       return acc;
     }, {});
 
-    const sortedDates = Object.keys(grouped).sort();
+    const sortedKeys = Object.keys(grouped).sort();
     
-    // X축 레이블 가공
-    const labels = sortedDates.map(date => {
-      if (period === 'month') return date.split('-')[2]; // '일'만 표시
-      if (period === 'year') return date.substring(5, 7) + '월'; // '월'만 표시
-      return date;
+    // 2. X축 레이블 가공
+    const labels = sortedKeys.map(key => {
+      if (period === 'all') return key + '년';
+      if (period === 'year') return key.substring(5, 7) + '월';
+      return key.split('-')[2]; // '일'
     });
     
+    // 3. 데이터셋 생성
     const datasets = activeGroups.map((group) => ({
       label: group,
-      data: sortedDates.map(date => grouped[date][group] || 0),
+      data: sortedKeys.map(key => grouped[key][group] || 0),
       backgroundColor: groupColorMap[group],
-      // 범례 호버 시 해당 그룹만 강조
       borderWidth: hoveredGroup === group ? 2 : 0,
       borderColor: '#333'
     }));
 
-    return { labels, datasets };
+    return { labels, datasets, originalKeys: sortedKeys };
   };
+
+  const barDataObj = getBarData();
 
   return (
     <div className="grid grid-cols-2 gap-6 mb-8">
@@ -151,7 +156,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         <div style={{ height: '250px', flex: 1 }}>
           <Bar 
             ref={barRef}
-            data={getBarData()} 
+            data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
             options={{ 
               maintainAspectRatio: false, 
               scales: { 
@@ -162,11 +167,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 legend: { display: false },
                 tooltip: {
                   callbacks: {
-                    title: (items: any) => {
-                        const idx = items[0].dataIndex;
-                        const fullDate = Object.keys(transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => { acc[t.date] = 1; return acc; }, {})).sort()[idx];
-                        return fullDate || items[0].label;
-                    },
+                    title: (items: any) => barDataObj.originalKeys[items[0].dataIndex],
                     label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
                   }
                 }
