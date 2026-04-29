@@ -74,34 +74,44 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     </div>
   );
 
-  const barData = {
-    labels: Object.keys(filteredData.reduce((acc: any, t) => {
+  const getBarData = () => {
+    const grouped = filteredData.reduce((acc: any, t) => {
       let key;
       if (period === 'all') key = t.date.substring(0, 4);
       else if (period === 'year') key = t.date.substring(0, 7);
       else key = t.date;
       acc[key] = 1; return acc;
-    }, {})).sort(),
-    datasets: activeGroups.map(group => ({
-      label: group,
-      backgroundColor: groupColorMap[group],
-      data: Object.keys(filteredData.reduce((acc: any, t) => {
-        let key;
-        if (period === 'all') key = t.date.substring(0, 4);
-        else if (period === 'year') key = t.date.substring(0, 7);
-        else key = t.date;
-        acc[key] = 1; return acc;
-      }, {})).sort().map(key => {
-        return filteredData.filter(t => {
-            let tKey;
-            if (period === 'all') tKey = t.date.substring(0, 4);
-            else if (period === 'year') tKey = t.date.substring(0, 7);
-            else tKey = t.date;
-            return tKey === key && getGroupName(t.category) === group;
-        }).reduce((sum, t) => sum + t.amount, 0);
-      })
-    }))
+    }, {});
+
+    const sortedKeys = Object.keys(grouped).sort();
+    
+    // 요청 사항: X축 레이블 단축 로직 복구
+    const labels = sortedKeys.map(key => {
+        if (period === 'all') return key + '년';
+        if (period === 'year') return key.substring(5, 7) + '월';
+        return key.split('-')[2]; // 'Month' 모드 시 '일'만 표시
+    });
+
+    return {
+      labels,
+      originalKeys: sortedKeys,
+      datasets: activeGroups.map(group => ({
+        label: group,
+        backgroundColor: groupColorMap[group],
+        data: sortedKeys.map(key => {
+          return filteredData.filter(t => {
+              let tKey;
+              if (period === 'all') tKey = t.date.substring(0, 4);
+              else if (period === 'year') tKey = t.date.substring(0, 7);
+              else tKey = t.date;
+              return tKey === key && getGroupName(t.category) === group;
+          }).reduce((sum, t) => sum + t.amount, 0);
+        })
+      }))
+    };
   };
+
+  const barDataObj = getBarData();
 
   return (
     <div style={{ marginBottom: '32px' }}>
@@ -117,7 +127,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       <div className="grid grid-cols-2 gap-6">
         <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px', padding: '15px' }}>
           <h3 style={{ margin: '0 0 10px 0', fontSize: '1.1rem' }}>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
-          <div style={{ height: '350px', flex: 1, paddingTop: '40px' }}> {/* 10px 추가 하향 */}
+          <div style={{ height: '350px', flex: 1, paddingTop: '40px' }}>
             <Pie 
               ref={pieRef}
               data={{
@@ -131,8 +141,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '87%', // 약 3px 정도 확대 (85% -> 87%)
-                layout: { padding: { left: 60, right: 60, top: 10, bottom: 40 } }, // 하단 공간 확보
+                radius: '87%',
+                layout: { padding: { left: 60, right: 60, top: 10, bottom: 40 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -147,13 +157,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     textAlign: 'center',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
-                    // 요청: 라벨을 원의 외곽쪽(조각의 끝)으로 배치
                     anchor: 'end', 
-                    align: 'start', // 내부 조각의 끝부분에 맞춤
+                    align: 'start',
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 25 : -35; // 8% 이상은 안쪽 외곽에, 미만은 바깥쪽 외곽에 배치
+                        return percentage >= 8 ? 25 : -35;
                     },
                     display: 'auto'
                   }
@@ -171,7 +180,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           <div style={{ height: '300px', flex: 1 }}>
             <Bar 
               ref={barRef}
-              data={barData} 
+              data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
               options={{ 
                 maintainAspectRatio: false, 
                 scales: { 
@@ -196,6 +205,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                   datalabels: { display: false },
                   tooltip: {
                     callbacks: {
+                      title: (items: any) => barDataObj.originalKeys[items[0].dataIndex],
                       label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
                     }
                   }
