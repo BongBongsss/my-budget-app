@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
+import { ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title);
 
@@ -13,13 +14,14 @@ interface SummaryChartsProps {
 
 const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period }) => {
   const [hoveredGroup, setHoveredGroup] = useState<string | null>(null);
+  const [chartType, setChartType] = useState<'expense' | 'income'>('expense');
   const pieRef = useRef<any>(null);
   const barRef = useRef<any>(null);
 
-  const COLOR_PALETTE = [
-    '#f87171', '#fb923c', '#fbbf24', '#4ade80', '#38bdf8', '#818cf8', '#a78bfa', '#fb7185',
-    '#2dd4bf', '#a3e635', '#f472b6', '#94a3b8', '#60a5fa'
-  ];
+  const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
+  const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
+  
+  const COLOR_PALETTE = chartType === 'expense' ? EXPENSE_PALETTE : INCOME_PALETTE;
 
   const categoryToGroupMap: Record<string, string> = {};
   categories.forEach(cat => {
@@ -30,9 +32,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
   };
 
-  const categoryData = transactions
-    .filter(t => t.type === 'expense')
-    .reduce((acc: any, t) => {
+  // 현재 선택된 타입(지출/수입)에 따른 데이터 집계
+  const filteredData = transactions.filter(t => t.type === chartType);
+  
+  const categoryData = filteredData.reduce((acc: any, t) => {
       const groupName = getGroupName(t.category);
       acc[groupName] = (acc[groupName] || 0) + t.amount;
       return acc;
@@ -42,7 +45,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     .filter(group => categoryData[group] > 0)
     .sort((a, b) => categoryData[b] - categoryData[a]);
 
-  const totalExpense = activeGroups.reduce((sum, group) => sum + categoryData[group], 0);
+  const totalAmount = activeGroups.reduce((sum, group) => sum + categoryData[group], 0);
 
   const groupColorMap: Record<string, string> = {};
   activeGroups.forEach((group, idx) => {
@@ -71,15 +74,16 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         <div key={group} onMouseEnter={() => handleLegendHover(group)} onMouseLeave={() => handleLegendHover(null)} style={{ display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', backgroundColor: hoveredGroup === group ? '#f1f5f9' : 'transparent', transition: 'all 0.2s' }}>
           <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: groupColorMap[group] }} />
           <span style={{ fontSize: '0.7rem', fontWeight: hoveredGroup === group ? 'bold' : 'normal', color: hoveredGroup === group ? '#1e293b' : '#64748b' }}>
-            {group}{hoveredGroup === group && <span style={{ marginLeft: '3px', color: '#3b82f6' }}>({categoryData[group].toLocaleString()}원)</span>}
+            {group}{hoveredGroup === group && <span style={{ marginLeft: '3px', color: chartType === 'expense' ? '#ef4444' : '#10b981' }}>({categoryData[group].toLocaleString()}원)</span>}
           </span>
         </div>
       ))}
+      {activeGroups.length === 0 && <span style={{ fontSize: '0.75rem', color: '#94a3b8' }}>표시할 데이터가 없습니다.</span>}
     </div>
   );
 
   const getBarData = () => {
-    const grouped = transactions.filter(t => t.type === 'expense').reduce((acc: any, t) => {
+    const grouped = filteredData.reduce((acc: any, t) => {
       let key;
       if (period === 'all') key = t.date.substring(0, 4);
       else if (period === 'year') key = t.date.substring(0, 7);
@@ -113,85 +117,109 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const barDataObj = getBarData();
 
   return (
-    <div className="grid grid-cols-2 gap-6 mb-8">
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
-        <h3>Category Group Breakdown</h3>
-        <div style={{ height: '300px', flex: 1 }}>
-          <Pie 
-            ref={pieRef}
-            data={{
-              labels: activeGroups,
-              datasets: [{
-                data: activeGroups.map(group => categoryData[group]),
-                backgroundColor: activeGroups.map(group => groupColorMap[group]),
-              }]
-            }} 
-            options={{ 
-              maintainAspectRatio: false,
-              plugins: {
-                legend: { display: false },
-                tooltip: {
-                  callbacks: {
-                    label: (context: any) => {
-                      const value = context.raw || 0;
-                      const percentage = ((value / totalExpense) * 100).toFixed(1);
-                      return `${context.label}: ${value.toLocaleString()}원 (${percentage}%)`;
+    <div style={{ marginBottom: '32px' }}>
+      {/* 지출/수입 전환 스위치 */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px', gap: '10px' }}>
+        <button 
+          onClick={() => setChartType('expense')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+            backgroundColor: chartType === 'expense' ? '#fee2e2' : '#f1f5f9',
+            color: chartType === 'expense' ? '#ef4444' : '#64748b',
+            fontWeight: chartType === 'expense' ? 'bold' : 'normal',
+            transition: 'all 0.2s'
+          }}
+        >
+          <ArrowDownCircle size={18} /> 지출 분석
+        </button>
+        <button 
+          onClick={() => setChartType('income')}
+          style={{ 
+            display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', borderRadius: '20px', border: 'none', cursor: 'pointer',
+            backgroundColor: chartType === 'income' ? '#dcfce7' : '#f1f5f9',
+            color: chartType === 'income' ? '#10b981' : '#64748b',
+            fontWeight: chartType === 'income' ? 'bold' : 'normal',
+            transition: 'all 0.2s'
+          }}
+        >
+          <ArrowUpCircle size={18} /> 수입 분석
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-6">
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
+          <h3>{chartType === 'expense' ? 'Expense' : 'Income'} Breakdown</h3>
+          <div style={{ height: '300px', flex: 1 }}>
+            <Pie 
+              ref={pieRef}
+              data={{
+                labels: activeGroups,
+                datasets: [{
+                  data: activeGroups.map(group => categoryData[group]),
+                  backgroundColor: activeGroups.map(group => groupColorMap[group]),
+                }]
+              }} 
+              options={{ 
+                maintainAspectRatio: false,
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      label: (context: any) => {
+                        const value = context.raw || 0;
+                        const percentage = ((value / totalAmount) * 100).toFixed(1);
+                        return `${context.label}: ${value.toLocaleString()}원 (${percentage}%)`;
+                      }
                     }
                   }
                 }
-              }
-            }} 
-          />
+              }} 
+            />
+          </div>
+          <CustomLegend />
         </div>
-        <CustomLegend />
-      </div>
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-          <h3 style={{ margin: 0 }}>Spending Trend</h3>
-          {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
-        </div>
-        <div style={{ height: '300px', flex: 1 }}>
-          <Bar 
-            ref={barRef}
-            data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
-            options={{ 
-              maintainAspectRatio: false, 
-              scales: { 
-                x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
-                y: { 
-                    type: 'logarithmic',
-                    stacked: true, 
-                    ticks: { 
-                        font: { size: 10 }, 
-                        callback: (val) => {
-                            const numericVal = val as number;
-                            if (numericVal === 0) return '0';
-                            
-                            // 100만 원 미만은 숫자를 표시하지 않음
-                            if (numericVal < 1000000) return '';
-                            
-                            // 정확히 백만 단위(Integer)인 경우만 표시
-                            if (numericVal % 1000000 === 0) {
-                                return `${numericVal / 1000000}M`;
-                            }
-                            return '';
-                        }
-                    } 
-                } 
-              },
-              plugins: {
-                legend: { display: false },
-                tooltip: {
-                  callbacks: {
-                    title: (items: any) => barDataObj.originalKeys[items[0].dataIndex],
-                    label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
+        <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '400px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+            <h3 style={{ margin: 0 }}>{chartType === 'expense' ? 'Spending' : 'Income'} Trend</h3>
+            {getCurrentPeriodInfo() && <span style={{ fontSize: '0.8rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
+          </div>
+          <div style={{ height: '300px', flex: 1 }}>
+            <Bar 
+              ref={barRef}
+              data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
+              options={{ 
+                maintainAspectRatio: false, 
+                scales: { 
+                  x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
+                  y: { 
+                      type: 'logarithmic',
+                      stacked: true, 
+                      ticks: { 
+                          font: { size: 10 }, 
+                          callback: (val) => {
+                              const numericVal = val as number;
+                              if (numericVal === 0) return '0';
+                              if (numericVal < 1000000) return '';
+                              if (numericVal % 1000000 === 0) return `${numericVal / 1000000}M`;
+                              return '';
+                          }
+                      } 
+                  } 
+                },
+                plugins: {
+                  legend: { display: false },
+                  tooltip: {
+                    callbacks: {
+                      title: (items: any) => barDataObj.originalKeys[items[0].dataIndex],
+                      label: (context: any) => `${context.dataset.label}: ${context.raw.toLocaleString()}원`
+                    }
                   }
                 }
-              }
-            }} 
-          />
+              }} 
+            />
+          </div>
+          <CustomLegend />
         </div>
-        <CustomLegend />
       </div>
     </div>
   );
