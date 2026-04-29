@@ -117,9 +117,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   return (
     <div className="grid grid-cols-2 gap-6 mb-8">
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px' }}>
         <h3>Category Group Breakdown</h3>
-        <div style={{ height: '250px', flex: 1 }}>
+        <div style={{ height: '450px', flex: 1 }}>
           <Pie 
             ref={pieRef}
             data={{
@@ -148,12 +148,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         </div>
         <CustomLegend />
       </div>
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
           <h3 style={{ margin: 0 }}>Spending Trend</h3>
           {getCurrentPeriodInfo() && <span style={{ fontSize: '0.9rem', color: '#64748b', fontWeight: 'bold' }}>{getCurrentPeriodInfo()}</span>}
         </div>
-        <div style={{ height: '250px', flex: 1 }}>
+        <div style={{ height: '450px', flex: 1 }}>
           <Bar 
             ref={barRef}
             data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
