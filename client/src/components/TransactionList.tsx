@@ -30,15 +30,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source'>('vendor');
+  const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source' | 'group'>('vendor');
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
 
+  // 카테고리명을 키로, 그룹명을 값으로 가지는 맵 생성
+  const categoryToGroupMap: Record<string, string> = {};
+  categories.forEach(cat => {
+    categoryToGroupMap[cat.name] = cat.groupName || '미분류';
+  });
+
+  const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || '미분류';
+
   const handleBulkUpdate = async () => {
     if (selectedIds.length === 0) return;
-    
     const updates: Partial<Transaction> = {};
     if (bulkCategory) updates.category = bulkCategory;
     if (bulkType) updates.type = bulkType;
@@ -49,20 +56,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
       alert('Please select at least one field to update.');
       return;
     }
-
-    for (const id of selectedIds) {
-      await onUpdate(id, updates);
-    }
-    
-    setBulkCategory('');
-    setBulkType('');
-    setBulkSubcategory('');
-    setBulkMemo('');
-    setSelectedIds([]);
+    for (const id of selectedIds) { await onUpdate(id, updates); }
+    setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkMemo(''); setSelectedIds([]);
   };
 
   const filteredTransactions = transactions.filter(tx => {
-    // 날짜 기간 검색 처리
     if (filterType === 'date') {
       if (!startDate && !endDate) return true;
       const txDate = tx.date;
@@ -73,11 +71,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
-    const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
     
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
-    if (filterType === 'type') return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
+    if (filterType === 'type') {
+        const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
+        return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
+    }
     if (filterType === 'category') return tx.category.toLowerCase().includes(q);
+    if (filterType === 'group') return getGroupName(tx.category).toLowerCase().includes(q);
     if (filterType === 'subcategory') return (tx.subcategory || '').toLowerCase().includes(q);
     if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
     if (filterType === 'source') return (tx.source || '').toLowerCase().includes(q);
@@ -119,7 +120,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
-      {/* 기간 필터링 섹션 (Summary와 동일한 형식) */}
       <div className="flex justify-start items-center gap-2 mb-4">
         <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
           <option value="all">All</option>
@@ -143,85 +143,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
           <div className="flex gap-1 items-center">
             <select value={filterType} onChange={e => setFilterType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
-              <option value="vendor">내용</option>
-              <option value="type">타입</option>
+              <option value="group">상위 그룹</option>
               <option value="category">대분류</option>
               <option value="subcategory">소분류</option>
+              <option value="vendor">내용</option>
+              <option value="type">타입</option>
               <option value="source">결제수단</option>
               <option value="memo">메모</option>
             </select>
             
             {filterType === 'date' ? (
               <div className="flex gap-1 items-center">
-                <input 
-                  type="date" 
-                  value={startDate} 
-                  onChange={e => setStartDate(e.target.value)} 
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setSearchQuery(search);
-                      setCurrentPage(1);
-                    }
-                  }}
-                  className="edit-input" 
-                  style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
-                />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
                 <span>~</span>
-                <input 
-                  type="date" 
-                  value={endDate} 
-                  onChange={e => setEndDate(e.target.value)} 
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      setSearchQuery(search);
-                      setCurrentPage(1);
-                    }
-                  }}
-                  className="edit-input" 
-                  style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
-                />
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
               </div>
             ) : (
-              <input 
-                type="text" 
-                placeholder="검색어..." 
-                value={search} 
-                onChange={e => setSearch(e.target.value)} 
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    setSearchQuery(search);
-                    setCurrentPage(1);
-                  }
-                }}
-                className="edit-input" 
-                style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} 
-              />
+              <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            <button 
-              className="btn btn-secondary" 
-              style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
-              onClick={() => {
-                setSearchQuery(search);
-                setCurrentPage(1); // 검색 시 1페이지로 이동
-              }}
-            >
-              <Search size={16} />
-            </button>
-            <button 
-              className="btn btn-secondary" 
-              style={{ fontSize: '0.8rem', padding: '2px 5px' }} 
-              onClick={() => { 
-                setSearch(''); 
-                setSearchQuery(''); 
-                setStartDate(''); 
-                setEndDate(''); 
-                setCurrentPage(1); 
-                onRefresh(); // 서버 데이터 새로고침 및 정렬 적용
-              }}
-            >
-              <RefreshCw size={16} />
-            </button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }}><RefreshCw size={16} /></button>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
@@ -238,15 +180,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
       {selectedIds.length > 0 && (
         <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
-            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} 
-              onClick={() => {
-                onBulkDelete(selectedIds);
-                setSelectedIds([]); // 삭제 후 선택 목록 비우기
-              }} 
-              title="Delete Selected"
-            >
-                <Trash2 size={16} />
-            </button>
+            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => { onBulkDelete(selectedIds); setSelectedIds([]); }} title="Delete Selected"><Trash2 size={16} /></button>
             <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
             <select value={bulkType} onChange={(e) => setBulkType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '80px' }}>
                 <option value="">타입</option>
@@ -254,44 +188,25 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <option value="income">수입</option>
                 <option value="exclude">미반영</option>
             </select>
-
             <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '110px' }}>
                 <option value="">대분류</option>
                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
             </select>
-
-            <input 
-              type="text" 
-              placeholder="소분류 입력" 
-              value={bulkSubcategory} 
-              onChange={(e) => setBulkSubcategory(e.target.value)} 
-              className="edit-input" 
-              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} 
-            />
-
-            <input 
-              type="text" 
-              placeholder="메모 일괄 입력" 
-              value={bulkMemo} 
-              onChange={(e) => setBulkMemo(e.target.value)} 
-              className="edit-input" 
-              style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} 
-            />
-
-            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes">
-                <ListChecks size={16} className="mr-1" /> 일괄 적용
-            </button>
+            <input type="text" placeholder="소분류 입력" value={bulkSubcategory} onChange={(e) => setBulkSubcategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} />
+            <input type="text" placeholder="메모 일괄 입력" value={bulkMemo} onChange={(e) => setBulkMemo(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} />
+            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes"><ListChecks size={16} className="mr-1" /> 일괄 적용</button>
             <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
         </div>
       )}
 
-      <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}>
+      <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
         <thead>
           <tr>
             <th style={{ width: '30px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
             <th style={{ width: '80px' }}>날짜</th>
             <th style={{ width: '50px' }}>시간</th>
             <th style={{ width: '40px' }}>타입</th>
+            <th style={{ width: '80px' }}>상위 그룹</th>
             <th style={{ width: '90px' }}>대분류</th>
             <th style={{ width: '80px' }}>소분류</th>
             <th style={{ width: '120px' }}>내용</th>
@@ -310,6 +225,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%', fontSize: '11px' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
+                  <td style={{ fontSize: '12px', color: '#64748b' }}>{getGroupName(tx.category)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%', fontSize: '11px' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
@@ -325,6 +241,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ fontSize: '12px' }} title={tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}>
                     {tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}
                   </td>
+                  <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64748b' }} title={getGroupName(tx.category)}>{getGroupName(tx.category)}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.category}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.subcategory}>{tx.subcategory}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
