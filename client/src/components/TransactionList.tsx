@@ -216,11 +216,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
               
               return (
                 <>
-                  <span style={{ color: '#ef4444' }}>
-                    지출 합계 : {expenseTotal.toLocaleString()}원
-                  </span>
                   <span style={{ color: '#10b981' }}>
                     수입 합계 : {incomeTotal.toLocaleString()}원
+                  </span>
+                  <span style={{ color: '#64748b', margin: '0 4px' }}>,</span>
+                  <span style={{ color: '#ef4444' }}>
+                    지출 합계 : {expenseTotal.toLocaleString()}원
                   </span>
                 </>
               );
