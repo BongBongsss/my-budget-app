@@ -63,8 +63,8 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 }
 
 table { width: 100%; border-collapse: collapse; }
-th { text-align: left; padding: 0.5rem; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 13px; }
-td { padding: 0.5rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
+th { text-align: left; padding: 0.35rem; border-bottom: 2px solid #f1f5f9; color: #64748b; font-size: 13px; }
+td { padding: 0.35rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .income { color: #166534; font-weight: 600; }
 .expense { color: #991b1b; font-weight: 600; }
