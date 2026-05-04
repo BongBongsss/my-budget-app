@@ -205,7 +205,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </div>
         {searchQuery && (
           <div className="font-bold text-sm text-blue-600">
-            Search Total : {filteredTransactions.reduce((sum, t) => sum + t.amount, 0).toLocaleString()}
+            Search Total (Excl. 미반영) : {filteredTransactions
+              .filter(t => t.type !== 'exclude')
+              .reduce((sum, t) => sum + (t.type === 'expense' ? -t.amount : t.amount), 0)
+              .toLocaleString()}원
           </div>
         )}
       </div>
