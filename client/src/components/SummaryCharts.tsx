@@ -54,12 +54,19 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return "All Time";
   };
 
+  // 범례 호버 핸들러 (원형/막대 차트 모두 연동)
   const handleLegendHover = (group: string | null) => {
     setHoveredGroup(group);
+    
+    // 원형 차트 연동
     const index = group ? activeGroups.indexOf(group) : -1;
     if (pieRef.current && index >= 0) pieRef.current.setActiveElements([{ datasetIndex: 0, index }]);
     else if (pieRef.current) pieRef.current.setActiveElements([]);
-    if (barRef.current) barRef.current.update();
+    
+    // 막대 차트 연동 (데이터셋 하이라이트)
+    if (barRef.current) {
+        barRef.current.update(); // 색상 변경 로직 적용을 위해 업데이트 트리거
+    }
   };
 
   const BarLegend = () => (
@@ -84,7 +91,6 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     }, {});
 
     const sortedKeys = Object.keys(grouped).sort();
-    
     const labels = sortedKeys.map(key => {
         if (period === 'all') return key + '년';
         if (period === 'year') return key.substring(5, 7) + '월';
@@ -94,19 +100,28 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     return {
       labels,
       originalKeys: sortedKeys,
-      datasets: activeGroups.map(group => ({
-        label: group,
-        backgroundColor: groupColorMap[group],
-        data: sortedKeys.map(key => {
-          return filteredData.filter(t => {
-              let tKey;
-              if (period === 'all') tKey = t.date.substring(0, 4);
-              else if (period === 'year') tKey = t.date.substring(0, 7);
-              else tKey = t.date;
-              return tKey === key && getGroupName(t.category) === group;
-          }).reduce((sum, t) => sum + t.amount, 0);
-        })
-      }))
+      datasets: activeGroups.map(group => {
+        const baseColor = groupColorMap[group];
+        // 하이라이트 로직: 아무것도 호버되지 않았을 때는 기본색, 특정 항목 호버 시에는 해당 항목만 진하게, 나머지는 투명하게
+        const isSelected = hoveredGroup === group;
+        const noHover = hoveredGroup === null;
+        
+        return {
+          label: group,
+          backgroundColor: noHover || isSelected ? baseColor : `${baseColor}33`, // 33은 약 20% 투명도
+          borderWidth: isSelected ? 1 : 0,
+          borderColor: '#333',
+          data: sortedKeys.map(key => {
+            return filteredData.filter(t => {
+                let tKey;
+                if (period === 'all') tKey = t.date.substring(0, 4);
+                else if (period === 'year') tKey = t.date.substring(0, 7);
+                else tKey = t.date;
+                return tKey === key && getGroupName(t.category) === group;
+            }).reduce((sum, t) => sum + t.amount, 0);
+          })
+        };
+      })
     };
   };
 
@@ -140,8 +155,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
               options={{ 
                 maintainAspectRatio: false,
-                radius: '95%', // 차트 크기 큼직하게 복구
-                layout: { padding: { left: 45, right: 45, top: 45, bottom: 45 } }, // 캔버스 내부 여백 충분히 확보
+                radius: '95%',
+                layout: { padding: { left: 45, right: 45, top: 45, bottom: 45 } },
                 plugins: {
                   legend: { display: false },
                   tooltip: { enabled: true },
@@ -152,7 +167,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                       return `${label}\n${percentage}%`;
                     },
                     color: '#000',
-                    font: { weight: 'bold', size: 12 }, // 10px -> 12px 확대
+                    font: { weight: 'bold', size: 12 },
                     textAlign: 'center',
                     textStrokeColor: '#fff',
                     textStrokeWidth: 2,
@@ -161,7 +176,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     offset: (ctx) => {
                         const value = ctx.dataset.data[ctx.dataIndex] as number;
                         const percentage = (value / totalAmount) * 100;
-                        return percentage >= 8 ? 30 : -45; // 글씨가 커진 만큼 오프셋 조정
+                        return percentage >= 8 ? 30 : -45;
                     },
                     display: 'auto'
                   }
@@ -182,6 +197,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               data={{ labels: barDataObj.labels, datasets: barDataObj.datasets }} 
               options={{ 
                 maintainAspectRatio: false, 
+                animation: { duration: 200 }, // 하이라이트 반응 속도 향상
                 scales: { 
                   x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
                   y: { 
