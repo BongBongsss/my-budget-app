@@ -204,19 +204,25 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </select>
         </div>
         {searchQuery && (
-          <div className="font-bold text-sm">
+          <div className="font-bold text-sm flex gap-4">
             {(() => {
-              const netAmount = filteredTransactions
-                .filter(t => t.type !== 'exclude')
-                .reduce((sum, t) => sum + (t.type === 'expense' ? -t.amount : t.amount), 0);
+              const incomeTotal = filteredTransactions
+                .filter(t => t.type === 'income')
+                .reduce((sum, t) => sum + t.amount, 0);
               
-              const isExpenseGreater = netAmount < 0;
+              const expenseTotal = filteredTransactions
+                .filter(t => t.type === 'expense')
+                .reduce((sum, t) => sum + t.amount, 0);
               
               return (
-                <span style={{ color: isExpenseGreater ? '#ef4444' : '#10b981' }}>
-                  Search Total : {Math.abs(netAmount).toLocaleString()}원 
-                  {isExpenseGreater ? ' (지출 합계)' : ' (수입 합계)'}
-                </span>
+                <>
+                  <span style={{ color: '#ef4444' }}>
+                    지출 합계 : {expenseTotal.toLocaleString()}원
+                  </span>
+                  <span style={{ color: '#10b981' }}>
+                    수입 합계 : {incomeTotal.toLocaleString()}원
+                  </span>
+                </>
               );
             })()}
           </div>
