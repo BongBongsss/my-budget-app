@@ -30,19 +30,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-  const [filterType, setFilterType] = useState<'vendor' | 'date' | 'type' | 'category' | 'subcategory' | 'memo' | 'source' | 'group'>('vendor');
+  const [filterType, setFilterType] = useState<'date' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'source' | 'memo'>('date');
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
 
-  // 카테고리명을 키로, 그룹명을 값으로 가지는 맵 생성
   const categoryToGroupMap: Record<string, string> = {};
   categories.forEach(cat => {
     categoryToGroupMap[cat.name] = cat.groupName || '미분류';
   });
 
   const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || '미분류';
+
+  // 검색을 위한 고유값 리스트 추출
+  const uniqueValues = {
+    types: Array.from(new Set(transactions.map(t => t.type === 'expense' ? '지출' : t.type === 'income' ? '수입' : '미반영'))),
+    groups: Array.from(new Set(transactions.map(t => getGroupName(t.category)))).sort(),
+    categories: Array.from(new Set(transactions.map(t => t.category))).sort(),
+    subcategories: Array.from(new Set(transactions.map(t => t.subcategory || '').filter(Boolean))).sort(),
+    sources: Array.from(new Set(transactions.map(t => t.source || '').filter(Boolean))).sort(),
+  };
 
   const handleBulkUpdate = async () => {
     if (selectedIds.length === 0) return;
@@ -73,15 +81,18 @@ const TransactionList: React.FC<TransactionListProps> = ({
     const q = searchQuery.toLowerCase();
     
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
+    if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
+    
+    // 선택형 필터링 (정확히 일치 검색)
     if (filterType === 'type') {
         const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
-        return typeLabel.includes(q) || tx.type.toLowerCase().includes(q);
+        return typeLabel === searchQuery;
     }
-    if (filterType === 'category') return tx.category.toLowerCase().includes(q);
-    if (filterType === 'group') return getGroupName(tx.category).toLowerCase().includes(q);
-    if (filterType === 'subcategory') return (tx.subcategory || '').toLowerCase().includes(q);
-    if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
-    if (filterType === 'source') return (tx.source || '').toLowerCase().includes(q);
+    if (filterType === 'category') return tx.category === searchQuery;
+    if (filterType === 'group') return getGroupName(tx.category) === searchQuery;
+    if (filterType === 'subcategory') return (tx.subcategory || '') === searchQuery;
+    if (filterType === 'source') return (tx.source || '') === searchQuery;
+    
     return false;
   });
 
@@ -141,29 +152,50 @@ const TransactionList: React.FC<TransactionListProps> = ({
       <div className="list-actions mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">
-            <select value={filterType} onChange={e => setFilterType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
+            {/* 요청 사항: 검색 조건을 리스트 열 순서와 일치시킴 */}
+            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
+              <option value="type">타입</option>
               <option value="group">상위 그룹</option>
               <option value="category">대분류</option>
               <option value="subcategory">소분류</option>
               <option value="vendor">내용</option>
-              <option value="type">타입</option>
               <option value="source">결제수단</option>
               <option value="memo">메모</option>
             </select>
             
             {filterType === 'date' ? (
               <div className="flex gap-1 items-center">
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
                 <span>~</span>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
               </div>
+            ) : ['type', 'group', 'category', 'subcategory', 'source'].includes(filterType) ? (
+              /* 요청 사항: 선택형 검색 (드롭다운) 제공 */
+              <select 
+                value={search} 
+                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCurrentPage(1); }} 
+                className="edit-input" 
+                style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }}
+              >
+                <option value="">항목 선택...</option>
+                {filterType === 'type' && uniqueValues.types.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'group' && uniqueValues.groups.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'category' && uniqueValues.categories.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'subcategory' && uniqueValues.subcategories.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'source' && uniqueValues.sources.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
             ) : (
+              /* 내용, 메모는 타이핑 검색 유지 */
               <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }}><RefreshCw size={16} /></button>
+            {/* 타이핑 검색 시에만 검색 버튼 활성화 느낌으로 유지 */}
+            {!['date', 'type', 'group', 'category', 'subcategory', 'source'].includes(filterType) && (
+              <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+            )}
+            
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
