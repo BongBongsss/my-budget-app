@@ -55,6 +55,7 @@ app.use(session({
 declare module 'express-session' {
   interface SessionData {
     authenticated: boolean;
+    role: 'admin' | 'viewer';
   }
 }
 
