@@ -7,7 +7,7 @@ interface LoginProps {
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState<'admin' | 'viewer'>('admin');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,15 +34,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label className="flex items-center gap-1"><User size={14}/> User ID</label>
-            <input
-              type="text"
-              placeholder="아이디를 입력하세요"
+            <select
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => setUsername(e.target.value as 'admin' | 'viewer')}
               className="login-input"
-              autoFocus
               required
-            />
+            >
+              <option value="admin">Admin (관리자)</option>
+              <option value="viewer">Viewer (조회용)</option>
+            </select>
           </div>
           <div className="form-group">
             <label className="flex items-center gap-1"><Lock size={14}/> Password</label>
