@@ -75,17 +75,28 @@ if (!process.env.ADMIN_PASSWORD) {
 let currentPassword = process.env.ADMIN_PASSWORD;
 
 app.post('/api/login', (req, res) => {
-  const { password } = req.body;
-  
-  // 디버깅용 로그 (나중에 삭제 권장)
-  console.log(`Login attempt: Password provided? ${!!password}, Matches? ${password === currentPassword}`);
+  const { username, password } = req.body;
+  const VIEWER_PASSWORD = 'viewer123';
 
-  if (password === currentPassword) {
+  if (username === 'admin' && password === currentPassword) {
     req.session.authenticated = true;
-    res.json({ success: true });
+    req.session.role = 'admin';
+    res.json({ success: true, role: 'admin' });
+  } else if (username === 'viewer' && password === VIEWER_PASSWORD) {
+    req.session.authenticated = true;
+    req.session.role = 'viewer';
+    res.json({ success: true, role: 'viewer' });
   } else {
-    res.status(401).json({ error: 'Invalid password' });
+    res.status(401).json({ error: 'Invalid ID or Password' });
   }
+});
+
+app.get('/api/auth-status', (req, res) => {
+    if (req.session.authenticated) {
+        res.json({ isAuthenticated: true, role: req.session.role || 'viewer' });
+    } else {
+        res.status(401).json({ isAuthenticated: false });
+    }
 });
 
 app.post('/api/logout', (req, res) => {

@@ -1,21 +1,22 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { Wallet } from 'lucide-react';
+import { Wallet, User, Lock } from 'lucide-react';
 
 interface LoginProps {
-  onLogin: () => void;
+  onLogin: (role: 'admin' | 'viewer') => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await axios.post('https://my-budget-app-nwm8.onrender.com/api/login', { password });
-      onLogin();
+      const res = await axios.post('https://my-budget-app-nwm8.onrender.com/api/login', { username, password });
+      onLogin(res.data.role);
     } catch (err) {
-      alert('비밀번호가 틀렸습니다.');
+      alert('아이디 또는 비밀번호가 틀렸습니다.');
     }
   };
 
@@ -32,14 +33,25 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
-            <label>Master Password</label>
+            <label className="flex items-center gap-1"><User size={14}/> User ID</label>
+            <input
+              type="text"
+              placeholder="아이디를 입력하세요"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              className="login-input"
+              autoFocus
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="flex items-center gap-1"><Lock size={14}/> Password</label>
             <input
               type="password"
               placeholder="비밀번호를 입력하세요"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="login-input"
-              autoFocus
               required
             />
           </div>

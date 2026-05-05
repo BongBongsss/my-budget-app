@@ -15,11 +15,12 @@ interface TransactionListProps {
   setYear: (y: number) => void;
   month: number;
   setMonth: (m: number) => void;
+  isAdmin?: boolean;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onRefresh,
-  period, setPeriod, year, setYear, month, setMonth
+  period, setPeriod, year, setYear, month, setMonth, isAdmin = true
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
