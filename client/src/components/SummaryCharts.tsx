@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -39,7 +39,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   // 공통 데이터 처리 로직
   const getProcessedData = (type: 'income' | 'expense') => {
     const filtered = transactions.filter(t => t.type === type);
-    const categoryData = filtered.reduce((acc: any, t) => {
+    const categoryData = filtered.reduce((acc: any, t: Transaction) => {
       const groupName = getGroupName(t.category);
       acc[groupName] = (acc[groupName] || 0) + t.amount;
       return acc;
@@ -49,7 +49,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       .filter(group => categoryData[group] > 0)
       .sort((a, b) => categoryData[b] - categoryData[a]);
 
-    const totalAmount = activeGroups.reduce((sum, group) => sum + categoryData[group], 0);
+    const totalAmount = activeGroups.reduce((sum: number, group: string) => sum + categoryData[group], 0);
 
     const palette = type === 'income' ? INCOME_PALETTE : EXPENSE_PALETTE;
     const groupColorMap: Record<string, string> = {};
@@ -62,7 +62,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const expenseData = getProcessedData('expense');
 
   const getBarData = (type: 'income' | 'expense', processed: any) => {
-    const grouped = processed.filtered.reduce((acc: any, t) => {
+    const grouped = processed.filtered.reduce((acc: any, t: Transaction) => {
       let key;
       if (period === 'all') key = t.date.substring(0, 4);
       else if (period === 'year') key = t.date.substring(0, 7);
@@ -175,7 +175,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 plugins: {
                   legend: { display: false },
                   datalabels: {
-                    formatter: (value, ctx) => {
+                    formatter: (value: any, ctx: any) => {
                       const label = ctx.chart.data.labels?.[ctx.dataIndex];
                       const percentage = ((value / incomeData.totalAmount) * 100).toFixed(1);
                       return `${label}\n${percentage}%`;
@@ -183,7 +183,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     color: '#000', font: { weight: 'bold', size: 12 }, textAlign: 'center',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     anchor: 'end', align: 'start',
-                    offset: (ctx) => ((ctx.dataset.data[ctx.dataIndex] as number / incomeData.totalAmount) * 100) >= 8 ? 30 : -45,
+                    offset: (ctx: any) => ((ctx.dataset.data[ctx.dataIndex] as number / incomeData.totalAmount) * 100) >= 8 ? 30 : -45,
                     display: 'auto'
                   }
                 }
@@ -256,7 +256,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 plugins: {
                   legend: { display: false },
                   datalabels: {
-                    formatter: (value, ctx) => {
+                    formatter: (value: any, ctx: any) => {
                       const label = ctx.chart.data.labels?.[ctx.dataIndex];
                       const percentage = ((value / expenseData.totalAmount) * 100).toFixed(1);
                       return `${label}\n${percentage}%`;
@@ -264,7 +264,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     color: '#000', font: { weight: 'bold', size: 12 }, textAlign: 'center',
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     anchor: 'end', align: 'start',
-                    offset: (ctx) => ((ctx.dataset.data[ctx.dataIndex] as number / expenseData.totalAmount) * 100) >= 8 ? 30 : -45,
+                    offset: (ctx: any) => ((ctx.dataset.data[ctx.dataIndex] as number / expenseData.totalAmount) * 100) >= 8 ? 30 : -45,
                     display: 'auto'
                   }
                 }
