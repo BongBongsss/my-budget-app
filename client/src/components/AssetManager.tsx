@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
@@ -11,7 +11,8 @@ const AssetManager: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'default'>('default');
+  const originalAssets = useRef<Asset[]>([]);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
     name: '', type: 'bank', balance: 0, memo: ''
@@ -21,6 +22,7 @@ const AssetManager: React.FC = () => {
     try {
       const [res, histRes] = await Promise.all([getAssets(), getAssetHistory()]);
       setAssets(res.data);
+      originalAssets.current = res.data;
       setHistory(histRes.data);
     } catch (err) { console.error(err); }
   };
@@ -28,14 +30,23 @@ const AssetManager: React.FC = () => {
   useEffect(() => { fetchData(); }, []);
 
   const handleSort = () => {
-    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortOrder(newOrder);
-    const sorted = [...assets].sort((a, b) => {
-      const typeA = assetTypeMap[a.type] || a.type;
-      const typeB = assetTypeMap[b.type] || b.type;
-      return newOrder === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
-    });
-    setAssets(sorted);
+    let nextOrder: 'asc' | 'desc' | 'default';
+    if (sortOrder === 'default') nextOrder = 'asc';
+    else if (sortOrder === 'asc') nextOrder = 'desc';
+    else nextOrder = 'default';
+
+    setSortOrder(nextOrder);
+
+    if (nextOrder === 'default') {
+        setAssets(originalAssets.current);
+    } else {
+        const sorted = [...assets].sort((a, b) => {
+            const typeA = assetTypeMap[a.type] || a.type;
+            const typeB = assetTypeMap[b.type] || b.type;
+            return nextOrder === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
+        });
+        setAssets(sorted);
+    }
   };
 
   const handleAdd = async () => {
@@ -218,7 +229,7 @@ const AssetManager: React.FC = () => {
             <thead>
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
-                <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : '▼'}</th>
+                <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : sortOrder === 'desc' ? '▼' : '↕'}</th>
                 <th className="p-3 text-center border-b">잔액</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
@@ -248,7 +259,7 @@ const AssetManager: React.FC = () => {
                     </td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
-                    <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : asset.memo}</td>
+                    <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : editForm.memo || asset.memo}</td>
                     <td className="p-3 border-b">
                       <div className="flex justify-start gap-1">
                       {editingId === asset.id ? (
