@@ -207,7 +207,7 @@ const AssetManager: React.FC = () => {
                   plugins: {
                     legend: { 
                       position: 'right', 
-                      labels: { boxWidth: 12, font: { size: 12, weight: '600' }, padding: 15 } 
+                      labels: { boxWidth: 12, font: { size: 12, weight: 'bold' }, padding: 15 } 
                     },
                     datalabels: {
                       formatter: (value: any, ctx: any) => {
