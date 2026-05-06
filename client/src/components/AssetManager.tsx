@@ -98,8 +98,10 @@ const AssetManager: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-2 gap-6 items-start mb-8">
-        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
-            <h3 className="text-lg font-bold mb-6">자산 구성비</h3>
+        <div className="card-form shadow-md p-4" style={{ minHeight: '400px' }}>
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 구성비</h3>
+            </div>
             <div style={{ height: '300px', width: '100%' }}>
                 <Pie 
                     data={chartData} 
@@ -129,9 +131,9 @@ const AssetManager: React.FC = () => {
             </div>
         </div>
 
-        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">자산 변화 추이</h3>
+        <div className="card-form shadow-md p-4" style={{ minHeight: '400px' }}>
+            <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 변화 추이</h3>
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
             <div style={{ height: '300px', width: '100%' }}>
