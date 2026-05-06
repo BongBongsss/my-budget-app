@@ -50,6 +50,7 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 .income .icon { background: #dcfce7; color: #166534; }
 .expense .icon { background: #fee2e2; color: #991b1b; }
 .balance .icon { background: #e0f2fe; color: #075985; }
+.assets .icon { background: #fef3c7; color: #92400e; }
 
 .card-summary .details span { font-size: 0.875rem; color: #64748b; }
 .card-summary .details h2 { margin: 0; font-size: 1.5rem; }
@@ -250,6 +251,49 @@ td { padding: 0.35rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .btn-primary { background: #3b82f6; color: white; }
 .btn-secondary { background: #e2e8f0; color: #475569; }
+
+/* Main Navigation Styles */
+.main-nav {
+  background: white;
+  padding: 4px;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background: #f1f5f9;
+  color: #3b82f6;
+}
+
+.nav-item.active {
+  background: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.2);
+}
+
+/* Animations */
+.animate-fadeIn {
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .btn-icon {
   background: none;

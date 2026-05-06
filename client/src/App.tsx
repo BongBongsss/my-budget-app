@@ -1,24 +1,28 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
-import { getTransactions, getCategories, Transaction, CategoryItem, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, verifyTransactions } from './api';
+import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, verifyTransactions } from './api';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
 import SummaryCharts from './components/SummaryCharts';
 import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
+import AssetManager from './components/AssetManager';
 import Login from './components/Login';
 import './index.css';
-import { Settings, Upload, LogOut } from 'lucide-react';
+import { Settings, Upload, LogOut, BarChart3, Wallet } from 'lucide-react';
 
 axios.defaults.withCredentials = true;
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
+  const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'card' | 'transfer' | 'unclassified'>('all');
+  const [currentView, setCurrentView] = useState<'budget' | 'assets'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
+  // ... (rest of state)
+
   
   const [lastDeleted, setLastDeleted] = useState<Transaction[] | null>(null);
   const [showUndo, setShowUndo] = useState(false);
@@ -38,9 +42,14 @@ function App() {
       setIsAuthenticated(true);
 
       // 2. 데이터 조회
-      const [txRes, catRes] = await Promise.all([getTransactions(), getCategories()]);
+      const [txRes, catRes, assetRes] = await Promise.all([
+        getTransactions(),
+        getCategories(),
+        getAssets()
+      ]);
       setTransactions(txRes.data);
       setCategories(catRes.data);
+      setAssets(assetRes.data);
     } catch (err: any) {
       if (err.response && err.response.status === 401) {
         setIsAuthenticated(false);
@@ -171,8 +180,24 @@ function App() {
 
   return (
     <div className="container">
-      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1>Smart Budget Manager</h1>
+      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          <h1 style={{ margin: 0 }}>Smart Budget</h1>
+          <nav className="main-nav" style={{ display: 'flex', gap: '10px' }}>
+            <button 
+              className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
+              onClick={() => setCurrentView('budget')}
+            >
+              <BarChart3 size={18} /> 가계부 관리
+            </button>
+            <button 
+              className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
+              onClick={() => setCurrentView('assets')}
+            >
+              <Wallet size={18} /> 자산 관리
+            </button>
+          </nav>
+        </div>
         <div style={{ display: 'flex', gap: '10px' }}>
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
@@ -195,64 +220,72 @@ function App() {
         </div>
       </header>
 
-      <Summary 
-        transactions={allVerifiedForPeriod} 
-        period={period} setPeriod={setPeriod} 
-        year={year} setYear={setYear} 
-        month={month} setMonth={setMonth} 
-      />
-      <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
-      
-      {/* Admin 전용 폼: 데이터 추가 */}
-      {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
-      
-      <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-        {unverifiedCount > 0 && userRole === 'admin' && (
-          <button 
-            className={activeTab === 'new' ? 'btn btn-primary' : 'btn btn-danger'} 
-            onClick={() => setActiveTab('new')}
-            style={{ marginRight: '10px' }}
-          >
-            신규 내역 ({unverifiedCount})
-          </button>
-        )}
-        <div style={{ borderLeft: unverifiedCount > 0 && userRole === 'admin' ? '2px solid #ddd' : 'none', paddingLeft: unverifiedCount > 0 && userRole === 'admin' ? '10px' : '0', display: 'flex' }}>
-          <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
-          <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
-          <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
-          <button className={activeTab === 'unclassified' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('unclassified')} style={{ marginLeft: '10px' }}>미분류</button>
-        </div>
-        
-        {activeTab === 'new' && userRole === 'admin' && filteredTransactions.length > 0 && (
-          <button 
-            className="btn btn-primary" 
-            style={{ marginLeft: 'auto', backgroundColor: '#16a34a' }}
-            onClick={() => {
-              if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
-                handleVerify(filteredTransactions.map(t => t.id!));
-              }
-            }}
-          >
-            모두 승인하기
-          </button>
-        )}
-      </div>
+      {currentView === 'budget' ? (
+        <div className="view-budget animate-fadeIn">
+          <Summary 
+            transactions={allVerifiedForPeriod} 
+            assets={assets}
+            period={period} setPeriod={setPeriod} 
+            year={year} setYear={setYear} 
+            month={month} setMonth={setMonth} 
+          />
+          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
+          
+          {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
+          
+          <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+            {unverifiedCount > 0 && userRole === 'admin' && (
+              <button 
+                className={activeTab === 'new' ? 'btn btn-primary' : 'btn btn-danger'} 
+                onClick={() => setActiveTab('new')}
+                style={{ marginRight: '10px' }}
+              >
+                신규 내역 ({unverifiedCount})
+              </button>
+            )}
+            <div style={{ borderLeft: unverifiedCount > 0 && userRole === 'admin' ? '2px solid #ddd' : 'none', paddingLeft: unverifiedCount > 0 && userRole === 'admin' ? '10px' : '0', display: 'flex' }}>
+              <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
+              <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
+              <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
+              <button className={activeTab === 'unclassified' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('unclassified')} style={{ marginLeft: '10px' }}>미분류</button>
+            </div>
+            
+            {activeTab === 'new' && userRole === 'admin' && filteredTransactions.length > 0 && (
+              <button 
+                className="btn btn-primary" 
+                style={{ marginLeft: 'auto', backgroundColor: '#16a34a' }}
+                onClick={() => {
+                  if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
+                    handleVerify(filteredTransactions.map(t => t.id!));
+                  }
+                }}
+              >
+                모두 승인하기
+              </button>
+            )}
+          </div>
 
-      <TransactionList 
-        transactions={filteredTransactions} 
-        categories={categories}
-        onDelete={handleDelete} 
-        onBulkDelete={handleBulkDelete}
-        onUpdate={handleUpdate}
-        onRefresh={fetchData}
-        period={period}
-        setPeriod={setPeriod}
-        year={year}
-        setYear={setYear}
-        month={month}
-        setMonth={setMonth}
-        isAdmin={userRole === 'admin'} // 리스트 내부의 수정 버튼 제어를 위해 전달
-      />
+          <TransactionList 
+            transactions={filteredTransactions} 
+            categories={categories}
+            onDelete={handleDelete} 
+            onBulkDelete={handleBulkDelete}
+            onUpdate={handleUpdate}
+            onRefresh={fetchData}
+            period={period}
+            setPeriod={setPeriod}
+            year={year}
+            setYear={setYear}
+            month={month}
+            setMonth={setMonth}
+            isAdmin={userRole === 'admin'}
+          />
+        </div>
+      ) : (
+        <div className="view-assets animate-fadeIn">
+          <AssetManager />
+        </div>
+      )}
 
       <SettingsModal
         isOpen={isSettingsModalOpen}

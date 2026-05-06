@@ -63,3 +63,12 @@ model RecurringTransaction {
   type         String @default("expense")
   day_of_month Int
 }
+
+model Asset {
+  id        String   @id
+  name      String   @unique
+  type      String   // 'cash', 'bank', 'stock', 'realestate', 'liability', etc.
+  balance   Float    @default(0)
+  memo      String?
+  updatedAt DateTime @updatedAt
+}

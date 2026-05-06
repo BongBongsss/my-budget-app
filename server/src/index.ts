@@ -8,6 +8,7 @@ import ruleRoutes from './routes/ruleRoutes';
 import categoryRoutes from './routes/categoryRoutes';
 import recurringRoutes from './routes/recurringRoutes';
 import paymentRoutes from './routes/paymentRoutes';
+import assetRoutes from './routes/assetRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
@@ -134,6 +135,7 @@ app.use('/api/categories', categoryRoutes);
 app.use('/api/recurring', recurringRoutes);
 app.use('/api/payment-rules', paymentRoutes);
 app.use('/api/transactions', transactionRoutes);
+app.use('/api/assets', assetRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Budget Automation API is running' });

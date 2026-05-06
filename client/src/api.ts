@@ -64,6 +64,15 @@ export interface RecurringTransaction {
   day_of_month: number;
 }
 
+export interface Asset {
+  id?: string;
+  name: string;
+  type: 'cash' | 'bank' | 'stock' | 'realestate' | 'liability' | 'other';
+  balance: number;
+  memo?: string;
+  updatedAt?: string;
+}
+
 // ... 기존 API 코드 ...
 
 export interface PaymentRule {
@@ -88,3 +97,8 @@ export const deleteCategory = (id: string) => axios.delete(`${API_BASE}/categori
 export const getRecurring = () => axios.get<RecurringTransaction[]>(`${API_BASE}/recurring`);
 export const addRecurring = (rec: Partial<RecurringTransaction>) => axios.post<RecurringTransaction>(`${API_BASE}/recurring`, rec);
 export const deleteRecurring = (id: string) => axios.delete(`${API_BASE}/recurring/${id}`);
+
+export const getAssets = () => axios.get<Asset[]>(`${API_BASE}/assets`);
+export const addAsset = (asset: Partial<Asset>) => axios.post<Asset>(`${API_BASE}/assets`, asset);
+export const updateAsset = (id: string, asset: Partial<Asset>) => axios.put<Asset>(`${API_BASE}/assets/${id}`, asset);
+export const deleteAsset = (id: string) => axios.delete(`${API_BASE}/assets/${id}`);
