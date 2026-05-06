@@ -56,9 +56,9 @@ const AssetManager: React.FC = () => {
   const netAssets = totalAssets - totalLiabilities;
 
   const assetTypeMap: Record<string, string> = {
-    bank: '🏦 예적금', cash: '💵 현금', stock: '📈 주식', 
-    realestate: '🏠 부동산', pension: '💰 연금', insurance: '🛡️ 보험',
-    liability: '💳 부채', other: '📦 기타'
+    bank: '예적금', cash: '현금', stock: '주식', 
+    realestate: '부동산', pension: '연금', insurance: '보험',
+    liability: '부채', other: '기타'
   };
 
   const groupedAssets = assets.reduce((acc, a) => {
@@ -112,8 +112,7 @@ const AssetManager: React.FC = () => {
                             datalabels: {
                                 formatter: (value: any, ctx: any) => {
                                     const label = ctx.chart.data.labels?.[ctx.dataIndex];
-                                    const cleanLabel = (label as string).replace(/[🏦💵📈🏠💳📦]/g, '');
-                                    return `${cleanLabel}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
+                                    return `${label}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
                                 },
                                 color: '#333', font: { weight: 'bold', size: 10 }
                             }
@@ -125,7 +124,7 @@ const AssetManager: React.FC = () => {
                 {sortedGroupedEntries.map(([type], index) => (
                     <div key={type} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
-                        {type.replace(/[🏦💵📈🏠💳📦💰🛡️]/g, '')}
+                        {type}
                     </div>
                 ))}
             </div>
@@ -216,7 +215,7 @@ const AssetManager: React.FC = () => {
                           <option value="bank">예적금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
                         </select>
                       ) : (
-                        (assetTypeMap[asset.type] || asset.type).replace(/[🏦💵📈🏠💳📦💰🛡️]/g, '')
+                        (assetTypeMap[asset.type] || asset.type)
                       )}
                     </td>
                     <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>
