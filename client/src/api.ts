@@ -99,6 +99,7 @@ export const addRecurring = (rec: Partial<RecurringTransaction>) => axios.post<R
 export const deleteRecurring = (id: string) => axios.delete(`${API_BASE}/recurring/${id}`);
 
 export const getAssets = () => axios.get<Asset[]>(`${API_BASE}/assets`);
+export const getAssetHistory = () => axios.get<any[]>(`${API_BASE}/assets/history`);
 export const addAsset = (asset: Partial<Asset>) => axios.post<Asset>(`${API_BASE}/assets`, asset);
 export const updateAsset = (id: string, asset: Partial<Asset>) => axios.put<Asset>(`${API_BASE}/assets/${id}`, asset);
 export const deleteAsset = (id: string) => axios.delete(`${API_BASE}/assets/${id}`);

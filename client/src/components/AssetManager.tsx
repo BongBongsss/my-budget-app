@@ -1,47 +1,49 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard, PieChart as PieIcon, BarChart3 } from 'lucide-react';
-import { getAssets, addAsset, updateAsset, deleteAsset, Asset } from '../api';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
-import { Pie, Bar } from 'react-chartjs-2';
+import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, Asset } from '../api';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
+import { Pie, Bar, Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
-ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, Title);
+ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
 
 const AssetManager: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
-  const [viewMode, setViewMode] = useState<'pie' | 'bar'>('pie');
+  const [history, setHistory] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'line'>('pie');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
     name: '', type: 'bank', balance: 0, memo: ''
   });
 
-  const fetchAssets = async () => {
+  const fetchData = async () => {
     try {
-      const res = await getAssets();
+      const [res, histRes] = await Promise.all([getAssets(), getAssetHistory()]);
       setAssets(res.data);
+      setHistory(histRes.data);
     } catch (err) { console.error(err); }
   };
 
-  useEffect(() => { fetchAssets(); }, []);
+  useEffect(() => { fetchData(); }, []);
 
   const handleAdd = async () => {
     if (!newAsset.name) return;
     await addAsset(newAsset);
     setNewAsset({ name: '', type: 'bank', balance: 0, memo: '' });
-    fetchAssets();
+    fetchData();
   };
 
   const handleUpdate = async (id: string) => {
     await updateAsset(id, editForm);
     setEditingId(null);
-    fetchAssets();
+    fetchData();
   };
 
   const handleDelete = async (id: string) => {
     if (confirm('삭제하시겠습니까?')) {
       await deleteAsset(id);
-      fetchAssets();
+      fetchData();
     }
   };
 
@@ -79,6 +81,15 @@ const AssetManager: React.FC = () => {
     }]
   };
 
+  const lineData = {
+    labels: history.map(h => h.yearMonth),
+    datasets: [
+        { label: '총 자산', data: history.map(h => h.totalAssets), borderColor: '#10b981', tension: 0.1 },
+        { label: '총 부채', data: history.map(h => h.totalLiabilities), borderColor: '#ef4444', tension: 0.1 },
+        { label: '순자산', data: history.map(h => h.netAssets), borderColor: '#3b82f6', tension: 0.1 }
+    ]
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="grid grid-cols-3 gap-6 mb-8">
@@ -104,6 +115,12 @@ const AssetManager: React.FC = () => {
                     >
                         <BarChart3 size={16} color={viewMode === 'bar' ? '#3b82f6' : '#64748b'} />
                     </button>
+                    <button 
+                        onClick={() => setViewMode('line')}
+                        className={`p-1.5 rounded-md border ${viewMode === 'line' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
+                    >
+                        <TrendingUp size={16} color={viewMode === 'line' ? '#3b82f6' : '#64748b'} />
+                    </button>
                 </div>
             </div>
 
@@ -126,7 +143,7 @@ const AssetManager: React.FC = () => {
                             }
                         }} 
                     />
-                ) : (
+                ) : viewMode === 'bar' ? (
                     <Bar 
                         data={barData} 
                         options={{ 
@@ -135,6 +152,8 @@ const AssetManager: React.FC = () => {
                             scales: { y: { beginAtZero: true } }
                         }} 
                     />
+                ) : (
+                    <Line data={lineData} options={{ maintainAspectRatio: false, plugins: { legend: { display: true } } }} />
                 )}
             </div>
             

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import * as assetService from '../services/assetService';
+import prisma from '../db';
 
 const router = Router();
 
@@ -7,6 +8,17 @@ router.get('/', async (req, res) => {
   try {
     const assets = await assetService.getAllAssets();
     res.json(assets);
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/history', async (req, res) => {
+  try {
+    const history = await prisma.assetHistory.findMany({
+      orderBy: { yearMonth: 'asc' },
+    });
+    res.json(history);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
