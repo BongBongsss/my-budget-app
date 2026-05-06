@@ -197,10 +197,11 @@ const AssetManager: React.FC = () => {
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
-                <th className="p-3 text-right border-b">관리</th>
+                <th className="p-3 text-center border-b" style={{ width: '100px' }}>관리</th>
                 </tr>
-                </thead>            <tbody>
-              {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
+                </thead>
+                <tbody>
+                {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{(assetTypeMap[asset.type] || asset.type).replace(/[🏦💵📈🏠💳📦]/g, '')}</td>
@@ -208,7 +209,7 @@ const AssetManager: React.FC = () => {
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : asset.memo}</td>
-                    <td className="p-3 border-b">
+                    <td className="p-3 border-b text-center">
                       <div className="flex justify-center gap-1">
                       {editingId === asset.id ? (
                         <>
@@ -225,7 +226,7 @@ const AssetManager: React.FC = () => {
                     </td>
                   </tr>
                 ))}
-            </tbody>
+                </tbody>
           </table>        </div>
       </div>
     </div>
