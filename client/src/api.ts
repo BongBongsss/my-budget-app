@@ -70,6 +70,7 @@ export interface Asset {
   type: 'cash' | 'bank' | 'stock' | 'realestate' | 'liability' | 'other';
   balance: number;
   memo?: string;
+  createdAt?: string;
   updatedAt?: string;
 }
 
