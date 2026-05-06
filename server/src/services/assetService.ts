@@ -17,7 +17,10 @@ const updateHistory = async () => {
 
 export const getAllAssets = async () => {
   return await prisma.asset.findMany({
-    orderBy: { name: 'asc' },
+    orderBy: [
+      { type: 'asc' },
+      { name: 'asc' }
+    ],
   });
 };
 
