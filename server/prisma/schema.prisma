@@ -72,3 +72,14 @@ model Asset {
   memo      String?
   updatedAt DateTime @updatedAt
 }
+
+model AssetHistory {
+  id        String   @id @default(uuid())
+  yearMonth String   // "2026-05" 형식
+  totalAssets Float
+  totalLiabilities Float
+  netAssets Float
+  createdAt DateTime @default(now())
+
+  @@unique([yearMonth])
+}
