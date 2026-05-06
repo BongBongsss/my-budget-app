@@ -11,6 +11,7 @@ const AssetManager: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
     name: '', type: 'bank', balance: 0, memo: ''
@@ -25,6 +26,17 @@ const AssetManager: React.FC = () => {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const handleSort = () => {
+    const newOrder = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(newOrder);
+    const sorted = [...assets].sort((a, b) => {
+      const typeA = assetTypeMap[a.type] || a.type;
+      const typeB = assetTypeMap[b.type] || b.type;
+      return newOrder === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
+    });
+    setAssets(sorted);
+  };
 
   const handleAdd = async () => {
     if (!newAsset.name) return;
@@ -206,7 +218,7 @@ const AssetManager: React.FC = () => {
             <thead>
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
-                <th className="p-3 text-left border-b">유형</th>
+                <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : '▼'}</th>
                 <th className="p-3 text-center border-b">잔액</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
