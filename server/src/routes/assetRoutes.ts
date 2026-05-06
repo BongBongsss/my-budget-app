@@ -24,6 +24,25 @@ router.get('/history', async (req, res) => {
   }
 });
 
+router.post('/history/save', async (req, res) => {
+  try {
+    const assets = await prisma.asset.findMany();
+    const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
+    const totalLiabilities = assets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
+    const netAssets = totalAssets - totalLiabilities;
+    const yearMonth = new Date().toISOString().substring(0, 7);
+
+    await prisma.assetHistory.upsert({
+      where: { yearMonth },
+      update: { totalAssets, totalLiabilities, netAssets },
+      create: { yearMonth, totalAssets, totalLiabilities, netAssets },
+    });
+    res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 router.post('/', async (req, res) => {
   try {
     const asset = await assetService.addAsset(req.body);

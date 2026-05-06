@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
-import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, Asset } from '../api';
+import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -44,6 +44,11 @@ const AssetManager: React.FC = () => {
       await deleteAsset(id);
       fetchData();
     }
+  };
+
+  const handleSaveHistory = async () => {
+    await saveAssetHistory();
+    fetchData();
   };
 
   const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
@@ -121,7 +126,10 @@ const AssetManager: React.FC = () => {
         </div>
 
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
-            <h3 className="text-lg font-bold mb-6">자산 변화 추이</h3>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">자산 변화 추이</h3>
+                <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
+            </div>
             <div style={{ height: '300px' }}>
                 <Line data={lineData} options={{ maintainAspectRatio: false, plugins: { legend: { display: true } } }} />
             </div>
