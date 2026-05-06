@@ -197,10 +197,9 @@ const AssetManager: React.FC = () => {
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
-                <th className="p-3 text-center border-b">관리</th>
+                <th className="p-3 text-right border-b">관리</th>
                 </tr>
-                </thead>
-            <tbody>
+                </thead>            <tbody>
               {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
