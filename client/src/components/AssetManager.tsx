@@ -12,6 +12,7 @@ const AssetManager: React.FC = () => {
   const [history, setHistory] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'default'>('default');
+  const [balanceSortOrder, setBalanceSortOrder] = useState<'asc' | 'desc' | 'default'>('default');
   const originalAssets = useRef<Asset[]>([]);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
@@ -36,6 +37,7 @@ const AssetManager: React.FC = () => {
     else nextOrder = 'default';
 
     setSortOrder(nextOrder);
+    setBalanceSortOrder('default');
 
     if (nextOrder === 'default') {
         setAssets(originalAssets.current);
@@ -44,6 +46,25 @@ const AssetManager: React.FC = () => {
             const typeA = assetTypeMap[a.type] || a.type;
             const typeB = assetTypeMap[b.type] || b.type;
             return nextOrder === 'asc' ? typeA.localeCompare(typeB) : typeB.localeCompare(typeA);
+        });
+        setAssets(sorted);
+    }
+  };
+
+  const handleSortBalance = () => {
+    let nextOrder: 'asc' | 'desc' | 'default';
+    if (balanceSortOrder === 'default') nextOrder = 'asc';
+    else if (balanceSortOrder === 'asc') nextOrder = 'desc';
+    else nextOrder = 'default';
+
+    setBalanceSortOrder(nextOrder);
+    setSortOrder('default');
+
+    if (nextOrder === 'default') {
+        setAssets(originalAssets.current);
+    } else {
+        const sorted = [...assets].sort((a, b) => {
+            return nextOrder === 'asc' ? a.balance - b.balance : b.balance - a.balance;
         });
         setAssets(sorted);
     }
@@ -153,10 +174,10 @@ const AssetManager: React.FC = () => {
                 />
             </div>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                {sortedGroupedEntries.map(([type], index) => (
+                {sortedGroupedEntries.map(([type, value], index) => (
                     <div key={type} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
-                        {type}
+                        {type} ({((value / totalBalanceForPie) * 100).toFixed(1)}%)
                     </div>
                 ))}
             </div>
@@ -230,7 +251,7 @@ const AssetManager: React.FC = () => {
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
                 <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : sortOrder === 'desc' ? '▼' : '↕'}</th>
-                <th className="p-3 text-center border-b">잔액</th>
+                <th className="p-3 text-center border-b cursor-pointer hover:bg-gray-200" onClick={handleSortBalance}>잔액 {balanceSortOrder === 'asc' ? '▲' : balanceSortOrder === 'desc' ? '▼' : '↕'}</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
