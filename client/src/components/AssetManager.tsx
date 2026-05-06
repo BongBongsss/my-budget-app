@@ -73,9 +73,9 @@ const AssetManager: React.FC = () => {
         <div className="card-summary expense shadow-md"><div className="icon"><CreditCard size={24}/></div><div className="details"><span>총 부채</span><h2>{totalLiabilities.toLocaleString()}</h2></div></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
         {/* 왼쪽: 자산 추가 폼 */}
-        <div className="card-form shadow-md" style={{ minHeight: '400px' }}>
+        <div className="card-form shadow-md">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
             <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
@@ -105,9 +105,10 @@ const AssetManager: React.FC = () => {
             </div>
           </div>
         </div>
-        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
+
+        <div className="card-form shadow-md p-6">
             <h3 className="text-lg font-bold mb-4">시각화 현황</h3>
-            <div className="grid grid-cols-2 gap-4 h-full">
+            <div className="grid grid-cols-2 gap-4">
                 <div><h4 className="text-xs font-bold text-gray-500 mb-2">구성비</h4><Pie data={chartData} options={{plugins:{legend:{display:false}}}} /></div>
                 <div><h4 className="text-xs font-bold text-gray-500 mb-2">잔액 현황</h4><Bar data={barData} options={{plugins:{legend:{display:false}}}} /></div>
             </div>
