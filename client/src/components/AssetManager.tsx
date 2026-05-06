@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard, PieChart as PieIcon, BarChart3 } from 'lucide-react';
+import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, Asset } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
-import { Pie, Bar, Line } from 'react-chartjs-2';
+import { Pie, Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
@@ -10,7 +10,6 @@ ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, Li
 const AssetManager: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<'pie' | 'bar' | 'line'>('pie');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
@@ -72,15 +71,6 @@ const AssetManager: React.FC = () => {
     }]
   };
 
-  const barData = {
-    labels: ['자산', '부채', '순자산'],
-    datasets: [{
-      label: '금액',
-      data: [totalAssets, totalLiabilities, netAssets],
-      backgroundColor: ['#10b981', '#ef4444', '#3b82f6'],
-    }]
-  };
-
   const lineData = {
     labels: history.map(h => h.yearMonth),
     datasets: [
@@ -99,65 +89,28 @@ const AssetManager: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
-        <div className="card-form shadow-md p-6" style={{ minHeight: '550px', position: 'relative' }}>
-            <div className="flex justify-between items-center mb-6">
-                <h3 className="text-lg font-bold">시각화 현황</h3>
-                <div style={{ display: 'flex', gap: '5px' }}>
-                    <button 
-                        onClick={() => setViewMode('pie')}
-                        className={`p-1.5 rounded-md border ${viewMode === 'pie' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
-                    >
-                        <PieIcon size={16} color={viewMode === 'pie' ? '#3b82f6' : '#64748b'} />
-                    </button>
-                    <button 
-                        onClick={() => setViewMode('bar')}
-                        className={`p-1.5 rounded-md border ${viewMode === 'bar' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
-                    >
-                        <BarChart3 size={16} color={viewMode === 'bar' ? '#3b82f6' : '#64748b'} />
-                    </button>
-                    <button 
-                        onClick={() => setViewMode('line')}
-                        className={`p-1.5 rounded-md border ${viewMode === 'line' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
-                    >
-                        <TrendingUp size={16} color={viewMode === 'line' ? '#3b82f6' : '#64748b'} />
-                    </button>
-                </div>
-            </div>
-
-            <div style={{ height: '420px', width: '100%' }}>
-                {viewMode === 'pie' ? (
-                    <Pie 
-                        data={chartData} 
-                        options={{ 
-                            maintainAspectRatio: false,
-                            plugins: { 
-                                legend: { display: false },
-                                datalabels: {
-                                    formatter: (value: any, ctx: any) => {
-                                        const label = ctx.chart.data.labels?.[ctx.dataIndex];
-                                        const cleanLabel = (label as string).replace(/[🏦💵📈🏠💳📦]/g, '');
-                                        return `${cleanLabel}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
-                                    },
-                                    color: '#333', font: { weight: 'bold', size: 10 }
-                                }
+        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
+            <h3 className="text-lg font-bold mb-6">자산 구성비</h3>
+            <div style={{ height: '300px' }}>
+                <Pie 
+                    data={chartData} 
+                    options={{ 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: false },
+                            datalabels: {
+                                formatter: (value: any, ctx: any) => {
+                                    const label = ctx.chart.data.labels?.[ctx.dataIndex];
+                                    const cleanLabel = (label as string).replace(/[🏦💵📈🏠💳📦]/g, '');
+                                    return `${cleanLabel}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
+                                },
+                                color: '#333', font: { weight: 'bold', size: 10 }
                             }
-                        }} 
-                    />
-                ) : viewMode === 'bar' ? (
-                    <Bar 
-                        data={barData} 
-                        options={{ 
-                            maintainAspectRatio: false,
-                            plugins: { legend: { display: false } },
-                            scales: { y: { beginAtZero: true } }
-                        }} 
-                    />
-                ) : (
-                    <Line data={lineData} options={{ maintainAspectRatio: false, plugins: { legend: { display: true } } }} />
-                )}
+                        }
+                    }} 
+                />
             </div>
-            
-            <div className="flex flex-wrap justify-center gap-2 mt-6">
+            <div className="flex flex-wrap justify-center gap-2 mt-4">
                 {Object.keys(groupedAssets).map((type, index) => (
                     <div key={type} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
@@ -167,7 +120,15 @@ const AssetManager: React.FC = () => {
             </div>
         </div>
 
-        <div className="card-form shadow-md">
+        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
+            <h3 className="text-lg font-bold mb-6">자산 변화 추이</h3>
+            <div style={{ height: '300px' }}>
+                <Line data={lineData} options={{ maintainAspectRatio: false, plugins: { legend: { display: true } } }} />
+            </div>
+        </div>
+      </div>
+
+      <div className="card-form shadow-md">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
             <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
@@ -197,7 +158,6 @@ const AssetManager: React.FC = () => {
             </div>
           </div>
         </div>
-      </div>
 
       <div className="transaction-list shadow-md">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Wallet size={20} className="text-blue-500" /> 내 자산 목록</h3>
