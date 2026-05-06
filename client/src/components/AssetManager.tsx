@@ -93,10 +93,10 @@ const AssetManager: React.FC = () => {
         <div className="card-summary expense shadow-md"><div className="icon"><CreditCard size={24}/></div><div className="details"><span>총 부채</span><h2>{totalLiabilities.toLocaleString()}</h2></div></div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-2 gap-6 items-start max-w-7xl mx-auto">
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
             <h3 className="text-lg font-bold mb-6">자산 구성비</h3>
-            <div style={{ height: '300px' }}>
+            <div style={{ height: '300px', width: '100%' }}>
                 <Pie 
                     data={chartData} 
                     options={{ 
@@ -130,7 +130,7 @@ const AssetManager: React.FC = () => {
                 <h3 className="text-lg font-bold">자산 변화 추이</h3>
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
-            <div style={{ height: '300px' }}>
+            <div style={{ height: '300px', width: '100%' }}>
                 <Line 
                     data={lineData} 
                     options={{ 
