@@ -68,26 +68,26 @@ const AssetManager: React.FC = () => {
   return (
     <div className="space-y-6 animate-fadeIn">
       {/* 자산 요약 헤더 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="card-summary balance shadow-lg border-t-4 border-blue-500">
+      <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="card-summary balance shadow-md">
           <div className="icon"><TrendingUp size={24} /></div>
           <div className="details">
-            <span className="text-gray-500 font-medium">총 순자산</span>
-            <h2 className="text-2xl font-bold text-blue-700">{netAssets.toLocaleString()}원</h2>
+            <span>총 순자산</span>
+            <h2>{netAssets.toLocaleString()}</h2>
           </div>
         </div>
         <div className="card-summary income shadow-md">
           <div className="icon"><Landmark size={24} /></div>
           <div className="details">
-            <span className="text-gray-500 font-medium">총 자산</span>
-            <h2 className="text-xl font-semibold text-green-600">{totalAssets.toLocaleString()}원</h2>
+            <span>총 자산</span>
+            <h2>{totalAssets.toLocaleString()}</h2>
           </div>
         </div>
         <div className="card-summary expense shadow-md">
           <div className="icon"><CreditCard size={24} /></div>
           <div className="details">
-            <span className="text-gray-500 font-medium">총 부채</span>
-            <h2 className="text-xl font-semibold text-red-500">{totalLiabilities.toLocaleString()}원</h2>
+            <span>총 부채</span>
+            <h2>{totalLiabilities.toLocaleString()}</h2>
           </div>
         </div>
       </div>
