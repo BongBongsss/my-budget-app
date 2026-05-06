@@ -137,7 +137,7 @@ const AssetManager: React.FC = () => {
                 </div>
             </div>
 
-            <div style={{ height: '400px', width: '100%' }}>
+            <div style={{ height: '420px', width: '100%' }}>
                 {viewMode === 'pie' ? (
                     <Pie 
                         data={chartData} 
@@ -168,9 +168,8 @@ const AssetManager: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap justify-center gap-2 mt-6">
-                {Object.keys(groupedAssets).map((type, index) => (
+                {Object.keys(groupedAssets).map((type) => (
                     <div key={type} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
-                        <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
                         {type}
                     </div>
                 ))}
