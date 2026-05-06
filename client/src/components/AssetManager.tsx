@@ -185,7 +185,7 @@ const AssetManager: React.FC = () => {
           </div>
         </div>
 
-      <div className="transaction-list shadow-md" style={{ marginTop: '2rem' }}>
+      <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Wallet size={20} className="text-blue-500" /> 내 자산 목록</h3>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
