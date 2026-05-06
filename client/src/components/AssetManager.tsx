@@ -148,7 +148,8 @@ const AssetManager: React.FC = () => {
                                 datalabels: {
                                     formatter: (value: any, ctx: any) => {
                                         const label = ctx.chart.data.labels?.[ctx.dataIndex];
-                                        return `${label}\n${(value / totalAssets * 100).toFixed(1)}%`;
+                                        const cleanLabel = (label as string).replace(/[🏦💵📈🏠💳📦]/g, '');
+                                        return `${cleanLabel}\n${(value / totalAssets * 100).toFixed(1)}%`;
                                     },
                                     color: '#333', font: { weight: 'bold', size: 10 }
                                 }
