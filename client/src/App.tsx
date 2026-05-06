@@ -282,7 +282,7 @@ function App() {
         </div>
       ) : (
         <div className="view-assets animate-fadeIn">
-          <AssetManager />
+          <AssetManager userRole={userRole} />
         </div>
       )}
 

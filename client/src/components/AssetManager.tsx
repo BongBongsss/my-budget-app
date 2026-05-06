@@ -7,7 +7,11 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
 
-const AssetManager: React.FC = () => {
+interface AssetManagerProps {
+  userRole?: 'admin' | 'viewer';
+}
+
+const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
