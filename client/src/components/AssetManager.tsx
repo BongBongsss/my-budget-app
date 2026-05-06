@@ -205,8 +205,22 @@ const AssetManager: React.FC = () => {
                 {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
-                    <td className="p-3 border-b text-sm text-gray-600">{(assetTypeMap[asset.type] || asset.type).replace(/[🏦💵📈🏠💳📦]/g, '')}</td>
-                    <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>{asset.balance.toLocaleString()}</td>
+                    <td className="p-3 border-b text-sm text-gray-600">
+                      {editingId === asset.id ? (
+                        <select className="w-full p-1 border rounded" value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value as any})}>
+                          <option value="bank">예적금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
+                        </select>
+                      ) : (
+                        (assetTypeMap[asset.type] || asset.type).replace(/[🏦💵📈🏠💳📦💰🛡️]/g, '')
+                      )}
+                    </td>
+                    <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>
+                      {editingId === asset.id ? (
+                        <input type="number" className="w-full p-1 border rounded text-right" value={editForm.balance} onChange={e => setEditForm({...editForm, balance: parseFloat(e.target.value) || 0})} />
+                      ) : (
+                        asset.balance.toLocaleString()
+                      )}
+                    </td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : asset.memo}</td>
