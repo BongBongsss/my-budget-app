@@ -154,7 +154,7 @@ const AssetManager: React.FC = () => {
         </div>
       </div>
 
-      <div className="card-form shadow-md">
+      <div className="card-form shadow-md mb-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
             <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
