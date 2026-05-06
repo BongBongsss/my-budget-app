@@ -76,7 +76,12 @@ const AssetManager: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* 왼쪽: 자산 추가 폼 */}
         <div className="card-form shadow-md" style={{ minHeight: '400px' }}>
-          <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
+            <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
+              <Plus size={16} /> 등록
+            </button>
+          </div>
           <div className="space-y-2">
             <div className="form-group">
               <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 이름</label>
@@ -99,14 +104,7 @@ const AssetManager: React.FC = () => {
               <input type="text" placeholder="기타 정보" className="w-full p-1.5 border rounded text-sm" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
             </div>
           </div>
-
-          <button 
-            onClick={handleAdd} 
-            className="w-full bg-blue-600 text-white py-3 rounded font-bold mt-6 hover:bg-blue-700 transition-colors"
-          >
-            자산 등록하기
-          </button>
-          </div>
+        </div>
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
             <h3 className="text-lg font-bold mb-4">시각화 현황</h3>
             <div className="grid grid-cols-2 gap-4 h-full">
