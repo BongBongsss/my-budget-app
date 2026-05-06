@@ -49,10 +49,21 @@ const AssetManager: React.FC = () => {
   const totalLiabilities = assets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
 
+  const assetTypeMap: Record<string, string> = {
+    bank: '🏦 예적금', cash: '💵 현금', stock: '📈 주식', 
+    realestate: '🏠 부동산', liability: '💳 부채', other: '📦 기타'
+  };
+
+  const groupedAssets = assets.reduce((acc, a) => {
+    const typeName = assetTypeMap[a.type] || '기타';
+    acc[typeName] = (acc[typeName] || 0) + (a.type === 'liability' ? 0 : a.balance);
+    return acc;
+  }, {} as Record<string, number>);
+
   const chartData = {
-    labels: assets.filter(a => a.balance > 0).map(a => a.name),
+    labels: Object.keys(groupedAssets),
     datasets: [{
-      data: assets.filter(a => a.balance > 0).map(a => a.balance),
+      data: Object.values(groupedAssets),
       backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'],
     }]
   };
@@ -157,10 +168,10 @@ const AssetManager: React.FC = () => {
             </div>
             
             <div className="flex flex-wrap justify-center gap-2 mt-6">
-                {assets.filter(a => a.balance > 0).map((asset, index) => (
-                    <div key={asset.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                {Object.keys(groupedAssets).map((type, index) => (
+                    <div key={type} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
-                        {asset.name}
+                        {type}
                     </div>
                 ))}
             </div>
