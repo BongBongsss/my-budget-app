@@ -21,7 +21,7 @@ function App() {
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'card' | 'transfer' | 'unclassified'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  // ... (rest of state)
+  const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
 
   
   const [lastDeleted, setLastDeleted] = useState<Transaction[] | null>(null);
