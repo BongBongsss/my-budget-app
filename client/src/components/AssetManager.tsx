@@ -86,14 +86,14 @@ const AssetManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-fadeIn">
+    <div className="animate-fadeIn max-w-7xl mx-auto">
       <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="card-summary balance shadow-md"><div className="icon"><TrendingUp size={24}/></div><div className="details"><span>총 순자산</span><h2>{netAssets.toLocaleString()}</h2></div></div>
         <div className="card-summary income shadow-md"><div className="icon"><Landmark size={24}/></div><div className="details"><span>총 자산</span><h2>{totalAssets.toLocaleString()}</h2></div></div>
         <div className="card-summary expense shadow-md"><div className="icon"><CreditCard size={24}/></div><div className="details"><span>총 부채</span><h2>{totalLiabilities.toLocaleString()}</h2></div></div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 items-start max-w-7xl mx-auto">
+      <div className="grid grid-cols-2 gap-6 items-start mb-8">
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
             <h3 className="text-lg font-bold mb-6">자산 구성비</h3>
             <div style={{ height: '300px', width: '100%' }}>
@@ -185,7 +185,7 @@ const AssetManager: React.FC = () => {
           </div>
         </div>
 
-      <div className="transaction-list shadow-md mt-8">
+      <div className="transaction-list shadow-md mb-8">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Wallet size={20} className="text-blue-500" /> 내 자산 목록</h3>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
