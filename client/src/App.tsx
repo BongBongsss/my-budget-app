@@ -224,7 +224,6 @@ function App() {
         <div className="view-budget animate-fadeIn">
           <Summary 
             transactions={allVerifiedForPeriod} 
-            assets={assets}
             period={period} setPeriod={setPeriod} 
             year={year} setYear={setYear} 
             month={month} setMonth={setMonth} 

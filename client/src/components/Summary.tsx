@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
-import { Transaction, Asset } from '../api';
-import { ArrowUpCircle, ArrowDownCircle, Wallet, Landmark } from 'lucide-react';
+import { Transaction } from '../api';
+import { ArrowUpCircle, ArrowDownCircle, Wallet } from 'lucide-react';
 
 interface SummaryProps {
   transactions: Transaction[];
-  assets: Asset[];
   period: 'all' | 'month' | 'year';
   setPeriod: (p: 'all' | 'month' | 'year') => void;
   year: number;
@@ -13,16 +12,11 @@ interface SummaryProps {
   setMonth: (m: number) => void;
 }
 
-const Summary: React.FC<SummaryProps> = ({ transactions, assets, period, setPeriod, year, setYear, month, setMonth }) => {
+const Summary: React.FC<SummaryProps> = ({ transactions, period, setPeriod, year, setYear, month, setMonth }) => {
   const income = transactions.filter(t => t.type === 'income').reduce((sum, t) => sum + t.amount, 0);
   const expense = transactions.filter(t => t.type === 'expense').reduce((sum, t) => sum + t.amount, 0);
   // exclude 타입은 자동으로 위 필터링에서 걸러집니다.
   const balance = income - expense;
-
-  const totalAssets = (assets || []).reduce((sum, a) => {
-    if (a.type === 'liability') return sum - a.balance;
-    return sum + a.balance;
-  }, 0);
 
   const years = Array.from({ length: 20 }, (_, i) => new Date().getFullYear() - 10 + i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
@@ -46,7 +40,7 @@ const Summary: React.FC<SummaryProps> = ({ transactions, assets, period, setPeri
           </select>
         )}
       </div>
-      <div className="grid grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-3 gap-6 mb-8">
         <div className="card-summary income">
           <div className="icon"><ArrowUpCircle size={24} /></div>
           <div className="details">
@@ -66,13 +60,6 @@ const Summary: React.FC<SummaryProps> = ({ transactions, assets, period, setPeri
           <div className="details">
             <span>Balance</span>
             <h2>{balance.toLocaleString()}</h2>
-          </div>
-        </div>
-        <div className="card-summary assets">
-          <div className="icon"><Landmark size={24} /></div>
-          <div className="details">
-            <span>Net Assets</span>
-            <h2>{totalAssets.toLocaleString()}</h2>
           </div>
         </div>
       </div>
