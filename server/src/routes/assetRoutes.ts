@@ -4,15 +4,6 @@ import prisma from '../db';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  try {
-    const assets = await assetService.getAllAssets();
-    res.json(assets);
-  } catch (err: any) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
 router.get('/history', async (req, res) => {
   try {
     const history = await prisma.assetHistory.findMany({
@@ -38,6 +29,15 @@ router.post('/history/save', async (req, res) => {
       create: { yearMonth, totalAssets, totalLiabilities, netAssets },
     });
     res.json({ success: true });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+router.get('/', async (req, res) => {
+  try {
+    const assets = await assetService.getAllAssets();
+    res.json(assets);
   } catch (err: any) {
     res.status(500).json({ error: err.message });
   }
