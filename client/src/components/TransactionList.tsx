@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
-import { Trash2, Check, X, Edit2, ChevronLeft, ChevronRight, Search, RefreshCw, ListChecks } from 'lucide-react';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -44,7 +43,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || '미분류';
 
-  // 검색을 위한 고유값 리스트 추출
   const uniqueValues = {
     types: Array.from(new Set(transactions.map(t => t.type === 'expense' ? '지출' : t.type === 'income' ? '수입' : '미반영'))),
     groups: Array.from(new Set(transactions.map(t => getGroupName(t.category)))).sort(),
@@ -62,7 +60,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (bulkMemo !== undefined && bulkMemo !== '') updates.memo = bulkMemo;
 
     if (Object.keys(updates).length === 0) {
-      alert('Please select at least one field to update.');
+      alert('필드를 하나 이상 선택해 주세요.');
       return;
     }
     for (const id of selectedIds) { await onUpdate(id, updates); }
@@ -84,7 +82,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
     if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
     
-    // 선택형 필터링 (정확히 일치 검색)
     if (filterType === 'type') {
         const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
         return typeLabel === searchQuery;
@@ -134,13 +131,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
     <div className="transaction-list">
       <div className="flex justify-start items-center gap-2 mb-4">
         <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
-          <option value="all">All</option>
-          <option value="month">Month</option>
-          <option value="year">Year</option>
+          <option value="all">모두</option>
+          <option value="month">월별</option>
+          <option value="year">연별</option>
         </select>
         {(period === 'month' || period === 'year') && (
           <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-            {years.map(y => <option key={y} value={y}>{y}</option>)}
+            {years.map(y => <option key={y} value={y}>{y}년</option>)}
           </select>
         )}
         {period === 'month' && (
@@ -153,7 +150,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
       <div className="list-actions mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">
-            {/* 요청 사항: 검색 조건을 리스트 열 순서와 일치시킴 */}
             <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
               <option value="type">타입</option>
@@ -172,7 +168,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
               </div>
             ) : ['type', 'group', 'category', 'subcategory', 'source'].includes(filterType) ? (
-              /* 요청 사항: 선택형 검색 (드롭다운) 제공 */
               <select 
                 value={search} 
                 onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCurrentPage(1); }} 
@@ -187,16 +182,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 {filterType === 'source' && uniqueValues.sources.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             ) : (
-              /* 내용, 메모는 타이핑 검색 유지 */
               <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            {/* 타이핑 검색 시에만 검색 버튼 활성화 느낌으로 유지 */}
             {!['date', 'type', 'group', 'category', 'subcategory', 'source'].includes(filterType) && (
-              <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+              <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}>검색</button>
             )}
             
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }}>초기화</button>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
@@ -233,7 +226,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
       {selectedIds.length > 0 && (
         <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
-            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => { onBulkDelete(selectedIds); setSelectedIds([]); }} title="Delete Selected"><Trash2 size={16} /></button>
+            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => { onBulkDelete(selectedIds); setSelectedIds([]); }}>삭제</button>
             <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
             <select value={bulkType} onChange={(e) => setBulkType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '80px' }}>
                 <option value="">타입</option>
@@ -247,7 +240,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             </select>
             <input type="text" placeholder="소분류 입력" value={bulkSubcategory} onChange={(e) => setBulkSubcategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} />
             <input type="text" placeholder="메모 일괄 입력" value={bulkMemo} onChange={(e) => setBulkMemo(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} />
-            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes"><ListChecks size={16} className="mr-1" /> 일괄 적용</button>
+            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate}>일괄 적용</button>
             <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
         </div>
       )}
@@ -266,7 +259,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '80px' }}>금액</th>
             <th style={{ width: '100px' }}>결제수단</th>
             <th>메모</th>
-            <th style={{ width: '65px' }}>Actions</th>
+            <th style={{ width: '100px' }}>관리</th>
           </tr>
         </thead>
         <tbody>
@@ -285,7 +278,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
-                  <td><button onClick={() => saveEdit(tx.id!)}><Check size={16} /></button><button onClick={() => setEditingId(null)}><X size={16} /></button></td>
+                  <td>
+                    <div className="flex gap-1">
+                      <button className="btn-icon edit" onClick={() => saveEdit(tx.id!)} style={{ fontSize: '10px', padding: '2px 4px' }}>저장</button>
+                      <button className="btn-icon delete" onClick={() => setEditingId(null)} style={{ fontSize: '10px', padding: '2px 4px' }}>취소</button>
+                    </div>
+                  </td>
                 </>
               ) : (
                 <>
@@ -303,8 +301,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
                   <td>
                     <div className="flex gap-1">
-                      <button onClick={() => startEdit(tx)} className="btn-icon edit"><Edit2 size={16} /></button>
-                      <button onClick={() => onDelete(tx.id!)} className="btn-icon delete"><Trash2 size={16} /></button>
+                      <button onClick={() => startEdit(tx)} className="btn-icon edit" style={{ fontSize: '10px', padding: '2px 4px' }}>수정</button>
+                      <button onClick={() => onDelete(tx.id!)} className="btn-icon delete" style={{ fontSize: '10px', padding: '2px 4px' }}>삭제</button>
                     </div>
                   </td>
                 </>
@@ -314,7 +312,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </tbody>
       </table>
       <div className="pagination mt-4 flex justify-center gap-2">
-        <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={16}/></button>
+        <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>이전</button>
         {currentPage > 3 && <button className="btn btn-secondary" onClick={() => setCurrentPage(1)}>1</button>}
         {currentPage > 4 && <span>...</span>}
         {getPaginationNumbers().map(page => (
@@ -322,7 +320,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         ))}
         {currentPage < totalPages - 3 && <span>...</span>}
         {currentPage < totalPages - 2 && <button className="btn btn-secondary" onClick={() => setCurrentPage(totalPages)}>{totalPages}</button>}
-        <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}><ChevronRight size={16}/></button>
+        <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>다음</button>
       </div>
     </div>
   );
