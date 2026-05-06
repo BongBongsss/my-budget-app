@@ -107,14 +107,29 @@ const AssetManager: React.FC = () => {
                     data={chartData} 
                     options={{ 
                         maintainAspectRatio: false,
+                        radius: '90%',
+                        layout: { padding: 40 },
                         plugins: { 
                             legend: { display: false },
                             datalabels: {
                                 formatter: (value: any, ctx: any) => {
                                     const label = ctx.chart.data.labels?.[ctx.dataIndex];
-                                    return `${label}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
+                                    const percentage = (value / totalBalanceForPie * 100).toFixed(1);
+                                    return `${label}\n${percentage}%`;
                                 },
-                                color: '#333', font: { weight: 'bold', size: 10 }
+                                color: '#000', 
+                                font: { weight: 'bold', size: 10 },
+                                textAlign: 'center',
+                                anchor: 'end',
+                                align: (ctx: any) => {
+                                    const percentage = (ctx.dataset.data[ctx.dataIndex] / totalBalanceForPie) * 100;
+                                    return percentage < 5 ? 'end' : 'start';
+                                },
+                                offset: (ctx: any) => {
+                                    const percentage = (ctx.dataset.data[ctx.dataIndex] / totalBalanceForPie) * 100;
+                                    return percentage < 5 ? 10 : 25;
+                                },
+                                display: 'auto'
                             }
                         }
                     }} 
