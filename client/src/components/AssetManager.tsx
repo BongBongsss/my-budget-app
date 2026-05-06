@@ -204,7 +204,7 @@ const AssetManager: React.FC = () => {
               {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
-                    <td className="p-3 border-b text-sm text-gray-600">{asset.type}</td>
+                    <td className="p-3 border-b text-sm text-gray-600">{assetTypeMap[asset.type] || asset.type}</td>
                     <td className="p-3 border-b text-right font-bold">{asset.balance.toLocaleString()}원</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
