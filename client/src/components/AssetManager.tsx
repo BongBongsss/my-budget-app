@@ -69,10 +69,13 @@ const AssetManager: React.FC = () => {
 
   const totalBalanceForPie = Object.values(groupedAssets).reduce((sum, val) => sum + val, 0);
 
+  const sortedGroupedEntries = Object.entries(groupedAssets)
+    .sort(([, a], [, b]) => b - a);
+
   const chartData = {
-    labels: Object.keys(groupedAssets),
+    labels: sortedGroupedEntries.map(([label]) => label),
     datasets: [{
-      data: Object.values(groupedAssets),
+      data: sortedGroupedEntries.map(([, value]) => value),
       backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'],
     }]
   };
@@ -117,10 +120,10 @@ const AssetManager: React.FC = () => {
                 />
             </div>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
-                {Object.keys(groupedAssets).map((type, index) => (
+                {sortedGroupedEntries.map(([type], index) => (
                     <div key={type} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
-                        {type.replace(/[🏦💵📈🏠💳📦]/g, '')}
+                        {type.replace(/[🏦💵📈🏠💳📦💰🛡️]/g, '')}
                     </div>
                 ))}
             </div>
