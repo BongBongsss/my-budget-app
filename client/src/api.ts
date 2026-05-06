@@ -67,7 +67,7 @@ export interface RecurringTransaction {
 export interface Asset {
   id?: string;
   name: string;
-  type: 'cash' | 'bank' | 'stock' | 'realestate' | 'liability' | 'other';
+  type: 'cash' | 'bank' | 'stock' | 'realestate' | 'pension' | 'insurance' | 'liability' | 'other';
   balance: number;
   memo?: string;
   createdAt?: string;
