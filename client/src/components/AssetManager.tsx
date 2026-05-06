@@ -193,7 +193,7 @@ const AssetManager: React.FC = () => {
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
                 <th className="p-3 text-left border-b">유형</th>
-                <th className="p-3 border-b" style={{ textAlign: 'right' }}>잔액</th>
+                <th className="p-3 text-center border-b">잔액</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
