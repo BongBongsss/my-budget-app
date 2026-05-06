@@ -112,7 +112,7 @@ const AssetManager: React.FC = () => {
             </div>
             <div className="flex flex-wrap justify-center gap-2 mt-4">
                 {Object.keys(groupedAssets).map((type, index) => (
-                    <div key={type} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                    <div key={type} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>
                         <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
                         {type.replace(/[🏦💵📈🏠💳📦]/g, '')}
                     </div>
