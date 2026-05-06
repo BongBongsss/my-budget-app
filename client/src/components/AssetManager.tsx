@@ -140,13 +140,12 @@ const AssetManager: React.FC = () => {
                             datalabels: { display: false }
                         },
                         scales: {
-                            y: {
-                                ticks: {
-                                    callback: (value: any) => `${(value / 1000000).toFixed(1)}M`
-                                }
-                            }
+                        y: {
+                        ticks: {
+                            callback: (value: any) => `${(value / 1000000000).toFixed(1)}B`
                         }
-                    }} 
+                        }
+                        }                    }} 
                 />
             </div>
         </div>
