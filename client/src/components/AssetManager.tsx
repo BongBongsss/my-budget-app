@@ -102,12 +102,11 @@ const AssetManager: React.FC = () => {
 
           <button 
             onClick={handleAdd} 
-            className="w-1/2 bg-blue-600 text-white py-2 rounded font-bold mt-2 hover:bg-blue-700 transition-colors"
+            className="w-full bg-blue-600 text-white py-3 rounded font-bold mt-auto hover:bg-blue-700 transition-colors"
           >
             자산 등록하기
           </button>
           </div>
-
 
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
             <h3 className="text-lg font-bold mb-4">시각화 현황</h3>
