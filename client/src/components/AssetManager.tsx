@@ -88,7 +88,7 @@ const AssetManager: React.FC = () => {
         <div className="card-summary expense shadow-md"><div className="icon"><CreditCard size={24}/></div><div className="details"><span>총 부채</span><h2>{totalLiabilities.toLocaleString()}</h2></div></div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+      <div className="grid grid-cols-2 gap-6 items-start">
         <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
             <h3 className="text-lg font-bold mb-6">자산 구성비</h3>
             <div style={{ height: '300px' }}>
