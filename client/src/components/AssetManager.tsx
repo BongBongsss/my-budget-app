@@ -77,28 +77,29 @@ const AssetManager: React.FC = () => {
         {/* 왼쪽: 자산 추가 폼 */}
         <div className="card-form shadow-md" style={{ minHeight: '400px' }}>
           <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
-          <div className="grid-form gap-4" style={{ gridTemplateColumns: 'repeat(1, 1fr)' }}>
+          <div className="space-y-2">
             <div className="form-group">
-              <label>자산 이름</label>
-              <input type="text" placeholder="예: 국민은행 예금" className="w-full p-2 border rounded" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} />
+              <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 이름</label>
+              <input type="text" placeholder="예: 국민은행 예금" className="w-full p-1.5 border rounded text-sm" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} />
             </div>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 gap-2">
                 <div className="form-group">
-                    <label>자산 유형</label>
-                    <select className="w-full p-2 border rounded" value={newAsset.type} onChange={e => setNewAsset({...newAsset, type: e.target.value as any})}>
+                    <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 유형</label>
+                    <select className="w-full p-1.5 border rounded text-sm" value={newAsset.type} onChange={e => setNewAsset({...newAsset, type: e.target.value as any})}>
                         <option value="bank">🏦 예적금</option><option value="cash">💵 현금</option><option value="stock">📈 주식</option><option value="realestate">🏠 부동산</option><option value="liability">💳 부채</option><option value="other">📦 기타</option>
                     </select>
                 </div>
                 <div className="form-group">
-                    <label>현재 잔액</label>
-                    <input type="number" placeholder="0" className="w-full p-2 border rounded" value={newAsset.balance} onChange={e => setNewAsset({...newAsset, balance: parseFloat(e.target.value) || 0})} />
+                    <label className="text-xs font-bold text-gray-500 mb-0.5 block">현재 잔액</label>
+                    <input type="number" placeholder="0" className="w-full p-1.5 border rounded text-sm" value={newAsset.balance} onChange={e => setNewAsset({...newAsset, balance: parseFloat(e.target.value) || 0})} />
                 </div>
             </div>
             <div className="form-group">
-              <label>메모</label>
-              <input type="text" placeholder="기타 정보" className="w-full p-2 border rounded" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
+              <label className="text-xs font-bold text-gray-500 mb-0.5 block">메모</label>
+              <input type="text" placeholder="기타 정보" className="w-full p-1.5 border rounded text-sm" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
             </div>
           </div>
+
           <button onClick={handleAdd} className="w-full bg-blue-600 text-white py-3 rounded font-bold mt-6 hover:bg-blue-700 transition-colors">자산 등록하기</button>
         </div>
 
