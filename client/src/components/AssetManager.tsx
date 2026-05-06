@@ -56,9 +56,11 @@ const AssetManager: React.FC = () => {
 
   const groupedAssets = assets.reduce((acc, a) => {
     const typeName = assetTypeMap[a.type] || '기타';
-    acc[typeName] = (acc[typeName] || 0) + (a.type === 'liability' ? 0 : a.balance);
+    acc[typeName] = (acc[typeName] || 0) + a.balance;
     return acc;
   }, {} as Record<string, number>);
+
+  const totalBalanceForPie = Object.values(groupedAssets).reduce((sum, val) => sum + val, 0);
 
   const chartData = {
     labels: Object.keys(groupedAssets),
@@ -117,7 +119,7 @@ const AssetManager: React.FC = () => {
                                     formatter: (value: any, ctx: any) => {
                                         const label = ctx.chart.data.labels?.[ctx.dataIndex];
                                         const cleanLabel = (label as string).replace(/[🏦💵📈🏠💳📦]/g, '');
-                                        return `${cleanLabel}\n${(value / totalAssets * 100).toFixed(1)}%`;
+                                        return `${cleanLabel}\n${(value / totalBalanceForPie * 100).toFixed(1)}%`;
                                     },
                                     color: '#333', font: { weight: 'bold', size: 10 }
                                 }
