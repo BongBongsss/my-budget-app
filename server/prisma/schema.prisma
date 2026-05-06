@@ -70,6 +70,7 @@ model Asset {
   type      String   // 'cash', 'bank', 'stock', 'realestate', 'liability', etc.
   balance   Float    @default(0)
   memo      String?
+  createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
 
