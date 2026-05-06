@@ -131,7 +131,23 @@ const AssetManager: React.FC = () => {
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
             <div style={{ height: '300px' }}>
-                <Line data={lineData} options={{ maintainAspectRatio: false, plugins: { legend: { display: true } } }} />
+                <Line 
+                    data={lineData} 
+                    options={{ 
+                        maintainAspectRatio: false,
+                        plugins: { 
+                            legend: { display: true },
+                            datalabels: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                ticks: {
+                                    callback: (value: any) => `${(value / 1000000).toFixed(1)}M`
+                                }
+                            }
+                        }
+                    }} 
+                />
             </div>
         </div>
       </div>
