@@ -9,6 +9,7 @@ ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, Li
 
 const AssetManager: React.FC = () => {
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [viewMode, setViewMode] = useState<'pie' | 'bar'>('pie');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
@@ -106,11 +107,62 @@ const AssetManager: React.FC = () => {
           </div>
         </div>
 
-        <div className="card-form shadow-md p-6">
-            <h3 className="text-lg font-bold mb-4">시각화 현황</h3>
-            <div className="grid grid-cols-2 gap-4">
-                <div><h4 className="text-xs font-bold text-gray-500 mb-2">구성비</h4><Pie data={chartData} options={{plugins:{legend:{display:false}}}} /></div>
-                <div><h4 className="text-xs font-bold text-gray-500 mb-2">잔액 현황</h4><Bar data={barData} options={{plugins:{legend:{display:false}}}} /></div>
+        <div className="card-form shadow-md p-6" style={{ minHeight: '550px', position: 'relative' }}>
+            <div className="flex justify-between items-center mb-6">
+                <h3 className="text-lg font-bold">시각화 현황</h3>
+                <div style={{ display: 'flex', gap: '5px' }}>
+                    <button 
+                        onClick={() => setViewMode('pie')}
+                        className={`p-1.5 rounded-md border ${viewMode === 'pie' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
+                    >
+                        <PieIcon size={16} color={viewMode === 'pie' ? '#3b82f6' : '#64748b'} />
+                    </button>
+                    <button 
+                        onClick={() => setViewMode('bar')}
+                        className={`p-1.5 rounded-md border ${viewMode === 'bar' ? 'bg-blue-100 border-blue-300' : 'bg-white border-gray-300'}`}
+                    >
+                        <BarChart3 size={16} color={viewMode === 'bar' ? '#3b82f6' : '#64748b'} />
+                    </button>
+                </div>
+            </div>
+
+            <div style={{ height: '400px', width: '100%' }}>
+                {viewMode === 'pie' ? (
+                    <Pie 
+                        data={chartData} 
+                        options={{ 
+                            maintainAspectRatio: false,
+                            plugins: { 
+                                legend: { display: false },
+                                datalabels: {
+                                    formatter: (value: any, ctx: any) => {
+                                        const label = ctx.chart.data.labels?.[ctx.dataIndex];
+                                        return `${label}\n${(value / totalAssets * 100).toFixed(1)}%`;
+                                    },
+                                    color: '#333', font: { weight: 'bold', size: 10 }
+                                }
+                            }
+                        }} 
+                    />
+                ) : (
+                    <Bar 
+                        data={barData} 
+                        options={{ 
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: { y: { beginAtZero: true } }
+                        }} 
+                    />
+                )}
+            </div>
+            
+            <div className="flex flex-wrap justify-center gap-2 mt-6">
+                {assets.filter(a => a.balance > 0).map((asset, index) => (
+                    <div key={asset.id} className="flex items-center gap-1 text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded">
+                        <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
+                        {asset.name}
+                    </div>
+                ))}
             </div>
         </div>
       </div>
