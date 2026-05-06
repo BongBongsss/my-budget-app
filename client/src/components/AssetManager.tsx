@@ -193,7 +193,7 @@ const AssetManager: React.FC = () => {
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
                 <th className="p-3 text-left border-b">유형</th>
-                <th className="p-3 text-right border-b">잔액</th>
+                <th className="p-3 border-b" style={{ textAlign: 'right' }}>잔액</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
@@ -205,7 +205,7 @@ const AssetManager: React.FC = () => {
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{(assetTypeMap[asset.type] || asset.type).replace(/[🏦💵📈🏠💳📦]/g, '')}</td>
-                    <td className="p-3 border-b text-right font-bold">{asset.balance.toLocaleString()}</td>
+                    <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>{asset.balance.toLocaleString()}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : asset.memo}</td>
