@@ -170,7 +170,7 @@ const AssetManager: React.FC = () => {
                 <div className="form-group">
                     <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 유형</label>
                     <select className="w-full p-1.5 border rounded text-sm" value={newAsset.type} onChange={e => setNewAsset({...newAsset, type: e.target.value as any})}>
-                        <option value="bank">🏦 예적금</option><option value="cash">💵 현금</option><option value="stock">📈 주식</option><option value="realestate">🏠 부동산</option><option value="liability">💳 부채</option><option value="other">📦 기타</option>
+                        <option value="bank">예적금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="liability">부채</option><option value="other">기타</option>
                     </select>
                 </div>
                 <div className="form-group">
