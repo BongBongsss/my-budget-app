@@ -144,6 +144,7 @@ const AssetManager: React.FC = () => {
                                 beginAtZero: true,
                                 max: 2000000000,
                                 ticks: {
+                                    stepSize: 500000000,
                                     callback: (value: any) => `${(value / 1000000000).toFixed(1)}B`
                                 }
                             }
