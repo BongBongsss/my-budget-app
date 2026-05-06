@@ -212,13 +212,13 @@ const AssetManager: React.FC = () => {
                     <td className="p-3 border-b text-center flex justify-center gap-1">
                       {editingId === asset.id ? (
                         <>
-                          <button onClick={() => handleUpdate(asset.id!)} className="p-1 text-green-600 hover:bg-green-100 rounded"><Check size={18} /></button>
-                          <button onClick={() => setEditingId(null)} className="p-1 text-gray-600 hover:bg-gray-100 rounded"><X size={18} /></button>
+                          <button onClick={() => handleUpdate(asset.id!)} className="btn-icon edit"><Check size={16} /></button>
+                          <button onClick={() => setEditingId(null)} className="btn-icon delete"><X size={16} /></button>
                         </>
                       ) : (
                         <>
-                          <button onClick={() => { setEditingId(asset.id!); setEditForm(asset); }} className="p-1 text-blue-600 hover:bg-blue-100 rounded"><Edit2 size={18} /></button>
-                          <button onClick={() => handleDelete(asset.id!)} className="p-1 text-red-600 hover:bg-red-100 rounded"><Trash2 size={18} /></button>
+                          <button onClick={() => { setEditingId(asset.id!); setEditForm(asset); }} className="btn-icon edit"><Edit2 size={16} /></button>
+                          <button onClick={() => handleDelete(asset.id!)} className="btn-icon delete"><Trash2 size={16} /></button>
                         </>
                       )}
                     </td>
