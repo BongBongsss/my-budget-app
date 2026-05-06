@@ -102,6 +102,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
   const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
   const totalLiabilities = assets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
+  const isAdmin = userRole === 'admin';
 
   const assetTypeMap: Record<string, string> = {
     bank: '예적금', cash: '현금', stock: '주식', 
