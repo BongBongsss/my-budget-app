@@ -127,80 +127,82 @@ const AssetManager: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* 자산 추가 폼 */}
-        <div className="card-form">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        {/* 자산 추가 폼 (왼쪽) */}
+        <div className="card-form h-full">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <Plus size={20} className="text-blue-500" /> 자산 추가
           </h3>
           <div className="space-y-4">
             <div className="form-group">
-              <label>자산 이름</label>
+              <label className="text-xs font-semibold text-gray-500">자산 이름</label>
               <input
                 type="text"
                 placeholder="예: 국민은행 예금, 삼성전자 주식"
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md text-sm"
                 value={newAsset.name}
                 onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
               />
             </div>
-            <div className="form-group">
-              <label>자산 유형</label>
-              <select
-                className="w-full p-2 border rounded-md"
-                value={newAsset.type}
-                onChange={e => setNewAsset({ ...newAsset, type: e.target.value as any })}
-              >
-                <option value="bank">🏦 예적금</option>
-                <option value="cash">💵 현금</option>
-                <option value="stock">📈 주식/투자</option>
-                <option value="realestate">🏠 부동산</option>
-                <option value="liability">💳 부채(대출/할부)</option>
-                <option value="other">📦 기타</option>
-              </select>
+            <div className="flex gap-4">
+              <div className="form-group flex-1">
+                <label className="text-xs font-semibold text-gray-500">자산 유형</label>
+                <select
+                  className="w-full p-2 border rounded-md text-sm"
+                  value={newAsset.type}
+                  onChange={e => setNewAsset({ ...newAsset, type: e.target.value as any })}
+                >
+                  <option value="bank">🏦 예적금</option>
+                  <option value="cash">💵 현금</option>
+                  <option value="stock">📈 주식/투자</option>
+                  <option value="realestate">🏠 부동산</option>
+                  <option value="liability">💳 부채</option>
+                  <option value="other">📦 기타</option>
+                </select>
+              </div>
+              <div className="form-group flex-1">
+                <label className="text-xs font-semibold text-gray-500">현재 잔액</label>
+                <input
+                  type="number"
+                  placeholder="0"
+                  className="w-full p-2 border rounded-md text-sm"
+                  value={newAsset.balance}
+                  onChange={e => setNewAsset({ ...newAsset, balance: parseFloat(e.target.value) || 0 })}
+                />
+              </div>
             </div>
             <div className="form-group">
-              <label>현재 잔액 (금액)</label>
-              <input
-                type="number"
-                placeholder="0"
-                className="w-full p-2 border rounded-md"
-                value={newAsset.balance}
-                onChange={e => setNewAsset({ ...newAsset, balance: parseFloat(e.target.value) || 0 })}
-              />
-            </div>
-            <div className="form-group">
-              <label>메모 (선택)</label>
+              <label className="text-xs font-semibold text-gray-500">메모 (선택)</label>
               <input
                 type="text"
                 placeholder="기타 정보 입력"
-                className="w-full p-2 border rounded-md"
+                className="w-full p-2 border rounded-md text-sm"
                 value={newAsset.memo}
                 onChange={e => setNewAsset({ ...newAsset, memo: e.target.value })}
               />
             </div>
             <button 
               onClick={handleAdd} 
-              className="w-full bg-blue-600 text-white py-2 rounded-md font-bold hover:bg-blue-700 transition-colors"
+              className="w-full bg-blue-600 text-white py-2.5 rounded-md font-bold hover:bg-blue-700 transition-colors shadow-sm"
             >
               자산 등록하기
             </button>
           </div>
         </div>
 
-        {/* 자산 구성 원형 그래프 */}
-        <div className="card-form flex flex-col items-center justify-center p-6">
-          <h3 className="text-lg font-bold mb-4 w-full flex items-center gap-2">
+        {/* 자산 구성 원형 그래프 (오른쪽) */}
+        <div className="card-form flex flex-col h-full p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
             <PieIcon size={20} className="text-blue-500" /> 자산 구성 현황
           </h3>
-          <div style={{ height: '300px', width: '100%', position: 'relative' }}>
+          <div className="flex-1 flex items-center justify-center" style={{ minHeight: '280px', position: 'relative' }}>
             {assets.length > 0 ? (
               <Pie 
                 data={chartData}
                 options={{
                   maintainAspectRatio: false,
                   plugins: {
-                    legend: { position: 'right', labels: { boxWidth: 12, font: { size: 12 } } },
+                    legend: { position: 'right', labels: { boxWidth: 10, font: { size: 11 }, padding: 15 } },
                     datalabels: {
                       formatter: (value: any, ctx: any) => {
                         const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
@@ -208,7 +210,7 @@ const AssetManager: React.FC = () => {
                         return percentage + '%';
                       },
                       color: '#fff',
-                      font: { weight: 'bold', size: 11 },
+                      font: { weight: 'bold', size: 10 },
                       textStrokeColor: '#333',
                       textStrokeWidth: 1,
                       display: 'auto'
@@ -217,7 +219,7 @@ const AssetManager: React.FC = () => {
                 }}
               />
             ) : (
-              <div className="h-full flex items-center justify-center text-gray-400">데이터가 없습니다.</div>
+              <div className="text-gray-400">데이터를 입력하면 그래프가 나타납니다.</div>
             )}
           </div>
         </div>
