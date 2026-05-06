@@ -286,6 +286,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : editForm.memo || asset.memo}</td>
                     <td className="p-3 border-b">
+                      {isAdmin && (
                       <div className="flex justify-start gap-1">
                       {editingId === asset.id ? (
                         <>
@@ -299,6 +300,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                         </>
                       )}
                       </div>
+                      )}
                     </td>
                   </tr>
                 ))}
