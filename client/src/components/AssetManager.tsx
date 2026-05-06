@@ -104,133 +104,34 @@ const AssetManager: React.FC = () => {
     <div className="space-y-6 animate-fadeIn">
       {/* 자산 요약 헤더 */}
       <div className="grid grid-cols-3 gap-6 mb-8">
-        <div className="card-summary balance shadow-md">
-          <div className="icon"><TrendingUp size={24} /></div>
-          <div className="details">
-            <span>총 순자산</span>
-            <h2>{netAssets.toLocaleString()}</h2>
-          </div>
-        </div>
-        <div className="card-summary income shadow-md">
-          <div className="icon"><Landmark size={24} /></div>
-          <div className="details">
-            <span>총 자산</span>
-            <h2>{totalAssets.toLocaleString()}</h2>
-          </div>
-        </div>
-        <div className="card-summary expense shadow-md">
-          <div className="icon"><CreditCard size={24} /></div>
-          <div className="details">
-            <span>총 부채</span>
-            <h2>{totalLiabilities.toLocaleString()}</h2>
-          </div>
-        </div>
+        <div className="card-summary balance shadow-md"><div className="icon"><TrendingUp size={24}/></div><div className="details"><span>총 순자산</span><h2>{netAssets.toLocaleString()}</h2></div></div>
+        <div className="card-summary income shadow-md"><div className="icon"><Landmark size={24}/></div><div className="details"><span>총 자산</span><h2>{totalAssets.toLocaleString()}</h2></div></div>
+        <div className="card-summary expense shadow-md"><div className="icon"><CreditCard size={24}/></div><div className="details"><span>총 부채</span><h2>{totalLiabilities.toLocaleString()}</h2></div></div>
       </div>
 
-      {/* 자산 추가 및 그래프 영역 (동일 행 배치) */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
-        {/* 자산 추가 폼 (왼쪽) */}
-        <div className="card-form shadow-md flex flex-col justify-between" style={{ height: '400px' }}>
+        {/* 왼쪽: 자산 추가 */}
+        <div className="card-form shadow-md flex flex-col justify-between" style={{ minHeight: '400px' }}>
           <div>
-            <h3 className="text-lg font-bold mb-6 flex items-center gap-2">
-              <Plus size={22} className="text-blue-500" /> 자산 추가
-            </h3>
+            <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
             <div className="space-y-4">
-              <div className="form-group">
-                <label className="text-xs font-bold text-gray-500 mb-1 block">자산 이름</label>
-                <input
-                  type="text"
-                  placeholder="예: 국민은행 예금, 삼성전자 주식"
-                  className="w-full p-2 border rounded-md text-sm bg-gray-50 focus:bg-white transition-colors"
-                  value={newAsset.name}
-                  onChange={e => setNewAsset({ ...newAsset, name: e.target.value })}
-                />
-              </div>
-              <div className="flex gap-4">
-                <div className="form-group flex-1">
-                  <label className="text-xs font-bold text-gray-500 mb-1 block">자산 유형</label>
-                  <select
-                    className="w-full p-2 border rounded-md text-sm bg-gray-50 focus:bg-white"
-                    value={newAsset.type}
-                    onChange={e => setNewAsset({ ...newAsset, type: e.target.value as any })}
-                  >
-                    <option value="bank">🏦 예적금</option>
-                    <option value="cash">💵 현금</option>
-                    <option value="stock">📈 주식/투자</option>
-                    <option value="realestate">🏠 부동산</option>
-                    <option value="liability">💳 부채</option>
-                    <option value="other">📦 기타</option>
-                  </select>
-                </div>
-                <div className="form-group flex-1">
-                  <label className="text-xs font-bold text-gray-500 mb-1 block">현재 잔액</label>
-                  <input
-                    type="number"
-                    placeholder="0"
-                    className="w-full p-2 border rounded-md text-sm bg-gray-50 focus:bg-white"
-                    value={newAsset.balance}
-                    onChange={e => setNewAsset({ ...newAsset, balance: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-              <div className="form-group">
-                <label className="text-xs font-bold text-gray-500 mb-1 block">메모 (선택)</label>
-                <input
-                  type="text"
-                  placeholder="기타 정보 입력"
-                  className="w-full p-2 border rounded-md text-sm bg-gray-50 focus:bg-white"
-                  value={newAsset.memo}
-                  onChange={e => setNewAsset({ ...newAsset, memo: e.target.value })}
-                />
-              </div>
+              <input type="text" placeholder="자산 이름" className="w-full p-2 border rounded" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} />
+              <select className="w-full p-2 border rounded" value={newAsset.type} onChange={e => setNewAsset({...newAsset, type: e.target.value as any})}>
+                <option value="bank">🏦 예적금</option><option value="cash">💵 현금</option><option value="stock">📈 주식</option><option value="realestate">🏠 부동산</option><option value="liability">💳 부채</option><option value="other">📦 기타</option>
+              </select>
+              <input type="number" placeholder="잔액" className="w-full p-2 border rounded" value={newAsset.balance} onChange={e => setNewAsset({...newAsset, balance: parseFloat(e.target.value) || 0})} />
             </div>
           </div>
-          <button 
-            onClick={handleAdd} 
-            className="w-full bg-blue-600 text-white py-3 rounded-md font-bold hover:bg-blue-700 transition-all shadow-md mt-6"
-          >
-            자산 등록하기
-          </button>
+          <button onClick={handleAdd} className="w-full bg-blue-600 text-white py-3 rounded font-bold mt-6">자산 등록하기</button>
         </div>
 
-        {/* 자산 구성 원형 그래프 (오른쪽) */}
-        <div className="card-form shadow-md flex flex-col p-6" style={{ height: '400px' }}>
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <PieIcon size={22} className="text-blue-500" /> 자산 구성 현황
-          </h3>
-          <div className="flex-1 flex items-center justify-center relative">
-            {assets.length > 0 ? (
-              <Pie 
-                data={chartData}
-                options={{
-                  maintainAspectRatio: false,
-                  plugins: {
-                    legend: { 
-                      position: 'right', 
-                      labels: { boxWidth: 12, font: { size: 12, weight: 'bold' }, padding: 15 } 
-                    },
-                    datalabels: {
-                      formatter: (value: any, ctx: any) => {
-                        const total = ctx.dataset.data.reduce((a: number, b: number) => a + b, 0);
-                        const percentage = ((value / total) * 100).toFixed(1);
-                        return percentage + '%';
-                      },
-                      color: '#fff',
-                      font: { weight: 'bold', size: 11 },
-                      textStrokeColor: '#333',
-                      textStrokeWidth: 2,
-                      display: 'auto'
-                    }
-                  }
-                }}
-              />
-            ) : (
-              <div className="text-gray-400 flex flex-col items-center gap-2">
-                <PieIcon size={48} className="opacity-20" />
-                <span>데이터를 입력하면 그래프가 나타납니다.</span>
-              </div>
-            )}
-          </div>
+        {/* 오른쪽: 그래프 (원형 + 막대) */}
+        <div className="card-form shadow-md p-6" style={{ minHeight: '400px' }}>
+            <h3 className="text-lg font-bold mb-4">시각화 현황</h3>
+            <div className="grid grid-cols-2 gap-4 h-full">
+                <div><h4 className="text-xs font-bold text-gray-500 mb-2">구성비</h4><Pie data={chartData} options={{plugins:{legend:{display:false}}}} /></div>
+                <div><h4 className="text-xs font-bold text-gray-500 mb-2">잔액 현황</h4><Bar data={barData} options={{plugins:{legend:{display:false}}}} /></div>
+            </div>
         </div>
       </div>
 
