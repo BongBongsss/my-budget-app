@@ -260,7 +260,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
-                <th className="p-3 text-center border-b" style={{ width: '100px' }}>관리</th>
+                <th className="p-3 border-b" style={{ textAlign: 'center', width: '100px' }}>관리</th>
                 </tr>
                 </thead>
                 <tbody>
