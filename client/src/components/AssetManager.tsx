@@ -276,9 +276,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                         (assetTypeMap[asset.type] || asset.type)
                       )}
                     </td>
-                    <td className="p-3 border-b font-bold text-center">
+                    <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>
                       {editingId === asset.id ? (
-                        <input type="number" className="w-full p-1 border rounded text-center" value={editForm.balance} onChange={e => setEditForm({...editForm, balance: parseFloat(e.target.value) || 0})} />
+                        <input type="number" className="w-full p-1 border rounded text-right" value={editForm.balance} onChange={e => setEditForm({...editForm, balance: parseFloat(e.target.value) || 0})} />
                       ) : (
                         asset.balance.toLocaleString()
                       )}
