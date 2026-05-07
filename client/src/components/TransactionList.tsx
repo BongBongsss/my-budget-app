@@ -280,9 +280,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td>
-                    <div className="flex gap-1">
-                      <button className="btn-icon edit" onClick={() => saveEdit(tx.id!)} style={{ fontSize: '10px', padding: '2px 4px' }}>저장</button>
-                      <button className="btn-icon delete" onClick={() => setEditingId(null)} style={{ fontSize: '10px', padding: '2px 4px' }}>취소</button>
+                    <div className="flex gap-2 justify-center">
+                      <button className="btn-icon edit" onClick={() => saveEdit(tx.id!)} title="저장"><Check size={16} /></button>
+                      <button className="btn-icon delete" onClick={() => setEditingId(null)} title="취소"><X size={16} /></button>
                     </div>
                   </td>
                 </>
@@ -302,9 +302,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
                   <td>
                     {isAdmin && (
-                      <div className="flex gap-1">
-                        <button onClick={() => startEdit(tx)} className="btn-icon edit" style={{ fontSize: '10px', padding: '2px 4px' }}>수정</button>
-                        <button onClick={() => onDelete(tx.id!)} className="btn-icon delete" style={{ fontSize: '10px', padding: '2px 4px' }}>삭제</button>
+                      <div className="flex gap-2 justify-center">
+                        <button onClick={() => startEdit(tx)} className="btn-icon edit" title="수정"><Edit2 size={16} /></button>
+                        <button onClick={() => onDelete(tx.id!)} className="btn-icon delete" title="삭제"><Trash2 size={16} /></button>
                       </div>
                     )}
                   </td>
