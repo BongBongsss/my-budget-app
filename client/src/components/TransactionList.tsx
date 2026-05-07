@@ -256,11 +256,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '80px' }}>상위 그룹</th>
             <th style={{ width: '90px' }}>대분류</th>
             <th style={{ width: '80px' }}>소분류</th>
-            <th style={{ width: '120px', textAlign: 'right' }}>내용</th>
+            <th style={{ width: '120px', textAlign: 'left' }}>내용</th>
             <th style={{ width: '80px' }}>금액</th>
             <th style={{ width: '100px' }}>결제수단</th>
             <th>메모</th>
-            <th style={{ width: '100px', textAlign: 'right' }}>관리</th>
+            <th style={{ width: '100px', textAlign: 'center' }}>관리</th>
           </tr>
         </thead>
         <tbody>
