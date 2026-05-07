@@ -256,7 +256,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
                 <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : sortOrder === 'desc' ? '▼' : '↕'}</th>
-                <th className="p-3 text-center border-b cursor-pointer hover:bg-gray-200" onClick={handleSortBalance}>잔액 {balanceSortOrder === 'asc' ? '▲' : balanceSortOrder === 'desc' ? '▼' : '↕'}</th>
+                <th className="p-3 border-b cursor-pointer hover:bg-gray-200" style={{ textAlign: 'center' }} onClick={handleSortBalance}>잔액 {balanceSortOrder === 'asc' ? '▲' : balanceSortOrder === 'desc' ? '▼' : '↕'}</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
