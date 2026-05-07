@@ -211,7 +211,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 변화 추이</h3>
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
-            <div style={{ height: '500px', width: '100%' }}>
+            <div style={{ height: '300px', width: '100%' }}>
                 <Line 
                     data={lineData} 
                     options={{ 
