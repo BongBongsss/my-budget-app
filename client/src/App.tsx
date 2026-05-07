@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, verifyTransactions } from './api';
+import SuggestionNotification from './components/SuggestionNotification';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
 import SummaryCharts from './components/SummaryCharts';
@@ -228,6 +229,7 @@ function App() {
             year={year} setYear={setYear} 
             month={month} setMonth={setMonth} 
           />
+          <SuggestionNotification onRuleApproved={fetchData} />
           <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
           
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
