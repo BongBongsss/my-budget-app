@@ -18,7 +18,8 @@ router.post('/', async (req, res) => {
     await ignoreRule(keyword);
     res.status(201).json({ success: true });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to ignore rule' });
+    console.error('Error in /api/ignored-rules (POST):', error);
+    res.status(500).json({ error: 'Failed to ignore rule', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
