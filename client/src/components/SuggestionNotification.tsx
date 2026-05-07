@@ -22,7 +22,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const fetchCandidates = async () => {
     try {
-      const res = await axios.get('https://my-budget-app-nwm8.onrender.com/api/suggestions/candidates');
+      const res = await axios.get('/api/suggestions/candidates');
       setCandidates(res.data);
       if (res.data.length > 0) setShow(true);
     } catch (err) {
@@ -32,7 +32,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const handleApprove = async (candidate: RuleCandidate) => {
     try {
-      await axios.post('https://my-budget-app-nwm8.onrender.com/api/suggestions/approve', {
+      await axios.post('/api/suggestions/approve', {
         vendor: candidate.vendor,
         category: candidate.suggestedCategory
       });
