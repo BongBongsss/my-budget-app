@@ -237,7 +237,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
 
       <div className="card-form shadow-md mb-8">
           <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold flex items-center gap-2"><Plus size={22} className="text-blue-500" /> 자산 추가</h3>
+            <h3 className="text-lg font-bold flex items-center gap-2">자산 추가</h3>
             <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
               <Plus size={16} /> 등록
             </button>
@@ -267,7 +267,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
         </div>
 
       <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><Wallet size={20} className="text-blue-500" /> 내 자산 목록</h3>
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">내 자산 목록</h3>
         <div className="overflow-x-auto">
           <table className="w-full border-collapse">
             <thead>
