@@ -19,7 +19,7 @@ function App() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'card' | 'transfer' | 'unclassified'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'new'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
@@ -162,14 +162,7 @@ function App() {
   const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
 
   const filteredTransactions = filteredByPeriod.filter(t => {
-    const source = (t.source || '').toLowerCase();
-    const isCard = source.includes('카드');
-    const isTransfer = source.includes('이체');
     if (activeTab === 'new') return t.isVerified === false;
-    if (t.isVerified === false) return false;
-    if (activeTab === 'card') return isCard;
-    if (activeTab === 'transfer') return isTransfer;
-    if (activeTab === 'unclassified') return !isCard && !isTransfer;
     return true;
   });
 
@@ -235,21 +228,19 @@ function App() {
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
           <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
-            {unverifiedCount > 0 && userRole === 'admin' && (
-              <button 
-                className={activeTab === 'new' ? 'btn btn-primary' : 'btn btn-danger'} 
-                onClick={() => setActiveTab('new')}
-                style={{ marginRight: '10px' }}
-              >
-                신규 내역 ({unverifiedCount})
-              </button>
-            )}
-            <div style={{ borderLeft: unverifiedCount > 0 && userRole === 'admin' ? '2px solid #ddd' : 'none', paddingLeft: unverifiedCount > 0 && userRole === 'admin' ? '10px' : '0', display: 'flex' }}>
-              <button className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('all')}>전체</button>
-              <button className={activeTab === 'card' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('card')} style={{ marginLeft: '10px' }}>카드결제</button>
-              <button className={activeTab === 'transfer' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('transfer')} style={{ marginLeft: '10px' }}>계좌이체</button>
-              <button className={activeTab === 'unclassified' ? 'btn btn-primary' : 'btn btn-secondary'} onClick={() => setActiveTab('unclassified')} style={{ marginLeft: '10px' }}>미분류</button>
-            </div>
+            <button 
+              className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} 
+              onClick={() => setActiveTab('all')}
+              style={{ marginRight: '10px' }}
+            >
+              전체
+            </button>
+            <button 
+              className={activeTab === 'new' ? 'btn btn-danger' : 'btn btn-secondary'} 
+              onClick={() => setActiveTab('new')}
+            >
+              신규 ({unverifiedCount})
+            </button>
             
             {activeTab === 'new' && userRole === 'admin' && filteredTransactions.length > 0 && (
               <button 
