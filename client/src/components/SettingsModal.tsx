@@ -6,6 +6,7 @@ import CategoryGroupSettings from './CategoryGroupSettings';
 import PaymentRuleSettings from './PaymentRuleSettings';
 import AssetSettings from './AssetSettings';
 import RecurringSettings from './RecurringSettings';
+import RuleManager from './RuleManager';
 import { CategoryItem } from '../api';
 
 interface SettingsModalProps {
@@ -16,7 +17,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'assets' | 'password'>('category');
+  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'rule' | 'assets' | 'password'>('category');
 
   if (!isOpen) return null;
 
@@ -32,6 +33,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'group' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('group')}>Grouping</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'payment' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('payment')}>Payment Rules</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'recurring' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('recurring')}>Recurring</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>Rule Manager</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'assets' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('assets')}>Assets</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
         </div>
@@ -39,6 +41,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         {activeTab === 'group' && <CategoryGroupSettings categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'payment' && <PaymentRuleSettings onRefresh={onRefresh} />}
         {activeTab === 'recurring' && <RecurringSettings categories={categories} onRefresh={onRefresh} />}
+        {activeTab === 'rule' && <RuleManager categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'assets' && <AssetSettings />}
         {activeTab === 'password' && <ChangePassword onClose={onClose} />}
       </div>

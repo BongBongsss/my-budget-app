@@ -53,6 +53,7 @@ export const bulkAddTransactions = (txs: Transaction[]) => axios.post(`${API_BAS
 
 export const getRules = () => axios.get<CategoryRule[]>(`${API_BASE}/rules`);
 export const addRule = (rule: Partial<CategoryRule>) => axios.post<CategoryRule>(`${API_BASE}/rules`, rule);
+export const updateRule = (id: string, rule: Partial<CategoryRule>) => axios.put(`${API_BASE}/rules/${id}`, rule);
 export const deleteRule = (id: string) => axios.delete(`${API_BASE}/rules/${id}`);
 
 export interface RecurringTransaction {
