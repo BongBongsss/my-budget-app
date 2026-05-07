@@ -13,25 +13,30 @@ export interface RuleCandidate {
  * 규칙화할 수 있는 후보들을 추출합니다.
  */
 export const getRuleCandidates = async (minOccurrence: number = 3): Promise<RuleCandidate[]> => {
-  // 1. 수정 이력이 있는 것으로 간주할 수 있는 데이터를 찾습니다.
-  // 현재 모델에는 'isVerified' 플래그가 있는데, 
-  // 수정된 데이터는 보통 자동 매칭된 '기타'에서 사용자가 바꾼 경우입니다.
+  // 사용자가 수동으로 수정한 데이터를 분석하기 위해 
+  // '기타' 혹은 'Uncategorized'가 아닌 모든 내역을 가져와서 분석합니다.
   const allTransactions = await prisma.transaction.findMany({
     where: {
-      NOT: { category: '기타' },
+      NOT: { 
+          OR: [
+              { category: '기타' },
+              { category: 'Uncategorized' }
+          ]
+      },
       isVerified: true
     }
   });
 
-  // 2. 가맹점별로 카테고리 매핑 빈도를 계산
+  // 2. 가맹점별로 카테고리 매핑 빈도를 계산 (trim 적용)
   const vendorCategoryMap: Record<string, Record<string, number>> = {};
 
   for (const tx of allTransactions) {
-    if (!vendorCategoryMap[tx.vendor]) {
-      vendorCategoryMap[tx.vendor] = {};
+    const vendor = tx.vendor.trim();
+    if (!vendorCategoryMap[vendor]) {
+      vendorCategoryMap[vendor] = {};
     }
     const cat = tx.category;
-    vendorCategoryMap[tx.vendor][cat] = (vendorCategoryMap[tx.vendor][cat] || 0) + 1;
+    vendorCategoryMap[vendor][cat] = (vendorCategoryMap[vendor][cat] || 0) + 1;
   }
 
   // 3. 기존 규칙 및 무시된 규칙에 없는지 확인 후 후보 추출
