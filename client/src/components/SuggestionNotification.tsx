@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
+const API_BASE = 'https://my-budget-app-nwm8.onrender.com/api';
+
 interface RuleCandidate {
   id: string;
   vendor: string;
@@ -22,7 +24,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const fetchCandidates = async () => {
     try {
-      const res = await axios.get('/api/suggestions/candidates');
+      const res = await axios.get(`${API_BASE}/suggestions/candidates`);
       setCandidates(res.data);
       if (res.data.length > 0) setShow(true);
     } catch (err) {
@@ -32,7 +34,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const handleApprove = async (candidate: RuleCandidate) => {
     try {
-      await axios.post('/api/suggestions/approve', {
+      await axios.post(`${API_BASE}/suggestions/approve`, {
         vendor: candidate.vendor,
         category: candidate.suggestedCategory
       });
