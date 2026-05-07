@@ -174,25 +174,23 @@ function App() {
 
   return (
     <div className="container">
-      <header className="header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <h1 style={{ margin: 0 }}>Smart Budget</h1>
-          <nav className="main-nav" style={{ display: 'flex', gap: '10px' }}>
-            <button 
-              className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
-              onClick={() => setCurrentView('budget')}
-            >
-              <BarChart3 size={18} /> 가계부 관리
-            </button>
-            <button 
-              className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
-              onClick={() => setCurrentView('assets')}
-            >
-              <Wallet size={18} /> 자산 관리
-            </button>
-          </nav>
-        </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+      <header className="header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: '1rem' }}>
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Smart Budget</h1>
+        <nav className="main-nav" style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+          <button 
+            className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
+            onClick={() => setCurrentView('budget')}
+          >
+            <BarChart3 size={18} /> 가계부 관리
+          </button>
+          <button 
+            className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
+            onClick={() => setCurrentView('assets')}
+          >
+            <Wallet size={18} /> 자산 관리
+          </button>
+        </nav>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
             <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
