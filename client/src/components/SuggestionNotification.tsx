@@ -32,7 +32,11 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
     }
   };
 
-  const handleDismiss = async (candidate: RuleCandidate) => {
+  const handleDismiss = (candidate: RuleCandidate) => {
+    setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+  };
+
+  const handleIgnore = async (candidate: RuleCandidate) => {
     try {
         await axios.post(`${API_BASE}/ignored-rules`, { keyword: candidate.vendor });
         setCandidates(prev => prev.filter(c => c.id !== candidate.id));
@@ -75,6 +79,9 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
             </button>
             <button onClick={() => handleDismiss(c)} className="btn btn-secondary" style={{ marginLeft: '5px', padding: '2px 8px', fontSize: '12px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none' }}>
               미승인
+            </button>
+            <button onClick={() => handleIgnore(c)} className="btn btn-secondary" style={{ marginLeft: '5px', padding: '2px 8px', fontSize: '12px', backgroundColor: '#fca5a5', color: '#991b1b', border: 'none' }}>
+              무시
             </button>
           </li>
         ))}
