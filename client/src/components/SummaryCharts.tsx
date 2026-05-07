@@ -108,7 +108,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const renderLegend = (type: 'income' | 'expense', processed: any) => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '10px' }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '0px' }}>
       {processed.activeGroups.map((group: string) => (
         <div 
           key={group} 
