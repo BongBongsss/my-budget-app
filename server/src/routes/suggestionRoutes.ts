@@ -21,7 +21,8 @@ router.post('/approve', async (req, res) => {
     const newRule = await addCategoryRule(vendor, category);
     res.json(newRule);
   } catch (error) {
-    res.status(500).json({ error: 'Failed to approve rule' });
+    console.error('Error in /approve:', error);
+    res.status(500).json({ error: 'Failed to approve rule', details: error instanceof Error ? error.message : 'Unknown error' });
   }
 });
 
