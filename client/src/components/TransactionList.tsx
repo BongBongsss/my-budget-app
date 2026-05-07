@@ -297,7 +297,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.category}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.subcategory}>{tx.subcategory}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
-                  <td style={{ textAlign: 'center', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
+                  <td style={{ textAlign: 'right', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.source}>{tx.source}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
                   <td style={{ textAlign: 'center' }}>
