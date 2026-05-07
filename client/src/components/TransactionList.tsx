@@ -252,7 +252,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '30px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
             <th style={{ width: '80px' }}>날짜</th>
             <th style={{ width: '50px' }}>시간</th>
-            <th style={{ width: '40px' }}>타입</th>
             <th style={{ width: '80px' }}>상위 그룹</th>
             <th style={{ width: '90px' }}>대분류</th>
             <th style={{ width: '80px' }}>소분류</th>
@@ -271,7 +270,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
-                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%', fontSize: '11px' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td style={{ fontSize: '12px', color: '#64748b' }}>{getGroupName(tx.category)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%', fontSize: '11px' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
@@ -290,9 +288,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td style={{ fontSize: '12px' }} title={tx.date}>{tx.date}</td>
                   <td style={{ fontSize: '12px' }} title={tx.time}>{tx.time}</td>
-                  <td style={{ fontSize: '12px' }} title={tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}>
-                    {tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}
-                  </td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#64748b' }} title={getGroupName(tx.category)}>{getGroupName(tx.category)}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.category}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.subcategory}>{tx.subcategory}</td>
