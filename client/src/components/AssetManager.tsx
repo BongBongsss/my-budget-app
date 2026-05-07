@@ -204,6 +204,8 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                                 display: true,
                                 color: (ctx: any) => ctx.dataset.borderColor,
                                 font: { weight: 'bold', size: 10 },
+                                anchor: 'end',
+                                align: 'top',
                                 formatter: (value: any) => `${(value / 100000000).toFixed(0)}`
                             }
                         },
