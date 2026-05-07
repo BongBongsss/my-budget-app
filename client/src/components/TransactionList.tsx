@@ -257,7 +257,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '90px' }}>대분류</th>
             <th style={{ width: '80px' }}>소분류</th>
             <th style={{ width: '120px', textAlign: 'left' }}>내용</th>
-            <th style={{ width: '80px' }}>금액</th>
+            <th style={{ width: '80px', textAlign: 'center' }}>금액</th>
             <th style={{ width: '100px' }}>결제수단</th>
             <th>메모</th>
             <th style={{ width: '100px', textAlign: 'center' }}>관리</th>
@@ -297,7 +297,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.category}>{tx.category}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.subcategory}>{tx.subcategory}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.vendor}>{tx.vendor}</td>
-                  <td style={{ textAlign: 'right', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
+                  <td style={{ textAlign: 'center', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.source}>{tx.source}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
                   <td style={{ textAlign: 'center' }}>

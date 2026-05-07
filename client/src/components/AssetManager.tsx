@@ -260,7 +260,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
                 <th className="p-3 text-left border-b">메모</th>
-                <th className="p-3 text-left border-b" style={{ width: '100px' }}>관리</th>
+                <th className="p-3 text-center border-b" style={{ width: '100px' }}>관리</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -276,9 +276,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                         (assetTypeMap[asset.type] || asset.type)
                       )}
                     </td>
-                    <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>
+                    <td className="p-3 border-b font-bold text-center">
                       {editingId === asset.id ? (
-                        <input type="number" className="w-full p-1 border rounded text-right" value={editForm.balance} onChange={e => setEditForm({...editForm, balance: parseFloat(e.target.value) || 0})} />
+                        <input type="number" className="w-full p-1 border rounded text-center" value={editForm.balance} onChange={e => setEditForm({...editForm, balance: parseFloat(e.target.value) || 0})} />
                       ) : (
                         asset.balance.toLocaleString()
                       )}
@@ -286,9 +286,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                     <td className="p-3 border-b text-sm text-gray-500">{asset.createdAt ? new Date(asset.createdAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-500">{asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</td>
                     <td className="p-3 border-b text-sm text-gray-600">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.memo} onChange={e => setEditForm({...editForm, memo: e.target.value})} /> : editForm.memo || asset.memo}</td>
-                    <td className="p-3 border-b">
+                    <td className="p-3 border-b text-center">
                       {isAdmin && (
-                      <div className="flex justify-start gap-1">
+                      <div className="flex justify-center gap-1">
                       {editingId === asset.id ? (
                         <>
                           <button onClick={() => handleUpdate(asset.id!)} className="btn-icon edit"><Check size={16} /></button>
