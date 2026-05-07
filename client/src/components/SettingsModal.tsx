@@ -7,6 +7,7 @@ import PaymentRuleSettings from './PaymentRuleSettings';
 import AssetSettings from './AssetSettings';
 import RecurringSettings from './RecurringSettings';
 import RuleManager from './RuleManager';
+import IgnoredRulesManager from './IgnoredRulesManager';
 import { CategoryItem } from '../api';
 
 interface SettingsModalProps {
@@ -17,7 +18,7 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'rule' | 'password'>('category');
+  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'rule' | 'ignored' | 'password'>('category');
 
   if (!isOpen) return null;
 
@@ -34,6 +35,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'payment' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('payment')}>Payment Rules</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'recurring' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('recurring')}>Recurring</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>Rule Manager</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'ignored' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('ignored')}>Ignored Rules</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
         </div>
         {activeTab === 'category' && <CategorySettings categories={categories} onRefresh={onRefresh} />}
@@ -41,6 +43,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         {activeTab === 'payment' && <PaymentRuleSettings onRefresh={onRefresh} />}
         {activeTab === 'recurring' && <RecurringSettings categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'rule' && <RuleManager categories={categories} onRefresh={onRefresh} />}
+        {activeTab === 'ignored' && <IgnoredRulesManager />}
         {activeTab === 'password' && <ChangePassword onClose={onClose} />}
       </div>
     </div>

@@ -84,3 +84,8 @@ model AssetHistory {
 
   @@unique([yearMonth])
 }
+
+model IgnoredRule {
+  id      String @id @default(uuid())
+  keyword String @unique
+}

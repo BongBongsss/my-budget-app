@@ -32,8 +32,13 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
     }
   };
 
-  const handleDismiss = (candidate: RuleCandidate) => {
-    setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+  const handleDismiss = async (candidate: RuleCandidate) => {
+    try {
+        await axios.post(`${API_BASE}/ignored-rules`, { keyword: candidate.vendor });
+        setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+    } catch (err) {
+        alert('무시 처리 실패');
+    }
   };
 
   const handleApprove = async (candidate: RuleCandidate) => {
