@@ -45,10 +45,10 @@ const RuleManager: React.FC<RuleManagerProps> = ({ categories, onRefresh }) => {
   };
 
   return (
-    <div className="rule-manager">
+    <div className="rule-manager" style={{ maxHeight: '400px', overflowY: 'auto' }}>
       <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-gray-50 border-b">
+        <thead style={{ position: 'sticky', top: 0, background: '#f9fafb', zIndex: 10 }}>
+          <tr className="border-b">
             <th className="p-2 text-left">가맹점 키워드</th>
             <th className="p-2 text-left">카테고리</th>
             <th className="p-2 text-center" style={{ width: '100px' }}>관리</th>
