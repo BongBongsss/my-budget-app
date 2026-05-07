@@ -309,7 +309,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
           ))}
         </tbody>
       </table>
-      <div className="pagination mt-4 flex justify-center gap-2">
+      <div className="pagination mt-2 flex justify-center gap-2">
         <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>이전</button>
         {currentPage > 3 && <button className="btn btn-secondary" onClick={() => setCurrentPage(1)}>1</button>}
         {currentPage > 4 && <span>...</span>}
