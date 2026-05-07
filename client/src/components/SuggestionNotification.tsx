@@ -32,6 +32,10 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
     }
   };
 
+  const handleDismiss = (candidate: RuleCandidate) => {
+    setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+  };
+
   const handleApprove = async (candidate: RuleCandidate) => {
     try {
       await axios.post(`${API_BASE}/suggestions/approve`, {
@@ -63,6 +67,9 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
             <strong>{c.vendor}</strong> → <strong>{c.suggestedCategory}</strong> (반복 횟수: {c.occurrenceCount})
             <button onClick={() => handleApprove(c)} className="btn btn-primary" style={{ marginLeft: '10px', padding: '2px 8px', fontSize: '12px' }}>
               승인
+            </button>
+            <button onClick={() => handleDismiss(c)} className="btn btn-secondary" style={{ marginLeft: '5px', padding: '2px 8px', fontSize: '12px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none' }}>
+              미승인
             </button>
           </li>
         ))}
