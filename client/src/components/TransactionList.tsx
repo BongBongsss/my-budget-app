@@ -279,7 +279,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
                   <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%', fontSize: '11px' }} /></td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}>
                     <div className="flex gap-2 justify-center">
                       <button className="btn-icon edit" onClick={() => saveEdit(tx.id!)} title="저장"><Check size={16} /></button>
                       <button className="btn-icon delete" onClick={() => setEditingId(null)} title="취소"><X size={16} /></button>
@@ -300,7 +300,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ textAlign: 'right', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.source}>{tx.source}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
-                  <td>
+                  <td style={{ textAlign: 'center' }}>
                     {isAdmin && (
                       <div className="flex gap-2 justify-center">
                         <button onClick={() => startEdit(tx)} className="btn-icon edit" title="수정"><Edit2 size={16} /></button>
