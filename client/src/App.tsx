@@ -175,7 +175,7 @@ function App() {
   return (
     <div className="container">
       <header className="header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Smart Budget</h1>
+        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Smart Budget Manager</h1>
         <nav className="main-nav" style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
           <button 
             className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
