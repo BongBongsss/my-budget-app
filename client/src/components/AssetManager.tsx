@@ -211,7 +211,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 변화 추이</h3>
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
-            <div style={{ height: '300px', width: '100%', marginBottom: '20px' }}>
+            <div style={{ height: '500px', width: '100%' }}>
                 <Line 
                     data={lineData} 
                     options={{ 
@@ -231,28 +231,6 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                             }
                         }                    }} 
                 />
-            </div>
-            <div className="overflow-x-auto">
-                <table className="w-full text-xs text-center border-collapse">
-                    <thead>
-                        <tr className="bg-gray-50 border-b">
-                            <th className="p-2">연월</th>
-                            <th className="p-2">총 자산</th>
-                            <th className="p-2">총 부채</th>
-                            <th className="p-2">순자산</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {history.slice(-6).reverse().map((h, i) => (
-                            <tr key={i} className="border-b">
-                                <td className="p-2">{h.yearMonth}</td>
-                                <td className="p-2">{h.totalAssets.toLocaleString()}</td>
-                                <td className="p-2">{h.totalLiabilities.toLocaleString()}</td>
-                                <td className="p-2 font-bold text-blue-600">{h.netAssets.toLocaleString()}</td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
             </div>
         </div>
       </div>
