@@ -17,13 +17,13 @@ interface SettingsModalProps {
 }
 
 const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'rule' | 'assets' | 'password'>('category');
+  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'payment' | 'recurring' | 'rule' | 'password'>('category');
 
   if (!isOpen) return null;
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: activeTab === 'group' || activeTab === 'assets' ? '1350px' : '650px' }}>
+      <div className="modal-content" style={{ maxWidth: activeTab === 'group' ? '1350px' : '650px' }}>
         <div className="modal-header">
           <h3>Settings</h3>
           <button onClick={onClose} className="btn-icon"><X size={20} /></button>
@@ -34,7 +34,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'payment' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('payment')}>Payment Rules</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'recurring' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('recurring')}>Recurring</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>Rule Manager</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'assets' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('assets')}>Assets</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
         </div>
         {activeTab === 'category' && <CategorySettings categories={categories} onRefresh={onRefresh} />}
@@ -42,7 +41,6 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         {activeTab === 'payment' && <PaymentRuleSettings onRefresh={onRefresh} />}
         {activeTab === 'recurring' && <RecurringSettings categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'rule' && <RuleManager categories={categories} onRefresh={onRefresh} />}
-        {activeTab === 'assets' && <AssetSettings />}
         {activeTab === 'password' && <ChangePassword onClose={onClose} />}
       </div>
     </div>
