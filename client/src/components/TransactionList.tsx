@@ -95,11 +95,48 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return false;
   });
 
-  const totalPages = Math.ceil(filteredTransactions.length / itemsPerPage);
-  const paginatedTransactions = filteredTransactions.filter(tx => tx.id).slice(
+  const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
+
+  const requestSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const sortedTransactions = [...filteredTransactions].sort((a, b) => {
+    if (!sortConfig) return 0;
+    const { key, direction } = sortConfig;
+    
+    let aVal: any = key === 'group' ? getGroupName(a.category) : (a as any)[key];
+    let bVal: any = key === 'group' ? getGroupName(b.category) : (b as any)[key];
+    
+    if (key === 'type') {
+      aVal = a.type === 'expense' ? '지출' : a.type === 'income' ? '수입' : '미반영';
+      bVal = b.type === 'expense' ? '지출' : b.type === 'income' ? '수입' : '미반영';
+    }
+
+    if (aVal < bVal) return direction === 'asc' ? -1 : 1;
+    if (aVal > bVal) return direction === 'asc' ? 1 : -1;
+    return 0;
+  });
+
+  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
+  const paginatedTransactions = sortedTransactions.filter(tx => tx.id).slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const SortHeader = ({ label, sortKey }: { label: string, sortKey: string }) => (
+    <th 
+      style={{ width: sortKey === 'type' ? '40px' : sortKey === 'amount' ? '80px' : sortKey === 'group' ? '80px' : '100px', cursor: 'pointer', textAlign: sortKey === 'amount' ? 'center' : 'left' }} 
+      onClick={() => requestSort(sortKey)}
+    >
+      {label} {sortConfig?.key === sortKey ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}
+    </th>
+  );
+
 
   const toggleSelect = (id: string) => {
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
@@ -250,15 +287,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
         <thead>
           <tr>
             <th style={{ width: '30px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? filteredTransactions.map(t => t.id!) : [])} /></th>
-            <th style={{ width: '80px' }}>날짜</th>
-            <th style={{ width: '50px' }}>시간</th>
-            <th style={{ width: '40px' }}>타입</th>
-            <th style={{ width: '80px' }}>상위 그룹</th>
-            <th style={{ width: '90px' }}>대분류</th>
-            <th style={{ width: '80px' }}>소분류</th>
-            <th style={{ width: '120px', textAlign: 'left' }}>내용</th>
-            <th style={{ width: '80px', textAlign: 'center' }}>금액</th>
-            <th style={{ width: '100px' }}>결제수단</th>
+            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜 {sortConfig?.key === 'date' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간 {sortConfig?.key === 'time' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '60px', cursor: 'pointer' }} onClick={() => requestSort('type')}>타입 {sortConfig?.key === 'type' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('group')}>상위 그룹 {sortConfig?.key === 'group' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '90px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류 {sortConfig?.key === 'category' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('subcategory')}>소분류 {sortConfig?.key === 'subcategory' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '120px', textAlign: 'left', cursor: 'pointer' }} onClick={() => requestSort('vendor')}>내용 {sortConfig?.key === 'vendor' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => requestSort('amount')}>금액 {sortConfig?.key === 'amount' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
+            <th style={{ width: '100px', cursor: 'pointer' }} onClick={() => requestSort('source')}>결제수단 {sortConfig?.key === 'source' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : '↕'}</th>
             <th>메모</th>
             <th style={{ width: '100px', textAlign: 'center' }}>관리</th>
           </tr>
