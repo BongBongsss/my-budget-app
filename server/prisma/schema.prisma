@@ -89,3 +89,8 @@ model IgnoredRule {
   id      String @id @default(uuid())
   keyword String @unique
 }
+
+model ExclusionRule {
+  id      String @id @default(uuid())
+  keyword String @unique
+}
