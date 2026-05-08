@@ -5,9 +5,22 @@ import { Transaction } from '@prisma/client';
 
 // 데이터의 고유 지문(hash) 생성 함수 - 정규화 적용
 const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
-  const normalizedVendor = (vendor || 'Unknown').trim();
+  // 1. 업체명 정규화 (모든 공백 제거, 소문자화)
+  const normalizedVendor = (vendor || 'Unknown').replace(/\s+/g, '').toLowerCase();
+  
+  // 2. 금액 정규화 (절대값)
   const normalizedAmount = Math.abs(amount);
-  const normalizedTime = time || '';
+  
+  // 3. 시간 정규화 (HH:mm 형식으로 통일)
+  let normalizedTime = (time || '').trim();
+  if (normalizedTime) {
+    const parts = normalizedTime.split(':');
+    if (parts.length >= 2) {
+      const hours = parts[0].padStart(2, '0');
+      const minutes = parts[1].padStart(2, '0');
+      normalizedTime = `${hours}:${minutes}`;
+    }
+  }
   
   return createHash('sha256')
     .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
