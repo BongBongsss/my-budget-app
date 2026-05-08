@@ -3,85 +3,18 @@ import { autoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 정규화 적용
+// 데이터의 고유 지문(hash) 생성 함수 - 원본 데이터와 호환성 유지
 const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
-  // 1. 업체명 정규화 (모든 공백 제거, 소문자화)
-  const normalizedVendor = (vendor || 'Unknown').replace(/\s+/g, '').toLowerCase();
-  
-  // 2. 금액 정규화 (절대값)
+  const normalizedVendor = (vendor || 'Unknown').trim();
   const normalizedAmount = Math.abs(amount);
-  
-  // 3. 시간 정규화 (HH:mm 형식으로 통일)
-  let normalizedTime = (time || '').trim();
-  if (normalizedTime) {
-    const parts = normalizedTime.split(':');
-    if (parts.length >= 2) {
-      const hours = parts[0].padStart(2, '0');
-      const minutes = parts[1].padStart(2, '0');
-      normalizedTime = `${hours}:${minutes}`;
-    }
-  }
+  const normalizedTime = time || '';
   
   return createHash('sha256')
     .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
     .digest('hex');
 };
 
-// 기존 데이터 정리 및 중복 제거
-export const cleanupTransactions = async () => {
-  // 날짜 순으로 정렬하여 일관된 sequence 부여
-  const allTransactions = await prisma.transaction.findMany({
-    orderBy: [
-      { date: 'asc' },
-      { time: 'asc' },
-      { id: 'asc' } // 동일 시간 내 순서 보장
-    ]
-  });
-
-  const occurrenceMap: Record<string, number> = {};
-  let updatedCount = 0;
-  let deletedCount = 0;
-
-  for (const tx of allTransactions) {
-    const normalizedVendor = (tx.vendor || 'Unknown').trim();
-    const normalizedAmount = Math.abs(tx.amount);
-    const normalizedTime = tx.time || '';
-    
-    const baseKey = `${tx.date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}`;
-    const sequence = occurrenceMap[baseKey] || 0;
-    occurrenceMap[baseKey] = sequence + 1;
-
-    const correctHash = generateHash(tx.date, tx.amount, tx.vendor, tx.time || '', sequence);
-
-    // Hash가 없거나 틀린 경우 업데이트 시도
-    if (!tx.hash || tx.hash !== correctHash) {
-      try {
-        await prisma.transaction.update({
-          where: { id: tx.id },
-          data: { 
-            hash: correctHash,
-            amount: normalizedAmount, // 금액 양수화 (일관성)
-            vendor: normalizedVendor  // 공백 제거
-          }
-        });
-        updatedCount++;
-      } catch (err) {
-        // 이미 해당 hash가 존재한다면 완전 중복이므로 삭제
-        await prisma.transaction.delete({
-          where: { id: tx.id }
-        });
-        deletedCount++;
-      }
-    }
-  }
-  return { updatedCount, deletedCount };
-};
-
-export const getAllTransactions = async (): Promise<Transaction[]> => {
-  return await prisma.transaction.findMany({
-    orderBy: { date: 'desc' },
-  });
-};
+// ... (existing code)
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
@@ -102,14 +35,18 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 지문(Hash)과 삭제된 지문을 한꺼번에 가져옴 (성능 최적화)
-    const [existingHashes, deletedHashes] = await Promise.all([
-      prisma.transaction.findMany({ select: { hash: true } }),
-      prisma.deletedHash.findMany({ select: { hash: true } })
-    ]);
-
+    // 2. 기존 DB의 모든 지문(Hash) 한꺼번에 가져옴
+    const existingHashes = await prisma.transaction.findMany({ select: { hash: true } });
     const existingHashSet = new Set(existingHashes.map(h => h.hash).filter(Boolean));
-    const deletedHashSet = new Set(deletedHashes.map(h => h.hash).filter(Boolean));
+
+    // 3. 삭제된 지문 확인 (테이블이 없을 경우 대비)
+    let deletedHashSet = new Set();
+    try {
+      const deletedHashes = await prisma.deletedHash.findMany({ select: { hash: true } });
+      deletedHashSet = new Set(deletedHashes.map(h => h.hash).filter(Boolean));
+    } catch (e) {
+      console.log("DeletedHash table not ready yet, skipping.");
+    }
 
     const dataToInsert = [];
     const batchOccurrenceMap: Record<string, number> = {};
@@ -126,7 +63,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
       const hash = generateHash(date, amount, vendor, time, batchIndex);
 
-      // 3. 메모리 내에서 중복 및 삭제 여부 빠르게 확인 (DB 요청 없음)
       if (existingHashSet.has(hash)) continue;
       if (deletedHashSet.has(hash)) continue;
       
@@ -149,7 +85,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
     if (dataToInsert.length === 0) return { count: 0 };
 
-    // 4. 새로운 내역들만 일괄 삽입
     return await prisma.transaction.createMany({
       data: dataToInsert as any,
       skipDuplicates: true,
