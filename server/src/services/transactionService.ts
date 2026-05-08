@@ -97,27 +97,48 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     
     const baseKey = `${date}-${time}-${amount}-${vendor}`;
     
-    // 1. DB에 이미 승인되어 있는 동일한 내역의 개수 확인
-    const existingVerifiedCount = await prisma.transaction.count({
-      where: { 
-        date, 
-        time, 
-        amount: { in: [amount, -amount] },
-        vendor: { equals: vendor, mode: 'insensitive' },
-        isVerified: true 
-      }
-    });
-
-    // 2. 현재 배치에서 이 항목이 몇 번째로 등장하는지 계산
+    // 현재 배치 내에서 몇 번째 동일 내역인지 계산
     const batchIndex = batchOccurrenceMap[baseKey] || 0;
     batchOccurrenceMap[baseKey] = batchIndex + 1;
 
-    // 3. 만약 이미 DB에 승인된 개수보다 적은 순서라면, 이미 있는 데이터이므로 건너뜀
-    if (batchIndex < existingVerifiedCount) {
-      continue;
+    // 이 내역이 들어갈 수 있는 유효한 Sequence 번호를 찾음
+    // (DB에 있거나, 삭제 목록에 있는 번호를 건너뜀)
+    let sequence = batchIndex;
+    let finalHash = "";
+    let shouldSkip = false;
+
+    // 이미 DB에 있거나 삭제된 내역을 피해서 시퀀스 결정
+    // 파일 내의 중복(batchIndex)을 고려하면서 DB/삭제목록과 대조
+    let foundValidSequence = false;
+    let currentSequence = 0;
+    let matchesInBatch = 0;
+
+    // 실제로는 파일의 순서(batchIndex)를 유지하는 것이 중요함
+    // 파일의 1번째 동일내역(batchIndex=0) -> DB/삭제목록의 1번째 내역과 매칭
+    const targetMatchIndex = batchIndex; 
+    let dbMatchCount = 0;
+    
+    // 이 부분의 로직을 단순화: 파일의 n번째 동일 내역은 Hash의 n번째 시퀀스와 1:1 매칭됩니다.
+    finalHash = generateHash(date, amount, vendor, time, targetMatchIndex);
+
+    // 1. DB에 존재하는지 확인
+    const existing = await prisma.transaction.findUnique({
+      where: { hash: finalHash }
+    });
+
+    if (existing) {
+      continue; // 이미 DB에 있으므로 스킵
+    }
+
+    // 2. 삭제 목록에 존재하는지 확인
+    const deleted = await prisma.deletedHash.findUnique({
+      where: { hash: finalHash }
+    });
+
+    if (deleted) {
+      continue; // 예전에 삭제했으므로 스킵
     }
     
-    // 4. 실제로 추가해야 할 새로운 내역인 경우
     dataToInsert.push({
       id: randomUUID(),
       date,
@@ -130,7 +151,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       currency: transaction.currency || 'KRW',
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
-      hash: generateHash(date, amount, vendor, time, batchIndex),
+      hash: finalHash,
       isVerified: false, 
     });
   }
@@ -192,6 +213,19 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 };
 
 export const deleteTransaction = async (id: string) => {
+  const transaction = await prisma.transaction.findUnique({
+    where: { id },
+    select: { hash: true }
+  });
+
+  if (transaction?.hash) {
+    await prisma.deletedHash.upsert({
+      where: { hash: transaction.hash },
+      update: {},
+      create: { hash: transaction.hash }
+    });
+  }
+
   return await prisma.transaction.delete({
     where: { id },
   });

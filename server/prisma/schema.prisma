@@ -94,3 +94,8 @@ model ExclusionRule {
   id      String @id @default(uuid())
   keyword String @unique
 }
+
+model DeletedHash {
+  hash      String   @id
+  createdAt DateTime @default(now())
+}
