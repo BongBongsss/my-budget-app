@@ -35,37 +35,33 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 지문(Hash) 한꺼번에 가져옴
-    const existingHashes = await prisma.transaction.findMany({ select: { hash: true } });
-    const existingHashSet = new Set(existingHashes.map(h => h.hash).filter(Boolean));
+    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체] 키 생성 (Safe Mode)
+    const existingTransactions = await prisma.transaction.findMany({
+      select: { date: true, time: true, amount: true, vendor: true }
+    });
 
-    // 3. 삭제된 지문 확인 (테이블이 없을 경우 대비)
-    let deletedHashSet = new Set();
-    try {
-      const deletedHashes = await prisma.deletedHash.findMany({ select: { hash: true } });
-      deletedHashSet = new Set(deletedHashes.map(h => h.hash).filter(Boolean));
-    } catch (e) {
-      console.log("DeletedHash table not ready yet, skipping.");
-    }
+    const existingKeySet = new Set(
+      existingTransactions.map(tx => 
+        `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}`
+      )
+    );
 
     const dataToInsert = [];
-    const batchOccurrenceMap: Record<string, number> = {};
 
     for (const transaction of processedTransactions) {
       const date = transaction.date || new Date().toISOString().split('T')[0];
       const amount = Math.abs(transaction.amount || 0);
       const vendor = (transaction.vendor || 'Unknown').trim();
-      const time = transaction.time || '';
+      const time = (transaction.time || '').trim();
       
-      const baseKey = `${date}-${time}-${amount}-${vendor}`;
-      const batchIndex = batchOccurrenceMap[baseKey] || 0;
-      batchOccurrenceMap[baseKey] = batchIndex + 1;
+      const key = `${date}-${time}-${amount}-${vendor}`;
 
-      const hash = generateHash(date, amount, vendor, time, batchIndex);
-
-      if (existingHashSet.has(hash)) continue;
-      if (deletedHashSet.has(hash)) continue;
+      // 3. 실제 데이터 키로 중복 여부 확인
+      if (existingKeySet.has(key)) continue;
       
+      // 혹시 이번 배치 안에서도 중복이 있을 수 있으므로 추가 후 키셋에 넣음
+      existingKeySet.add(key);
+
       dataToInsert.push({
         id: randomUUID(),
         date,
@@ -78,7 +74,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash,
+        hash: generateHash(date, amount, vendor, time, 0), // 지문은 일단 기본 생성 (대조용으론 안씀)
         isVerified: false, 
       });
     }
@@ -94,6 +90,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     throw error;
   }
 };
+
 
 
 export const verifyTransactions = async (ids: string[]) => {
