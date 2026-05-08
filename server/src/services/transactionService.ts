@@ -16,6 +16,58 @@ const generateHash = (date: string, amount: number, vendor: string, time: string
 
 // ... (existing code)
 
+export const getAllTransactions = async (): Promise<Transaction[]> => {
+  return await prisma.transaction.findMany({
+    orderBy: { date: 'desc' },
+  });
+};
+
+export const cleanupTransactions = async () => {
+  const allTransactions = await prisma.transaction.findMany({
+    orderBy: [
+      { date: 'asc' },
+      { time: 'asc' },
+      { id: 'asc' }
+    ]
+  });
+
+  const occurrenceMap: Record<string, number> = {};
+  let updatedCount = 0;
+  let deletedCount = 0;
+
+  for (const tx of allTransactions) {
+    const normalizedVendor = (tx.vendor || 'Unknown').trim();
+    const normalizedAmount = Math.abs(tx.amount);
+    const normalizedTime = tx.time || '';
+    
+    const baseKey = `${tx.date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}`;
+    const sequence = occurrenceMap[baseKey] || 0;
+    occurrenceMap[baseKey] = sequence + 1;
+
+    const correctHash = generateHash(tx.date, tx.amount, tx.vendor, tx.time || '', sequence);
+
+    if (!tx.hash || tx.hash !== correctHash) {
+      try {
+        await prisma.transaction.update({
+          where: { id: tx.id },
+          data: { 
+            hash: correctHash,
+            amount: normalizedAmount,
+            vendor: normalizedVendor
+          }
+        });
+        updatedCount++;
+      } catch (err) {
+        await prisma.transaction.delete({
+          where: { id: tx.id }
+        });
+        deletedCount++;
+      }
+    }
+  }
+  return { updatedCount, deletedCount };
+};
+
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
     const processedTransactions = await Promise.all(transactions.map(async (t) => ({
@@ -74,7 +126,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, 0), // 지문은 일단 기본 생성 (대조용으론 안씀)
+        hash: generateHash(date, amount, vendor, time, 0),
         isVerified: false, 
       });
     }
@@ -90,6 +142,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     throw error;
   }
 };
+
 
 
 
