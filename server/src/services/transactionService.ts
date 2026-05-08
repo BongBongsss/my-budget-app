@@ -90,7 +90,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       finalCategory: t.category || (await autoCategorize(t.vendor || 'Unknown'))
     })));
 
-    // 카테고리 일괄 등록
+    // 1. 필요한 모든 카테고리 일괄 등록
     const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
     for (const name of uniqueCategories) {
       if (name) {
@@ -101,6 +101,15 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         });
       }
     }
+
+    // 2. 기존 DB의 모든 지문(Hash)과 삭제된 지문을 한꺼번에 가져옴 (성능 최적화)
+    const [existingHashes, deletedHashes] = await Promise.all([
+      prisma.transaction.findMany({ select: { hash: true } }),
+      prisma.deletedHash.findMany({ select: { hash: true } })
+    ]);
+
+    const existingHashSet = new Set(existingHashes.map(h => h.hash).filter(Boolean));
+    const deletedHashSet = new Set(deletedHashes.map(h => h.hash).filter(Boolean));
 
     const dataToInsert = [];
     const batchOccurrenceMap: Record<string, number> = {};
@@ -117,17 +126,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
       const hash = generateHash(date, amount, vendor, time, batchIndex);
 
-      // 1. 이미 DB에 존재하는지 확인
-      const existing = await prisma.transaction.findUnique({
-        where: { hash }
-      });
-      if (existing) continue;
-
-      // 2. 삭제 목록에 존재하는지 확인
-      const deleted = await prisma.deletedHash.findUnique({
-        where: { hash }
-      });
-      if (deleted) continue;
+      // 3. 메모리 내에서 중복 및 삭제 여부 빠르게 확인 (DB 요청 없음)
+      if (existingHashSet.has(hash)) continue;
+      if (deletedHashSet.has(hash)) continue;
       
       dataToInsert.push({
         id: randomUUID(),
@@ -148,6 +149,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
     if (dataToInsert.length === 0) return { count: 0 };
 
+    // 4. 새로운 내역들만 일괄 삽입
     return await prisma.transaction.createMany({
       data: dataToInsert as any,
       skipDuplicates: true,
@@ -157,6 +159,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     throw error;
   }
 };
+
 
 export const verifyTransactions = async (ids: string[]) => {
   return await prisma.transaction.updateMany({
