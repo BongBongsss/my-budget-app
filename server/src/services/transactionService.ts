@@ -87,18 +87,19 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체] 키 생성 (Safe Mode)
+    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체]별로 개수를 셈
     const existingTransactions = await prisma.transaction.findMany({
       select: { date: true, time: true, amount: true, vendor: true }
     });
 
-    const existingKeySet = new Set(
-      existingTransactions.map(tx => 
-        `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}`
-      )
-    );
+    const dbOccurrenceMap: Record<string, number> = {};
+    for (const tx of existingTransactions) {
+      const key = `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}`;
+      dbOccurrenceMap[key] = (dbOccurrenceMap[key] || 0) + 1;
+    }
 
     const dataToInsert = [];
+    const batchOccurrenceMap: Record<string, number> = {};
 
     for (const transaction of processedTransactions) {
       const date = transaction.date || new Date().toISOString().split('T')[0];
@@ -107,12 +108,14 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const time = (transaction.time || '').trim();
       
       const key = `${date}-${time}-${amount}-${vendor}`;
-
-      // 3. 실제 데이터 키로 중복 여부 확인
-      if (existingKeySet.has(key)) continue;
       
-      // 혹시 이번 배치 안에서도 중복이 있을 수 있으므로 추가 후 키셋에 넣음
-      existingKeySet.add(key);
+      // 이번 배치에서 몇 번째 등장하는지 계산
+      const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
+      batchOccurrenceMap[key] = currentBatchCount;
+
+      // 이미 DB에 있는 개수보다 현재 배치에서의 순서가 작거나 같다면 중복임
+      const existingCountInDb = dbOccurrenceMap[key] || 0;
+      if (currentBatchCount <= existingCountInDb) continue;
 
       dataToInsert.push({
         id: randomUUID(),
@@ -126,7 +129,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, 0),
+        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1),
         isVerified: false, 
       });
     }
