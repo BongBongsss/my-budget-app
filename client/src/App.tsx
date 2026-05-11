@@ -261,7 +261,7 @@ function App() {
                   style={{ backgroundColor: '#dc2626' }}
                   onClick={() => {
                     if (window.confirm('표시된 모든 내역을 삭제하시겠습니까?')) {
-                      onBulkDelete(filteredTransactions.map(t => t.id!));
+                      handleBulkDelete(filteredTransactions.map(t => t.id!));
                     }
                   }}
                 >
