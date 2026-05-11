@@ -21,6 +21,7 @@ model Transaction {
   memo         String?
   hash         String? @unique
   isVerified   Boolean @default(true)
+  isDuplicate  Boolean @default(false)
 }
 
 model CategoryRule {
