@@ -229,6 +229,7 @@ function App() {
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
           <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+            {/* Force cache refresh: v2 */}
             <button 
               className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} 
               onClick={() => setActiveTab('all')}
@@ -246,17 +247,11 @@ function App() {
             <button 
               className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
               onClick={() => setActiveTab('duplicate')}
-              style={{ marginRight: '10px' }}
-            >
-              중복 ({duplicateCount})
-            </button>
-            <button 
-              className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
-              onClick={() => setActiveTab('duplicate')}
               style={{ backgroundColor: activeTab === 'duplicate' ? '#f59e0b' : '', color: activeTab === 'duplicate' ? 'white' : '' }}
             >
               중복 ({duplicateCount})
             </button>
+
             
             {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
               <button 
