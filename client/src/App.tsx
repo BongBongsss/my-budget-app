@@ -163,6 +163,7 @@ function App() {
   const unverifiedTransactions = transactions.filter(t => t.isVerified === false);
   const newCount = unverifiedTransactions.filter(t => !t.isDuplicate).length;
   const duplicateCount = unverifiedTransactions.filter(t => t.isDuplicate).length;
+  const verifiedCount = transactions.filter(t => t.isVerified !== false).length;
 
   const filteredTransactions = (activeTab === 'all' ? filteredByPeriod : transactions).filter(t => {
     if (activeTab === 'all') return t.isVerified !== false;
@@ -235,7 +236,7 @@ function App() {
               onClick={() => setActiveTab('all')}
               style={{ marginRight: '10px' }}
             >
-              전체
+              전체 ({verifiedCount})
             </button>
             <button 
               className={activeTab === 'new' ? 'btn btn-danger' : 'btn btn-secondary'} 
