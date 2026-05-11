@@ -140,8 +140,11 @@ export const cleanupTransactions = async () => {
       where: { isVerified: true },
       select: {
         date: true,
+        time: true,
+        type: true,
         vendor: true,
         amount: true,
+        source: true,
       },
     }),
     prisma.transaction.findMany({
