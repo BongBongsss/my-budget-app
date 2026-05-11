@@ -14,7 +14,7 @@ const generateHash = (date: string, amount: number, vendor: string, time: string
     .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
     .digest('hex');
 };
- Applied fuzzy match at line 6-15.
+
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
     orderBy: { date: 'desc' },
