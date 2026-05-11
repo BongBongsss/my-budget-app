@@ -16,6 +16,9 @@ const normalizeAmount = (value: number | null | undefined) => {
   return Math.round(Math.abs(Number(value || 0)) * 100);
 };
 
+// Import duplicate matching intentionally ignores fields users commonly edit
+// after verification: type, category, subcategory, and memo.
+// Source is kept because the same amount/vendor/time can move through different accounts.
 const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
   return [
     normalizeText(tx.date),
@@ -66,6 +69,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       return {
         id: randomUUID(),
         ...normalized,
+        // This hash is only a row-level unique value for the existing schema.
+        // Duplicate detection uses buildDuplicateKey above.
         hash: randomUUID(),
         isVerified: false,
         isDuplicate: verifiedKeys.has(buildDuplicateKey(normalized)),
@@ -106,6 +111,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       currency: transaction.currency || 'KRW',
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
+      // This hash is not used for duplicate detection.
       hash: randomUUID(),
       isVerified: true,
       isDuplicate: false
