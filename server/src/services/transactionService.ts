@@ -113,10 +113,10 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
     if (dataToInsert.length === 0) return { count: 0 };
 
-    // 3. 모든 내역을 일괄 삽입
+    // 3. 모든 내역을 일괄 삽입 (중복 지문은 에러 없이 건너뜀)
     return await prisma.transaction.createMany({
       data: dataToInsert as any,
-      skipDuplicates: false, // 모든 내역을 무조건 삽입
+      skipDuplicates: true, 
     });
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
