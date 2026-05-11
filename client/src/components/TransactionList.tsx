@@ -340,6 +340,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ textAlign: 'center' }}>
                     {isAdmin && (
                       <div className="flex gap-2 justify-center">
+                        {!tx.isVerified && (
+                          <button onClick={() => onBulkDelete([tx.id!]) || handleSingleVerify(tx.id!)} className="btn-icon edit" title="승인">
+                            <Check size={16} color="green" />
+                          </button>
+                        )}
                         <button onClick={() => startEdit(tx)} className="btn-icon edit" title="수정"><Edit2 size={16} /></button>
                         <button onClick={() => onDelete(tx.id!)} className="btn-icon delete" title="삭제"><Trash2 size={16} /></button>
                       </div>
