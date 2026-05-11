@@ -337,11 +337,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ textAlign: 'right', fontWeight: 'bold' }} title={tx.amount.toLocaleString()}>{tx.amount.toLocaleString()}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={tx.source}>{tx.source}</td>
                   <td style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#666' }} title={tx.memo}>{tx.memo}</td>
+  const handleSingleVerify = async (id: string) => {
+    await onUpdate(id, { isVerified: true });
+    onRefresh();
+  };
+
+  return (
+    <div className="transaction-list">
+...
                   <td style={{ textAlign: 'center' }}>
                     {isAdmin && (
                       <div className="flex gap-2 justify-center">
                         {!tx.isVerified && (
-                          <button onClick={() => onBulkDelete([tx.id!]) || handleSingleVerify(tx.id!)} className="btn-icon edit" title="승인">
+                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon edit" title="승인">
                             <Check size={16} color="green" />
                           </button>
                         )}
