@@ -118,7 +118,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency,
         source,
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, source, type, category, subcategory, currency, i + 30000), 
+        hash: generateHash(date, amount, vendor, time, source, type, category, subcategory, currency, currentBatchCount - 1), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
