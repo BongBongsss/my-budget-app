@@ -83,10 +83,7 @@ router.post('/import', upload.single('file'), async (req, res) => {
       return res.status(400).json({ error: 'Unsupported file format' });
     }
     
-    await bulkAddTransactions(transactions);
-    const savedTransactions = await getAllTransactions();
-
-    res.status(201).json(savedTransactions);
+    res.status(200).json(transactions);
   } catch (error) {
     console.error('Error during file import:', error);
     res.status(500).json({ error: (error as Error).message || 'Failed to parse or import file' });

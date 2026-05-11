@@ -4,9 +4,7 @@ import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
-  // 장부 보호를 위해 확정(승인)된 데이터만 전체 목록에 표시
   return await prisma.transaction.findMany({
-    where: { isVerified: true },
     orderBy: { date: 'desc' },
   });
 };
@@ -91,6 +89,13 @@ export const bulkDeleteTransactions = async (ids: string[]) => {
   return await prisma.transaction.deleteMany({
     where: { id: { in: ids } }
   });
+};
+
+export const cleanupTransactions = async () => {
+  return {
+    updatedCount: 0,
+    deletedCount: 0
+  };
 };
 
 export const applyAutoRulesToExisting = async () => {
