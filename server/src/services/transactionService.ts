@@ -5,7 +5,6 @@ import { Transaction } from '@prisma/client';
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
-    where: { isVerified: true }, // 전체 탭은 승인된 것만
     orderBy: { date: 'desc' },
   });
 };
