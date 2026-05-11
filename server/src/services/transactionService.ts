@@ -129,8 +129,43 @@ export const bulkDeleteTransactions = async (ids: string[]) => {
 };
 
 export const cleanupTransactions = async () => {
+  const [verifiedTransactions, unverifiedTransactions] = await Promise.all([
+    prisma.transaction.findMany({
+      where: { isVerified: true },
+      select: {
+        date: true,
+        vendor: true,
+        amount: true,
+      },
+    }),
+    prisma.transaction.findMany({
+      where: { isVerified: false },
+      select: {
+        id: true,
+        date: true,
+        vendor: true,
+        amount: true,
+        isDuplicate: true,
+      },
+    }),
+  ]);
+
+  const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
+  let updatedCount = 0;
+
+  for (const tx of unverifiedTransactions) {
+    const shouldBeDuplicate = verifiedKeys.has(buildDuplicateKey(tx));
+    if (tx.isDuplicate !== shouldBeDuplicate) {
+      await prisma.transaction.update({
+        where: { id: tx.id },
+        data: { isDuplicate: shouldBeDuplicate },
+      });
+      updatedCount++;
+    }
+  }
+
   return {
-    updatedCount: 0,
+    updatedCount,
     deletedCount: 0
   };
 };
