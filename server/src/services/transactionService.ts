@@ -87,37 +87,14 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체]별로 개수를 셈
-    const existingTransactions = await prisma.transaction.findMany({
-      select: { date: true, time: true, amount: true, vendor: true }
-    });
-
-    const dbOccurrenceMap: Record<string, number> = {};
-    for (const tx of existingTransactions) {
-      const key = `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}`;
-      dbOccurrenceMap[key] = (dbOccurrenceMap[key] || 0) + 1;
-    }
-
-    const dataToInsert = [];
-    const batchOccurrenceMap: Record<string, number> = {};
-
-    for (const transaction of processedTransactions) {
+    // 2. 중복 체크 없이 모든 데이터를 삽입 목록에 추가
+    const dataToInsert = processedTransactions.map((transaction, index) => {
       const date = transaction.date || new Date().toISOString().split('T')[0];
       const amount = Math.abs(transaction.amount || 0);
       const vendor = (transaction.vendor || 'Unknown').trim();
       const time = (transaction.time || '').trim();
       
-      const key = `${date}-${time}-${amount}-${vendor}`;
-      
-      // 이번 배치에서 몇 번째 등장하는지 계산
-      const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
-      batchOccurrenceMap[key] = currentBatchCount;
-
-      // 이미 DB에 있는 개수보다 현재 배치에서의 순서가 작거나 같다면 중복임
-      const existingCountInDb = dbOccurrenceMap[key] || 0;
-      if (currentBatchCount <= existingCountInDb) continue;
-
-      dataToInsert.push({
+      return {
         id: randomUUID(),
         date,
         time,
@@ -129,22 +106,24 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1),
+        hash: generateHash(date, amount, vendor, time, index), // 고유성을 위해 인덱스 사용
         isVerified: false, 
-      });
-    }
+      };
+    });
 
     if (dataToInsert.length === 0) return { count: 0 };
 
+    // 3. 모든 내역을 일괄 삽입
     return await prisma.transaction.createMany({
       data: dataToInsert as any,
-      skipDuplicates: true,
+      skipDuplicates: false, // 모든 내역을 무조건 삽입
     });
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
     throw error;
   }
 };
+
 
 
 
