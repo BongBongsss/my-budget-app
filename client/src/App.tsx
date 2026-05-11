@@ -16,6 +16,7 @@ axios.defaults.withCredentials = true;
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [importResults, setImportResults] = useState<Transaction[] | null>(null); // 임포트 결과 임시 저장
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
@@ -132,8 +133,10 @@ function App() {
     const file = e.target.files[0];
     try {
       const res = await importFile(file);
-      await bulkAddTransactions(res.data);
-      await fetchData();
+      const bulkRes = await bulkAddTransactions(res.data);
+      // 서버에서 받은 428개 전체(중복 포함)를 임시 메모리에 저장
+      setImportResults(bulkRes.data); 
+      await fetchData(); // DB 상태 업데이트 (신규 내역만 반영됨)
       setActiveTab('new');
     } catch (err: any) {
       alert('Error importing file');
@@ -145,8 +148,8 @@ function App() {
     try {
       await verifyTransactions(ids);
       await fetchData();
-      const remainingNew = transactions.filter(t => t.isVerified === false).length - ids.length;
-      if (remainingNew <= 0) setActiveTab('all');
+      setImportResults(null); // 승인 후 임시 결과 초기화
+      setActiveTab('all');
     } catch (err) {
       alert('승인 중 오류가 발생했습니다.');
     }
@@ -161,12 +164,15 @@ function App() {
 
   const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
 
-  const unverifiedTransactions = transactions.filter(t => t.isVerified === false);
+  // 화면에 보여줄 데이터 결정 (임포트 직후라면 임포트 결과물을, 아니면 DB 데이터를 사용)
+  const displayTransactions = importResults || transactions;
+
+  const unverifiedTransactions = displayTransactions.filter(t => t.isVerified === false);
   const newCount = unverifiedTransactions.filter(t => !t.isDuplicate).length;
   const duplicateCount = unverifiedTransactions.filter(t => t.isDuplicate).length;
 
-  const filteredTransactions = filteredByPeriod.filter(t => {
-    if (activeTab === 'all') return t.isVerified !== false; // 전체 탭은 승인된 것만 표시
+  const filteredTransactions = (activeTab === 'all' ? filteredByPeriod : displayTransactions).filter(t => {
+    if (activeTab === 'all') return t.isVerified !== false;
     if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
     if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
     return true;
