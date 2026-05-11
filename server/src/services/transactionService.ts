@@ -108,9 +108,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const amount = Math.abs(transaction.amount || 0);
       const vendor = (transaction.vendor || 'Unknown').trim();
       const time = (transaction.time || '').trim();
-      
+
       const key = `${date}-${time}-${amount}-${vendor}`;
-      
+
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
 
@@ -129,10 +129,19 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1),
+        hash: generateHash(date, amount, vendor, time, i + 10000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
+
+      // 결과 리스트에는 무조건 추가 (428개 보장)
+      fullResultList.push(txData);
+
+      // DB 저장은 정말 새로운 것만
+      if (!isDuplicate) {
+        dataToInsert.push(txData);
+      }
+    }
 
       // 중요: 중복이 아닌 경우에만 DB 삽입 목록에 추가
       if (!isDuplicate) {
