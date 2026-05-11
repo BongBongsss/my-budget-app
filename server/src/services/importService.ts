@@ -13,27 +13,24 @@ export interface ParsedTransaction {
   currency?: string;
   source: string;
   memo?: string;
+  isDuplicate?: boolean;
 }
 
 const normalizeData = (row: any): ParsedTransaction => {
-  // 날짜 강제 변환 로직
+  // 1. 날짜 (엑셀 '날짜' 또는 '일자')
   let dateRaw = row['날짜'] || row['일자'];
   let dateStr: string;
-  
   if (dateRaw && !isNaN(Number(dateRaw)) && typeof dateRaw !== 'object' && String(dateRaw).length > 4) {
-    // 엑셀 날짜 일련번호 처리 (예: 46139)
     const date = new Date((Number(dateRaw) - 25569) * 86400 * 1000);
     dateStr = date.toISOString().split('T')[0];
   } else {
     dateStr = String(dateRaw || new Date().toISOString().split('T')[0]).split(' ')[0].replace(/\./g, '-');
   }
 
-  // 시간 강제 변환 로직
+  // 2. 시간 (엑셀 '시간')
   let timeRaw = row['시간'];
   let timeStr = "";
-  
   if (timeRaw !== undefined && !isNaN(Number(timeRaw)) && Number(timeRaw) < 1) {
-    // 엑셀 시간 일련번호 처리 (예: 0.2483...)
     const totalSeconds = Math.round(Number(timeRaw) * 86400);
     const hours = Math.floor(totalSeconds / 3600);
     const minutes = Math.floor((totalSeconds % 3600) / 60);
@@ -42,15 +39,22 @@ const normalizeData = (row: any): ParsedTransaction => {
     timeStr = String(timeRaw || '');
   }
 
-  const vendor = row['내용'] || row['가맹점명'] || 'Unknown';
+  // 3. 내용 (엑셀 '내용' -> 시스템 'vendor')
+  const content = String(row['내용'] || row['가맹점명'] || 'Unknown').trim();
+
+  // 4. 금액 (엑셀 '금액')
   const rawAmount = String(row['금액'] || '0').replace(/,/g, '').replace(/[^\d.-]/g, '');
   const amount = parseFloat(rawAmount);
   
-  const typeStr = row['타입'] || '';
+  // 5. 타입 (엑셀 '타입')
+  const typeStr = String(row['타입'] || '');
   const type: 'income' | 'expense' = (typeStr.includes('수입') || typeStr.includes('입금')) ? 'income' : 'expense';
   
+  // 6. 분류 (엑셀 '대분류', '소분류')
   const category = row['대분류'] || row['카테고리'] || '기타';
   const subcategory = row['소분류'] || '';
+
+  // 7. 기타 (엑셀 '화폐', '결제수단', '메모')
   const currency = row['화폐'] || 'KRW';
   const source = row['결제수단'] || 'file_import';
   const memo = row['메모'] || '';
@@ -59,9 +63,9 @@ const normalizeData = (row: any): ParsedTransaction => {
     date: dateStr,
     time: timeStr,
     type: type,
-    category: category,
+    category: String(category),
     subcategory: String(subcategory),
-    vendor: String(vendor),
+    vendor: content, // '내용' 컬럼 데이터
     amount: Math.abs(isNaN(amount) ? 0 : amount),
     currency: String(currency),
     source: String(source),
