@@ -308,7 +308,17 @@ const TransactionList: React.FC<TransactionListProps> = ({
                         </button>
                       )}
                       <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
-                      <button onClick={() => onDelete(tx.id!)} className="btn-icon" title="삭제"><Trash2 size={16} /></button>
+                      <button
+                        onClick={() => {
+                          if (window.confirm(`이 항목을 삭제하시겠습니까?\n${tx.date} ${tx.time || ''} ${tx.vendor} ${tx.amount.toLocaleString()}원`)) {
+                            onDelete(tx.id!);
+                          }
+                        }}
+                        className="btn-icon"
+                        title="삭제"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </td>
                 </>
