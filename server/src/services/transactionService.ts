@@ -3,14 +3,15 @@ import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 업체명 포함
-const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
+// 데이터의 고유 지문(hash) 생성 함수 - 결제수단(Source)까지 포함하여 정밀도 극대화
+const generateHash = (date: string, amount: number, vendor: string, time: string = '', source: string = '', sequence: number = 0) => {
   const normalizedVendor = (vendor || 'Unknown').trim();
   const normalizedAmount = Math.abs(amount);
   const normalizedTime = time || '';
+  const normalizedSource = (source || '').trim();
   
   return createHash('sha256')
-    .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
+    .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${normalizedSource}-${sequence}`)
     .digest('hex');
 };
 
@@ -47,18 +48,19 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체]별로 개수를 셈
+    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체-결제수단]별로 개수를 셈
     const existingTransactions = await prisma.transaction.findMany({
-      select: { date: true, time: true, amount: true, vendor: true }
+      select: { date: true, time: true, amount: true, vendor: true, source: true }
     });
 
     const dbOccurrenceMap: Record<string, number> = {};
     for (const tx of existingTransactions) {
-      const key = `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}`;
+      const key = `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}-${(tx.source || '').trim()}`;
       dbOccurrenceMap[key] = (dbOccurrenceMap[key] || 0) + 1;
     }
 
     const dataToInsert = [];
+    const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
     // 3. 428개 데이터 하나하나 정밀 처리
@@ -68,8 +70,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const amount = Math.abs(transaction.amount || 0);
       const vendor = (transaction.vendor || 'Unknown').trim();
       const time = (transaction.time || '').trim();
+      const source = (transaction.source || 'file_import').trim();
 
-      const key = `${date}-${time}-${amount}-${vendor}`;
+      const key = `${date}-${time}-${amount}-${vendor}-${source}`;
       
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
@@ -88,21 +91,21 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         vendor,
         amount,
         currency: transaction.currency || 'KRW',
-        source: transaction.source || 'file_import',
+        source: source,
         memo: transaction.memo || null,
-        // 중요: 날짜/시간/금액/업체/순번을 모두 포함한 철저한 지문 생성
-        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1), 
+        hash: generateHash(date, amount, vendor, time, source, i + 30000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
 
-      // 중복이 아닌 경우에만 DB 삽입 목록에 추가
+      fullResultList.push(txData);
+
       if (!isDuplicate) {
         dataToInsert.push(txData);
       }
     }
 
-    // 4. 정말 새로운 데이터만 DB에 저장
+    // 4. 신규 데이터들만 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
@@ -110,8 +113,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       });
     }
 
-    // 5. 전체 탭에는 영향을 주지 않고, fetchData를 통해 신규 탭에 반영됨
-    return { count: dataToInsert.length };
+    return fullResultList;
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
     throw error;
@@ -136,7 +138,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
     where: { date, time, amount, vendor }
   });
 
-  const hash = generateHash(date, amount, vendor, time, existingCount);
+  const hash = generateHash(date, amount, vendor, time, '', existingCount);
 
   return await prisma.transaction.upsert({
     where: { hash: hash },
