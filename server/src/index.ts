@@ -28,9 +28,8 @@ app.set('trust proxy', 1);
 
 app.use(cors({ 
   origin: (origin, callback) => {
-    // Vercel에서 오는 요청인지 확인
     if (!origin || origin.endsWith('.vercel.app')) {
-      callback(null, true);
+      callback(null, origin); // 요청한 origin을 그대로 반영
     } else {
       callback(new Error('Not allowed by CORS'));
     }
