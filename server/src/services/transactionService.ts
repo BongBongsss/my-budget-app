@@ -14,8 +14,6 @@ const generateHash = (date: string, amount: number, vendor: string, time: string
     .digest('hex');
 };
 
-// ... (existing code)
-
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
     orderBy: { date: 'desc' },
@@ -143,15 +141,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-      // 중요: 중복이 아닌 경우에만 DB 삽입 목록에 추가
-      if (!isDuplicate) {
-        dataToInsert.push(txData);
-      }
-      
-      // 결과 리스트에는 중복 여부 상관없이 모두 추가
-      fullResultList.push(txData);
-    }
-
     // 3. 중복이 아닌 내역들만 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
@@ -160,19 +149,13 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       });
     }
 
-    // 4. 프론트엔드로 전체 428개 리스트 반환 (중복 데이터 포함)
+    // 4. 프론트엔드로 전체 리스트 반환
     return fullResultList;
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
     throw error;
   }
 };
-
-
-
-
-
-
 
 export const verifyTransactions = async (ids: string[]) => {
   return await prisma.transaction.updateMany({
