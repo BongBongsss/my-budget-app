@@ -57,9 +57,10 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
 
     if (dataToInsert.length === 0) return [];
 
-    // 3. 모든 내역을 일괄 삽입
+    // 3. 모든 내역을 일괄 삽입 (중복 지문 충돌 시 에러 없이 건너뛰어 안정성 확보)
     await prisma.transaction.createMany({
       data: dataToInsert as any,
+      skipDuplicates: true, 
     });
 
     return dataToInsert;
