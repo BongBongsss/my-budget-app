@@ -255,17 +255,30 @@ function App() {
 
             
             {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
-              <button 
-                className="btn btn-primary" 
-                style={{ marginLeft: 'auto', backgroundColor: '#16a34a' }}
-                onClick={() => {
-                  if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
-                    handleVerify(filteredTransactions.map(t => t.id!));
-                  }
-                }}
-              >
-                모두 승인하기
-              </button>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+                <button 
+                  className="btn btn-danger" 
+                  style={{ backgroundColor: '#dc2626' }}
+                  onClick={() => {
+                    if (window.confirm('표시된 모든 내역을 삭제하시겠습니까?')) {
+                      onBulkDelete(filteredTransactions.map(t => t.id!));
+                    }
+                  }}
+                >
+                  모두 삭제
+                </button>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ backgroundColor: '#16a34a' }}
+                  onClick={() => {
+                    if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
+                      handleVerify(filteredTransactions.map(t => t.id!));
+                    }
+                  }}
+                >
+                  모두 승인하기
+                </button>
+              </div>
             )}
           </div>
 
