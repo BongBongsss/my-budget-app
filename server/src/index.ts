@@ -27,7 +27,14 @@ const PgSession = connectPgSimple(session);
 app.set('trust proxy', 1);
 
 app.use(cors({ 
-  origin: 'https://my-budget-app-client-vzvzs0a1z-hyokyulee-6354s-projects.vercel.app',
+  origin: (origin, callback) => {
+    // Vercel에서 오는 요청인지 확인
+    if (!origin || origin.endsWith('.vercel.app')) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
