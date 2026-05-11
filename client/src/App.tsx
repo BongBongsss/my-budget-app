@@ -236,19 +236,11 @@ function App() {
             <button 
               className={activeTab === 'new' ? 'btn btn-danger' : 'btn btn-secondary'} 
               onClick={() => setActiveTab('new')}
-              style={{ marginRight: '10px' }}
             >
-              신규 ({newCount})
-            </button>
-            <button 
-              className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
-              onClick={() => setActiveTab('duplicate')}
-              style={{ backgroundColor: activeTab === 'duplicate' ? '#f59e0b' : '', color: activeTab === 'duplicate' ? 'white' : '' }}
-            >
-              중복 ({duplicateCount})
+              신규 ({unverifiedCount})
             </button>
             
-            {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
+            {activeTab === 'new' && userRole === 'admin' && filteredTransactions.length > 0 && (
               <button 
                 className="btn btn-primary" 
                 style={{ marginLeft: 'auto', backgroundColor: '#16a34a' }}
