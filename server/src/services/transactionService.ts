@@ -99,6 +99,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     }
 
     const dataToInsert = [];
+    const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
     for (let i = 0; i < processedTransactions.length; i++) {
@@ -114,9 +115,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       batchOccurrenceMap[key] = currentBatchCount;
 
       const existingCountInDb = dbOccurrenceMap[key] || 0;
-      if (currentBatchCount <= existingCountInDb) continue; // 이미 있으면 아예 안 가져옴
+      const isDuplicate = currentBatchCount <= existingCountInDb;
 
-      dataToInsert.push({
+      const txData = {
         id: randomUUID(),
         date,
         time,
@@ -130,22 +131,34 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         memo: transaction.memo || null,
         hash: generateHash(date, amount, vendor, time, currentBatchCount - 1),
         isVerified: false, 
-        isDuplicate: false,
+        isDuplicate: isDuplicate,
+      };
+
+      // 중요: 중복이 아닌 경우에만 DB 삽입 목록에 추가
+      if (!isDuplicate) {
+        dataToInsert.push(txData);
+      }
+      
+      // 결과 리스트에는 중복 여부 상관없이 모두 추가
+      fullResultList.push(txData);
+    }
+
+    // 3. 중복이 아닌 내역들만 실제로 DB에 저장
+    if (dataToInsert.length > 0) {
+      await prisma.transaction.createMany({
+        data: dataToInsert as any,
+        skipDuplicates: true, 
       });
     }
 
-    if (dataToInsert.length === 0) return { count: 0 };
-
-    // 3. 모든 내역을 일괄 삽입
-    return await prisma.transaction.createMany({
-      data: dataToInsert as any,
-      skipDuplicates: true, 
-    });
+    // 4. 프론트엔드로 전체 428개 리스트 반환 (중복 데이터 포함)
+    return fullResultList;
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
     throw error;
   }
 };
+
 
 
 
