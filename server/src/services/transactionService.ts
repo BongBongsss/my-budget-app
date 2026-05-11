@@ -3,17 +3,18 @@ import { autoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 원본 데이터와 호환성 유지
+// 데이터의 고유 지문(hash) 생성 함수 - 업체명 포함하여 정확도 향상
 const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
   const normalizedVendor = (vendor || 'Unknown').trim();
   const normalizedAmount = Math.abs(amount);
   const normalizedTime = time || '';
   
+  // 지문에 업체명을 포함하여 날짜/시간/금액이 같더라도 업체가 다르면 다른 내역으로 인식
   return createHash('sha256')
     .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
     .digest('hex');
 };
-
+ Applied fuzzy match at line 6-15.
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
     orderBy: { date: 'desc' },
