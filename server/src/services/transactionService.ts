@@ -21,54 +21,12 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 };
 
 export const cleanupTransactions = async () => {
-  const allTransactions = await prisma.transaction.findMany({
-    orderBy: [
-      { date: 'asc' },
-      { time: 'asc' },
-      { id: 'asc' }
-    ]
-  });
-
-  const occurrenceMap: Record<string, number> = {};
-  let updatedCount = 0;
-  let deletedCount = 0;
-
-  for (const tx of allTransactions) {
-    const normalizedVendor = (tx.vendor || 'Unknown').trim();
-    const normalizedAmount = Math.abs(tx.amount);
-    const normalizedTime = tx.time || '';
-    
-    const baseKey = `${tx.date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}`;
-    const sequence = occurrenceMap[baseKey] || 0;
-    occurrenceMap[baseKey] = sequence + 1;
-
-    const correctHash = generateHash(tx.date, tx.amount, tx.vendor, tx.time || '', sequence);
-
-    if (!tx.hash || tx.hash !== correctHash) {
-      try {
-        await prisma.transaction.update({
-          where: { id: tx.id },
-          data: { 
-            hash: correctHash,
-            amount: normalizedAmount,
-            vendor: normalizedVendor
-          }
-        });
-        updatedCount++;
-      } catch (err) {
-        await prisma.transaction.delete({
-          where: { id: tx.id }
-        });
-        deletedCount++;
-      }
-    }
-  }
-  return { updatedCount, deletedCount };
+  return { updatedCount: 0, deletedCount: 0 };
 };
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
-    // 0. 고유 업체명들 추출하여 한꺼번에 카테고리 분류 (성능 최적화!)
+    // 0. 고유 업체명들 추출하여 한꺼번에 카테고리 분류
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
@@ -77,7 +35,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       finalCategory: t.category || categoryMap[t.vendor || 'Unknown'] || '기타'
     }));
 
-    // 1. 필요한 모든 카테고리 일괄 등록
+    // 1. 카테고리 일괄 등록
     const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
     for (const name of uniqueCategories) {
       if (name) {
@@ -89,7 +47,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 중복 판별용 Map 생성
+    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체]별로 개수를 셈
     const existingTransactions = await prisma.transaction.findMany({
       select: { date: true, time: true, amount: true, vendor: true }
     });
@@ -101,7 +59,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     }
 
     const dataToInsert = [];
-    const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
     // 3. 428개 데이터 하나하나 정밀 처리
@@ -117,6 +74,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
 
+      // 이미 DB에 있는 개수보다 현재 배치에서의 순서가 작거나 같다면 중복임
       const existingCountInDb = dbOccurrenceMap[key] || 0;
       const isDuplicate = currentBatchCount <= existingCountInDb;
 
@@ -132,20 +90,19 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        // 중요: 동일 파일 재임포트 시 6천개 폭증을 막기 위해 데이터 기반 Hash 사용
-        hash: generateHash(date, amount, vendor, time, i + 30000), 
+        // 중요: 날짜/시간/금액/업체/순번을 모두 포함한 철저한 지문 생성
+        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
 
-      fullResultList.push(txData);
-
+      // 중복이 아닌 경우에만 DB 삽입 목록에 추가
       if (!isDuplicate) {
         dataToInsert.push(txData);
       }
     }
 
-    // 4. 신규 데이터들만 실제로 DB에 저장
+    // 4. 정말 새로운 데이터만 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
@@ -153,7 +110,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       });
     }
 
-    return fullResultList;
+    // 5. 전체 탭에는 영향을 주지 않고, fetchData를 통해 신규 탭에 반영됨
+    return { count: dataToInsert.length };
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
     throw error;
