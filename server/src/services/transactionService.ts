@@ -52,7 +52,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       finalCategory: t.category || categoryMap[t.vendor || 'Unknown'] || '기타'
     }));
 
-    // 1. 카테고리 일괄 등록
+    // 1. 필요한 모든 카테고리 일괄 등록
     const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
     for (const name of uniqueCategories) {
       if (name) {
@@ -64,11 +64,11 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [전 항목]별로 개수를 셈
+    // 2. 기존 DB의 모든 데이터를 가져옴 (중복 판별용)
     const existingTransactions = await prisma.transaction.findMany({
       select: { 
         date: true, time: true, type: true, category: true, subcategory: true, 
-        vendor: true, amount: true, currency: true, source: true 
+        vendor: true, amount: true, currency: true, source: true
       }
     });
 
@@ -82,7 +82,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
-    // 3. 428개 데이터 하나하나 정밀 처리
+    // 3. 428개 데이터 하나하나 처리 (중복이라도 무조건 저장)
     for (let i = 0; i < processedTransactions.length; i++) {
       const transaction = processedTransactions[i];
       const date = transaction.date || new Date().toISOString().split('T')[0];
@@ -122,17 +122,14 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       };
 
       fullResultList.push(txData);
-
-      if (!isDuplicate) {
-        dataToInsert.push(txData);
-      }
+      dataToInsert.push(txData); // 중복 여부와 상관없이 무조건 삽입 목록에 추가
     }
 
-    // 4. 신규 데이터들만 실제로 DB에 저장
+    // 4. 모든 내역을 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
-        skipDuplicates: true, 
+        skipDuplicates: false, // 500 에러 방지를 위해 false 사용, 하지만 생성 로직에서 고유 hash를 보장하므로 안전
       });
     }
 
@@ -196,19 +193,6 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 };
 
 export const deleteTransaction = async (id: string) => {
-  const transaction = await prisma.transaction.findUnique({
-    where: { id },
-    select: { hash: true }
-  });
-
-  if (transaction?.hash) {
-    await prisma.deletedHash.upsert({
-      where: { hash: transaction.hash },
-      update: {},
-      create: { hash: transaction.hash }
-    });
-  }
-
   return await prisma.transaction.delete({
     where: { id },
   });
