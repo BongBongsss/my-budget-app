@@ -19,7 +19,7 @@ function App() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'new'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
@@ -160,11 +160,14 @@ function App() {
 
   const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
 
-  const unverifiedCount = transactions.filter(t => t.isVerified === false).length;
+  const unverifiedTransactions = transactions.filter(t => t.isVerified === false);
+  const newCount = unverifiedTransactions.filter(t => !t.isDuplicate).length;
+  const duplicateCount = unverifiedTransactions.filter(t => t.isDuplicate).length;
 
   const filteredTransactions = (activeTab === 'all' ? filteredByPeriod : transactions).filter(t => {
     if (activeTab === 'all') return t.isVerified !== false;
-    if (activeTab === 'new') return t.isVerified === false;
+    if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
+    if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
     return true;
   });
 
@@ -236,11 +239,26 @@ function App() {
             <button 
               className={activeTab === 'new' ? 'btn btn-danger' : 'btn btn-secondary'} 
               onClick={() => setActiveTab('new')}
+              style={{ marginRight: '10px' }}
             >
-              신규 ({unverifiedCount})
+              신규 ({newCount})
+            </button>
+            <button 
+              className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
+              onClick={() => setActiveTab('duplicate')}
+              style={{ marginRight: '10px' }}
+            >
+              중복 ({duplicateCount})
+            </button>
+            <button 
+              className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
+              onClick={() => setActiveTab('duplicate')}
+              style={{ backgroundColor: activeTab === 'duplicate' ? '#f59e0b' : '', color: activeTab === 'duplicate' ? 'white' : '' }}
+            >
+              중복 ({duplicateCount})
             </button>
             
-            {activeTab === 'new' && userRole === 'admin' && filteredTransactions.length > 0 && (
+            {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
               <button 
                 className="btn btn-primary" 
                 style={{ marginLeft: 'auto', backgroundColor: '#16a34a' }}
