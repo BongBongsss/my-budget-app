@@ -110,13 +110,11 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       
       const key = `${date}-${time}-${amount}-${vendor}`;
       
-      // 이번 배치에서 몇 번째 등장하는지 계산
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
 
-      // 이미 DB에 있는 개수보다 현재 배치에서의 순서가 작거나 같다면 '중복' 표시
       const existingCountInDb = dbOccurrenceMap[key] || 0;
-      const isDuplicate = currentBatchCount <= existingCountInDb;
+      if (currentBatchCount <= existingCountInDb) continue; // 이미 있으면 아예 안 가져옴
 
       dataToInsert.push({
         id: randomUUID(),
@@ -130,10 +128,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        // 중복인 경우 hash가 겹치면 삽입 에러가 나므로 i(인덱스)를 섞어 고유하게 만듦
-        hash: generateHash(date, amount, vendor, time, i + 10000), 
+        hash: generateHash(date, amount, vendor, time, currentBatchCount - 1),
         isVerified: false, 
-        isDuplicate: isDuplicate, // 중복 여부 저장
+        isDuplicate: false,
       });
     }
 

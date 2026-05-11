@@ -166,6 +166,7 @@ function App() {
   const duplicateCount = unverifiedTransactions.filter(t => t.isDuplicate).length;
 
   const filteredTransactions = filteredByPeriod.filter(t => {
+    if (activeTab === 'all') return t.isVerified !== false; // 전체 탭은 승인된 것만 표시
     if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
     if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
     return true;
