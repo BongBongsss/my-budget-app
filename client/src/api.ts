@@ -18,6 +18,7 @@ export interface Transaction {
   source: string;
   memo?: string;
   isVerified?: boolean;
+  isDuplicate?: boolean;
 }
 
 export interface CategoryRule {
