@@ -36,6 +36,10 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
   });
 };
 
+export const cleanupTransactions = async () => {
+  return { updatedCount: 0, deletedCount: 0 };
+};
+
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
     // 0. 고유 업체명들 추출하여 한꺼번에 카테고리 분류 (메모리 내에서만 처리)
