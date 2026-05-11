@@ -1,44 +1,14 @@
 import prisma from '../db';
 import { autoCategorize, bulkAutoCategorize } from './categoryService';
-import { randomUUID, createHash } from 'crypto';
+import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수
-const generateHash = (
-  date: string, 
-  amount: number, 
-  vendor: string, 
-  time: string = '', 
-  source: string = '', 
-  type: string = '',
-  category: string = '',
-  subcategory: string = '',
-  currency: string = '',
-  sequence: number = 0
-) => {
-  const nDate = (date || '').trim();
-  const nTime = (time || '').trim();
-  const nType = (type || '').trim();
-  const nCat = (category || '').trim();
-  const nSub = (subcategory || '').trim();
-  const nVen = (vendor || '').trim();
-  const nAmt = Math.abs(amount);
-  const nCur = (currency || '').trim();
-  const nSrc = (source || '').trim();
-  
-  return createHash('sha256')
-    .update(`${nDate}-${nTime}-${nType}-${nCat}-${nSub}-${nVen}-${nAmt}-${nCur}-${nSrc}-${sequence}`)
-    .digest('hex');
-};
-
 export const getAllTransactions = async (): Promise<Transaction[]> => {
+  // 장부 보호를 위해 확정(승인)된 데이터만 전체 목록에 표시
   return await prisma.transaction.findMany({
+    where: { isVerified: true },
     orderBy: { date: 'desc' },
   });
-};
-
-export const cleanupTransactions = async () => {
-  return { updatedCount: 0, deletedCount: 0 };
 };
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
@@ -46,45 +16,27 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
-    const processedTransactions = transactions.map((t) => ({
-      ...t,
-      finalCategory: t.category || categoryMap[t.vendor || 'Unknown'] || '기타'
+    const dataToInsert = transactions.map((t) => ({
+      id: randomUUID(),
+      date: t.date || new Date().toISOString().split('T')[0],
+      time: (t.time || '').trim(),
+      type: (t.type || 'expense').trim(),
+      category: t.category || categoryMap[t.vendor || 'Unknown'] || '기타',
+      subcategory: (t.subcategory || '').trim(),
+      vendor: (t.vendor || 'Unknown').trim(),
+      amount: Math.abs(t.amount || 0),
+      currency: (t.currency || 'KRW').trim(),
+      source: (t.source || 'file_import').trim(),
+      memo: t.memo || null,
+      hash: randomUUID(), 
+      isVerified: false, // 모두 미확정(신규)으로 저장
+      isDuplicate: false
     }));
 
-    const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
-    for (const name of uniqueCategories) {
-      if (name) {
-        await prisma.category.upsert({
-          where: { name },
-          update: {},
-          create: { id: randomUUID(), name }
-        });
-      }
-    }
-
-    const dataToInsert = processedTransactions.map((t, i) => ({
-        id: randomUUID(),
-        date: t.date || new Date().toISOString().split('T')[0],
-        time: (t.time || '').trim(),
-        type: (t.type || 'expense').trim(),
-        category: (t.finalCategory || '기타').trim(),
-        subcategory: (t.subcategory || '').trim(),
-        vendor: (t.vendor || 'Unknown').trim(),
-        amount: Math.abs(t.amount || 0),
-        currency: (t.currency || 'KRW').trim(),
-        source: (t.source || 'file_import').trim(),
-        memo: t.memo || null,
-        hash: generateHash(t.date || '', t.amount || 0, t.vendor || '', t.time || '', t.source || '', t.type || '', t.category || '', t.subcategory || '', t.currency || '', i + 40000),
-        isVerified: false,
-        isDuplicate: false
-    }));
-
-    if (dataToInsert.length > 0) {
-      await prisma.transaction.createMany({
-        data: dataToInsert as any,
-        skipDuplicates: true,
-      });
-    }
+    await prisma.transaction.createMany({
+      data: dataToInsert as any,
+      skipDuplicates: false, 
+    });
 
     return dataToInsert;
   } catch (error) {
@@ -143,7 +95,10 @@ export const bulkDeleteTransactions = async (ids: string[]) => {
 
 export const applyAutoRulesToExisting = async () => {
   const transactions = await prisma.transaction.findMany({
-    where: { NOT: [{ category: '기타' }, { category: '' }] }
+    where: {
+      NOT: [{ category: '기타' }, { category: '' }],
+      isVerified: true
+    }
   });
 
   let updatedCount = 0;
