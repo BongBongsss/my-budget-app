@@ -128,23 +128,30 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        // 모든 항목에 대해 고유한 Hash 생성 (중복 저장 허용을 위해 i+20000 사용)
         hash: generateHash(date, amount, vendor, time, i + 20000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
 
+      // 전체 결과 리스트에는 무조건 추가 (프론트엔드 노출용)
       fullResultList.push(txData);
-      dataToInsert.push(txData); // 모든 데이터를 DB 삽입 목록에 추가
+
+      // 정말 새로운 데이터만 DB 삽입 목록에 추가 (DB 보호)
+      if (!isDuplicate) {
+        dataToInsert.push(txData);
+      }
     }
 
-    // 3. 모든 내역을 실제로 DB에 저장 (isVerified: false 상태)
+    // 3. 중복이 아닌 신규 데이터들만 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
         skipDuplicates: true, 
       });
     }
+
+    // 4. 프론트엔드로 428개 전체 리스트 반환 (메모리상에서만 중복 데이터 전달)
+    return fullResultList;
 
     // 5. 프론트엔드로 428개 전체 리스트 반환
     return fullResultList;
