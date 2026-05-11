@@ -3,15 +3,31 @@ import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 결제수단(Source)까지 포함하여 정밀도 극대화
-const generateHash = (date: string, amount: number, vendor: string, time: string = '', source: string = '', sequence: number = 0) => {
-  const normalizedVendor = (vendor || 'Unknown').trim();
-  const normalizedAmount = Math.abs(amount);
-  const normalizedTime = time || '';
-  const normalizedSource = (source || '').trim();
+// 데이터의 고유 지문(hash) 생성 함수 - 모든 핵심 필드(9개)를 포함하여 완벽한 중복 판별
+const generateHash = (
+  date: string, 
+  amount: number, 
+  vendor: string, 
+  time: string = '', 
+  source: string = '', 
+  type: string = '',
+  category: string = '',
+  subcategory: string = '',
+  currency: string = '',
+  sequence: number = 0
+) => {
+  const nDate = (date || '').trim();
+  const nTime = (time || '').trim();
+  const nType = (type || '').trim();
+  const nCat = (category || '').trim();
+  const nSub = (subcategory || '').trim();
+  const nVen = (vendor || '').trim();
+  const nAmt = Math.abs(amount);
+  const nCur = (currency || '').trim();
+  const nSrc = (source || '').trim();
   
   return createHash('sha256')
-    .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${normalizedSource}-${sequence}`)
+    .update(`${nDate}-${nTime}-${nType}-${nCat}-${nSub}-${nVen}-${nAmt}-${nCur}-${nSrc}-${sequence}`)
     .digest('hex');
 };
 
@@ -48,14 +64,17 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체-결제수단]별로 개수를 셈
+    // 2. 기존 DB의 모든 데이터를 가져와서 [전 항목]별로 개수를 셈
     const existingTransactions = await prisma.transaction.findMany({
-      select: { date: true, time: true, amount: true, vendor: true, source: true }
+      select: { 
+        date: true, time: true, type: true, category: true, subcategory: true, 
+        vendor: true, amount: true, currency: true, source: true 
+      }
     });
 
     const dbOccurrenceMap: Record<string, number> = {};
     for (const tx of existingTransactions) {
-      const key = `${tx.date}-${(tx.time || '').trim()}-${Math.abs(tx.amount)}-${(tx.vendor || '').trim()}-${(tx.source || '').trim()}`;
+      const key = `${tx.date}-${(tx.time || '').trim()}-${(tx.type || '').trim()}-${(tx.category || '').trim()}-${(tx.subcategory || '').trim()}-${(tx.vendor || '').trim()}-${Math.abs(tx.amount)}-${(tx.currency || '').trim()}-${(tx.source || '').trim()}`;
       dbOccurrenceMap[key] = (dbOccurrenceMap[key] || 0) + 1;
     }
 
@@ -70,14 +89,17 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const amount = Math.abs(transaction.amount || 0);
       const vendor = (transaction.vendor || 'Unknown').trim();
       const time = (transaction.time || '').trim();
+      const type = (transaction.type || 'expense').trim();
+      const category = (transaction.finalCategory || '기타').trim();
+      const subcategory = (transaction.subcategory || '').trim();
+      const currency = (transaction.currency || 'KRW').trim();
       const source = (transaction.source || 'file_import').trim();
 
-      const key = `${date}-${time}-${amount}-${vendor}-${source}`;
+      const key = `${date}-${time}-${type}-${category}-${subcategory}-${vendor}-${amount}-${currency}-${source}`;
       
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
 
-      // 이미 DB에 있는 개수보다 현재 배치에서의 순서가 작거나 같다면 중복임
       const existingCountInDb = dbOccurrenceMap[key] || 0;
       const isDuplicate = currentBatchCount <= existingCountInDb;
 
@@ -85,15 +107,16 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         id: randomUUID(),
         date,
         time,
-        type: transaction.type || 'expense',
-        category: transaction.finalCategory,
-        subcategory: transaction.subcategory || null,
+        type,
+        category,
+        subcategory,
         vendor,
         amount,
-        currency: transaction.currency || 'KRW',
-        source: source,
+        currency,
+        source,
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, source, i + 30000), 
+        // 모든 필드를 포함하여 Hash 생성
+        hash: generateHash(date, amount, vendor, time, source, type, category, subcategory, currency, i + 30000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
@@ -133,12 +156,15 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
   const amount = Math.abs(transaction.amount || 0);
   const vendor = (transaction.vendor || 'Unknown').trim();
   const category = transaction.category || await autoCategorize(vendor);
+  const source = transaction.source || 'manual';
+  const type = transaction.type || 'expense';
+  const currency = transaction.currency || 'KRW';
   
   const existingCount = await prisma.transaction.count({
-    where: { date, time, amount, vendor }
+    where: { date, time, amount, vendor, source, type }
   });
 
-  const hash = generateHash(date, amount, vendor, time, '', existingCount);
+  const hash = generateHash(date, amount, vendor, time, source, type, category, '', currency, existingCount);
 
   return await prisma.transaction.upsert({
     where: { hash: hash },
@@ -147,13 +173,13 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       id: randomUUID(),
       date,
       time,
-      type: transaction.type || 'expense',
+      type: type,
       category: category,
       subcategory: transaction.subcategory || null,
       vendor,
       amount,
-      currency: transaction.currency || 'KRW',
-      source: transaction.source || 'manual',
+      currency: currency,
+      source: source,
       memo: transaction.memo || null,
       hash,
       isVerified: true, 
