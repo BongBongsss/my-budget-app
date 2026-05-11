@@ -36,12 +36,9 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
   });
 };
 
-export const cleanupTransactions = async () => {
-  return { updatedCount: 0, deletedCount: 0 };
-};
-
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
+    // 0. 고유 업체명들 추출하여 한꺼번에 카테고리 분류 (메모리 내에서만 처리)
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
@@ -50,6 +47,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       finalCategory: t.category || categoryMap[t.vendor || 'Unknown'] || '기타'
     }));
 
+    // 1. 필요한 모든 카테고리 일괄 등록
     const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
     for (const name of uniqueCategories) {
       if (name) {
@@ -61,6 +59,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
+    // 2. 현재 DB의 모든 데이터를 가져옴
     const existingTransactions = await prisma.transaction.findMany({
       select: { 
         date: true, time: true, type: true, category: true, subcategory: true, 
@@ -68,16 +67,19 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     });
 
+    // DB 데이터 기반으로 현재 중복 상황 파악
     const dbOccurrenceMap: Record<string, number> = {};
     for (const tx of existingTransactions) {
       const key = `${tx.date}-${(tx.time || '').trim()}-${(tx.type || '').trim()}-${(tx.category || '').trim()}-${(tx.subcategory || '').trim()}-${(tx.vendor || '').trim()}-${Math.abs(tx.amount)}-${(tx.currency || '').trim()}-${(tx.source || '').trim()}`;
       dbOccurrenceMap[key] = (dbOccurrenceMap[key] || 0) + 1;
     }
 
+    // 3. 로컬 처리용 데이터 리스트 및 중복 확인 맵 (함수 실행 시마다 완벽 초기화)
     const dataToInsert = [];
     const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
+    // 4. 데이터 정밀 처리
     for (let i = 0; i < processedTransactions.length; i++) {
       const transaction = processedTransactions[i];
       const date = transaction.date || new Date().toISOString().split('T')[0];
@@ -116,9 +118,13 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       };
 
       fullResultList.push(txData);
-      dataToInsert.push(txData);
+
+      if (!isDuplicate) {
+        dataToInsert.push(txData);
+      }
     }
 
+    // 5. 신규 데이터들만 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
@@ -150,11 +156,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
   const type = transaction.type || 'expense';
   const currency = transaction.currency || 'KRW';
   
-  const existingCount = await prisma.transaction.count({
-    where: { date, time, amount, vendor, source, type }
-  });
-
-  const hash = generateHash(date, amount, vendor, time, source, type, category, '', currency, existingCount);
+  const hash = generateHash(date, amount, vendor, time, source, type, category, '', currency, 99999);
 
   return await prisma.transaction.upsert({
     where: { hash: hash },
