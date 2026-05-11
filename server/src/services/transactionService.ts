@@ -132,7 +132,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, i + 20000), 
+        // 중요: 동일 파일 재임포트 시 6천개 폭증을 막기 위해 데이터 기반 Hash 사용
+        hash: generateHash(date, amount, vendor, time, i + 30000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
@@ -196,6 +197,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       memo: transaction.memo || null,
       hash,
       isVerified: true, 
+      isDuplicate: false
     },
   });
 };
