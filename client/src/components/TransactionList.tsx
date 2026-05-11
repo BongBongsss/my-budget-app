@@ -123,7 +123,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   });
 
   const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
-  const paginatedTransactions = sortedTransactions.filter(tx => tx.id).slice(
+  const paginatedTransactions = sortedTransactions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
@@ -162,10 +162,93 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
-      {/* Search & Actions */}
       <div className="flex justify-start items-center gap-2 mb-4">
-        {/* ... (기존 검색 필터 로직) ... */}
+        <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+          <option value="all">All</option>
+          <option value="month">Monthly</option>
+          <option value="year">Yearly</option>
+        </select>
+        {(period === 'month' || period === 'year') && (
+          <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+            {years.map(y => <option key={y} value={y}>{y}년</option>)}
+          </select>
+        )}
+        {period === 'month' && (
+          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+            {months.map(m => <option key={m} value={m}>{m}월</option>)}
+          </select>
+        )}
       </div>
+
+      <div className="list-actions mb-4">
+        <div className="flex justify-between items-center mb-2">
+          <div className="flex gap-1 items-center">
+            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
+              <option value="date">날짜</option>
+              <option value="type">타입</option>
+              <option value="group">상위 그룹</option>
+              <option value="category">대분류</option>
+              <option value="subcategory">소분류</option>
+              <option value="vendor">내용</option>
+              <option value="source">결제수단</option>
+              <option value="memo">메모</option>
+            </select>
+            
+            {filterType === 'date' ? (
+              <div className="flex gap-1 items-center">
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <span>~</span>
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+              </div>
+            ) : ['type', 'group', 'category', 'subcategory', 'source'].includes(filterType) ? (
+              <select 
+                value={search} 
+                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCurrentPage(1); }} 
+                className="edit-input" 
+                style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }}
+              >
+                <option value="">항목 선택...</option>
+                {filterType === 'type' && uniqueValues.types.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'group' && uniqueValues.groups.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'category' && uniqueValues.categories.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'subcategory' && uniqueValues.subcategories.map(v => <option key={v} value={v}>{v}</option>)}
+                {filterType === 'source' && uniqueValues.sources.map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            ) : (
+              <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+            )}
+            
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
+          </div>
+          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+            <option value={10}>10</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+      </div>
+
+      {selectedIds.length > 0 && (
+        <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
+            <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => { onBulkDelete(selectedIds); setSelectedIds([]); }} title="Delete Selected"><Trash2 size={16} /></button>
+            <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
+            <select value={bulkType} onChange={(e) => setBulkType(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '80px' }}>
+                <option value="">타입</option>
+                <option value="expense">지출</option>
+                <option value="income">수입</option>
+                <option value="exclude">미반영</option>
+            </select>
+            <select value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '110px' }}>
+                <option value="">대분류</option>
+                {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
+            </select>
+            <input type="text" placeholder="소분류 입력" value={bulkSubcategory} onChange={(e) => setBulkSubcategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} />
+            <input type="text" placeholder="메모 일괄 입력" value={bulkMemo} onChange={(e) => setBulkMemo(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} />
+            <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes"><ListChecks size={16} className="mr-1" /> 일괄 적용</button>
+            <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
+        </div>
+      )}
 
       <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
         <thead>
@@ -220,11 +303,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex gap-1 justify-center">
                       {!tx.isVerified && (
-                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
-                            <ThumbsUp size={16} color="green" />
-                          </button>
-                        )}
-
+                        <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
+                          <ThumbsUp size={16} color="green" />
+                        </button>
+                      )}
                       <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
                       <button onClick={() => onDelete(tx.id!)} className="btn-icon" title="삭제"><Trash2 size={16} /></button>
                     </div>
@@ -235,6 +317,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
           ))}
         </tbody>
       </table>
+      <div className="pagination mt-2 flex justify-center gap-2">
+        <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>이전</button>
+        {getPaginationNumbers().map(page => (
+          <button key={page} className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setCurrentPage(page)}>{page}</button>
+        ))}
+        <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>다음</button>
+      </div>
     </div>
   );
 };
