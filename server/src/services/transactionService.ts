@@ -3,7 +3,7 @@ import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'type' | 'vendor' | 'amount' | 'source'>;
+type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'vendor' | 'amount' | 'source'>;
 
 const normalizeText = (value: string | null | undefined) => {
   return String(value || '')
@@ -20,7 +20,6 @@ const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
   return [
     normalizeText(tx.date),
     normalizeText(tx.time),
-    normalizeText(tx.type),
     normalizeText(tx.vendor),
     normalizeAmount(tx.amount),
     normalizeText(tx.source),
@@ -43,7 +42,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       select: {
         date: true,
         time: true,
-        type: true,
         vendor: true,
         amount: true,
         source: true,
@@ -141,7 +139,6 @@ export const cleanupTransactions = async () => {
       select: {
         date: true,
         time: true,
-        type: true,
         vendor: true,
         amount: true,
         source: true,
