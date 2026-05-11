@@ -57,6 +57,20 @@ export const updateCategoryGroupRule = async (id: string, categoryName: string, 
   });
 };
 
+// 카테고리 자동 지정 (여러 건 일괄 처리 - 성능 최적화)
+export const bulkAutoCategorize = async (vendors: string[]): Promise<Record<string, string>> => {
+  const rules = await getCategoryRules();
+  const resultMap: Record<string, string> = {};
+
+  vendors.forEach(vendor => {
+    const normalizedVendor = (vendor || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const matchedRule = rules.find(rule => normalizedVendor.includes(rule.keyword.toLowerCase().trim()));
+    resultMap[vendor] = matchedRule ? matchedRule.assigned_category : '기타';
+  });
+
+  return resultMap;
+};
+
 // 카테고리 자동 지정 (Vendor -> 대분류)
 export const autoCategorize = async (vendor: string): Promise<string> => {
   const rules = await getCategoryRules();
