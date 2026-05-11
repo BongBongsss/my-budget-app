@@ -3,13 +3,12 @@ import { autoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 업체명 포함하여 정확도 향상
+// 데이터의 고유 지문(hash) 생성 함수 - 업체명 포함
 const generateHash = (date: string, amount: number, vendor: string, time: string = '', sequence: number = 0) => {
   const normalizedVendor = (vendor || 'Unknown').trim();
   const normalizedAmount = Math.abs(amount);
   const normalizedTime = time || '';
   
-  // 지문에 업체명을 포함하여 날짜/시간/금액이 같더라도 업체가 다르면 다른 내역으로 인식
   return createHash('sha256')
     .update(`${date}-${normalizedTime}-${normalizedAmount}-${normalizedVendor}-${sequence}`)
     .digest('hex');
@@ -86,7 +85,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져와서 [날짜-시간-금액-업체]별로 개수를 셈 (중복 판별용)
+    // 2. 기존 DB의 모든 데이터를 가져와서 중복 판별용 Map 생성
     const existingTransactions = await prisma.transaction.findMany({
       select: { date: true, time: true, amount: true, vendor: true }
     });
@@ -101,6 +100,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
+    // 3. 428개 데이터 하나하나 정밀 처리
     for (let i = 0; i < processedTransactions.length; i++) {
       const transaction = processedTransactions[i];
       const date = transaction.date || new Date().toISOString().split('T')[0];
@@ -109,7 +109,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       const time = (transaction.time || '').trim();
 
       const key = `${date}-${time}-${amount}-${vendor}`;
-
+      
       const currentBatchCount = (batchOccurrenceMap[key] || 0) + 1;
       batchOccurrenceMap[key] = currentBatchCount;
 
@@ -128,21 +128,22 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: transaction.currency || 'KRW',
         source: transaction.source || 'file_import',
         memo: transaction.memo || null,
-        hash: generateHash(date, amount, vendor, time, i + 10000), 
+        // 고유성을 위해 인덱스(i)를 섞어 Hash 생성
+        hash: generateHash(date, amount, vendor, time, i + 20000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
 
-      // 결과 리스트에는 무조건 추가 (428개 보장)
+      // 전체 결과 리스트에 무조건 추가 (유실 방지)
       fullResultList.push(txData);
 
-      // DB 저장은 정말 새로운 것만
+      // 정말 새로운 데이터만 DB 삽입 목록에 추가
       if (!isDuplicate) {
         dataToInsert.push(txData);
       }
     }
 
-    // 3. 중복이 아닌 내역들만 실제로 DB에 저장
+    // 4. 신규 데이터들만 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
@@ -150,7 +151,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       });
     }
 
-    // 4. 프론트엔드로 전체 리스트 반환
+    // 5. 프론트엔드로 428개 전체 리스트 반환
     return fullResultList;
   } catch (error) {
     console.error('Error in bulkAddTransactions:', error);
