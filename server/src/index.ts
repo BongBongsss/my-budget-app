@@ -27,10 +27,7 @@ const PgSession = connectPgSimple(session);
 app.set('trust proxy', 1);
 
 app.use(cors({ 
-  origin: (origin, callback) => {
-    // 요청이 들어오는 origin을 그대로 허용 (세션 쿠키 사용 시 필수)
-    callback(null, true);
-  },
+  origin: 'https://my-budget-app-client-vzvzs0a1z-hyokyulee-6354s-projects.vercel.app',
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
