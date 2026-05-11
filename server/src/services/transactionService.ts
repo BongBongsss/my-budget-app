@@ -3,6 +3,27 @@ import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 
+type DuplicateComparable = Pick<Transaction, 'date' | 'vendor' | 'amount'>;
+
+const normalizeText = (value: string | null | undefined) => {
+  return String(value || '')
+    .trim()
+    .replace(/\s+/g, ' ')
+    .toLowerCase();
+};
+
+const normalizeAmount = (value: number | null | undefined) => {
+  return Math.round(Math.abs(Number(value || 0)) * 100);
+};
+
+const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
+  return [
+    normalizeText(tx.date),
+    normalizeText(tx.vendor),
+    normalizeAmount(tx.amount),
+  ].join('|');
+};
+
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
     orderBy: { date: 'desc' },
@@ -14,26 +35,42 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
-    const dataToInsert = transactions.map((t) => ({
-      id: randomUUID(),
-      date: t.date || new Date().toISOString().split('T')[0],
-      time: (t.time || '').trim(),
-      type: (t.type || 'expense').trim(),
-      category: t.category || categoryMap[t.vendor || 'Unknown'] || '기타',
-      subcategory: (t.subcategory || '').trim(),
-      vendor: (t.vendor || 'Unknown').trim(),
-      amount: Math.abs(t.amount || 0),
-      currency: (t.currency || 'KRW').trim(),
-      source: (t.source || 'file_import').trim(),
-      memo: t.memo || null,
-      hash: randomUUID(), 
-      isVerified: false, // 모두 미확정(신규)으로 저장
-      isDuplicate: false
-    }));
+    const verifiedTransactions = await prisma.transaction.findMany({
+      where: { isVerified: true },
+      select: {
+        date: true,
+        vendor: true,
+        amount: true,
+      },
+    });
+    const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
+
+    const dataToInsert = transactions.map((t) => {
+      const normalized = {
+        date: t.date || new Date().toISOString().split('T')[0],
+        time: (t.time || '').trim(),
+        type: (t.type || 'expense').trim(),
+        category: t.category || categoryMap[t.vendor || 'Unknown'] || '기타',
+        subcategory: (t.subcategory || '').trim(),
+        vendor: (t.vendor || 'Unknown').trim(),
+        amount: Math.abs(t.amount || 0),
+        currency: (t.currency || 'KRW').trim(),
+        source: (t.source || 'file_import').trim(),
+        memo: t.memo || null,
+      };
+
+      return {
+        id: randomUUID(),
+        ...normalized,
+        hash: randomUUID(),
+        isVerified: false,
+        isDuplicate: verifiedKeys.has(buildDuplicateKey(normalized)),
+      };
+    });
 
     await prisma.transaction.createMany({
       data: dataToInsert as any,
-      skipDuplicates: false, 
+      skipDuplicates: false,
     });
 
     return dataToInsert;
@@ -66,7 +103,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
       hash: randomUUID(),
-      isVerified: true, 
+      isVerified: true,
       isDuplicate: false
     },
   });
