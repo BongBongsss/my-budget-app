@@ -3,7 +3,6 @@ import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID, createHash } from 'crypto';
 import { Transaction } from '@prisma/client';
 
-// 데이터의 고유 지문(hash) 생성 함수 - 모든 핵심 필드(9개)를 포함하여 완벽한 중복 판별
 const generateHash = (
   date: string, 
   amount: number, 
@@ -43,7 +42,6 @@ export const cleanupTransactions = async () => {
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
   try {
-    // 0. 고유 업체명들 추출하여 한꺼번에 카테고리 분류
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
@@ -52,7 +50,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       finalCategory: t.category || categoryMap[t.vendor || 'Unknown'] || '기타'
     }));
 
-    // 1. 필요한 모든 카테고리 일괄 등록
     const uniqueCategories = Array.from(new Set(processedTransactions.map(t => t.finalCategory).filter(Boolean)));
     for (const name of uniqueCategories) {
       if (name) {
@@ -64,7 +61,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       }
     }
 
-    // 2. 기존 DB의 모든 데이터를 가져옴 (중복 판별용)
     const existingTransactions = await prisma.transaction.findMany({
       select: { 
         date: true, time: true, type: true, category: true, subcategory: true, 
@@ -82,7 +78,6 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const fullResultList = [];
     const batchOccurrenceMap: Record<string, number> = {};
 
-    // 3. 428개 데이터 하나하나 처리 (중복이라도 무조건 저장)
     for (let i = 0; i < processedTransactions.length; i++) {
       const transaction = processedTransactions[i];
       const date = transaction.date || new Date().toISOString().split('T')[0];
@@ -115,27 +110,25 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency,
         source,
         memo: transaction.memo || null,
-        // 모든 필드를 포함하여 Hash 생성
         hash: generateHash(date, amount, vendor, time, source, type, category, subcategory, currency, i + 30000), 
         isVerified: false, 
         isDuplicate: isDuplicate,
       };
 
       fullResultList.push(txData);
-      dataToInsert.push(txData); // 중복 여부와 상관없이 무조건 삽입 목록에 추가
+      dataToInsert.push(txData);
     }
 
-    // 4. 모든 내역을 실제로 DB에 저장
     if (dataToInsert.length > 0) {
       await prisma.transaction.createMany({
         data: dataToInsert as any,
-        skipDuplicates: false, // 500 에러 방지를 위해 false 사용, 하지만 생성 로직에서 고유 hash를 보장하므로 안전
+        skipDuplicates: true, 
       });
     }
 
     return fullResultList;
   } catch (error) {
-    console.error('Error in bulkAddTransactions:', error);
+    console.error('Import Error:', error);
     throw error;
   }
 };
@@ -207,10 +200,7 @@ export const bulkDeleteTransactions = async (ids: string[]) => {
 export const applyAutoRulesToExisting = async () => {
   const transactions = await prisma.transaction.findMany({
     where: {
-      OR: [
-        { category: '기타' },
-        { category: '' }
-      ]
+      NOT: [{ category: '기타' }, { category: '' }]
     }
   });
 
