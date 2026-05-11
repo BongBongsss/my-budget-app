@@ -44,11 +44,21 @@ const normalizeData = (row: any): ParsedTransaction => {
 
   // 4. 금액 (엑셀 '금액')
   const rawAmount = String(row['금액'] || '0').replace(/,/g, '').replace(/[^\d.-]/g, '');
-  const amount = parseFloat(rawAmount);
+  let amount = parseFloat(rawAmount);
+  if (isNaN(amount)) amount = 0;
   
-  // 5. 타입 (엑셀 '타입')
+  // 5. 타입 (엑셀 '타입' 및 금액 부호 기반 판별)
   const typeStr = String(row['타입'] || '');
-  const type: 'income' | 'expense' = (typeStr.includes('수입') || typeStr.includes('입금')) ? 'income' : 'expense';
+  let type: 'income' | 'expense';
+
+  if (typeStr.includes('수입') || typeStr.includes('입금')) {
+    type = 'income';
+  } else if (typeStr.includes('지출') || typeStr.includes('출금')) {
+    type = 'expense';
+  } else {
+    // '이체' 등 기타 타입은 금액의 부호에 따라 결정
+    type = amount >= 0 ? 'income' : 'expense';
+  }
   
   // 6. 분류 (엑셀 '대분류', '소분류')
   const category = row['대분류'] || row['카테고리'] || '기타';
