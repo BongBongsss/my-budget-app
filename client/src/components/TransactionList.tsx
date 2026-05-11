@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
-import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks } from 'lucide-react';
+import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp } from 'lucide-react';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -220,8 +220,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex gap-1 justify-center">
                       {!tx.isVerified && (
-                        <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인"><Check size={16} color="green" /></button>
-                      )}
+                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
+                            <ThumbsUp size={16} color="green" />
+                          </button>
+                        )}
+
                       <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
                       <button onClick={() => onDelete(tx.id!)} className="btn-icon" title="삭제"><Trash2 size={16} /></button>
                     </div>
