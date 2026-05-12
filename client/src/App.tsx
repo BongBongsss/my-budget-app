@@ -304,6 +304,8 @@ function App() {
             setYear={setYear}
             month={month}
             setMonth={setMonth}
+            memberFilter={memberFilter}
+            setMemberFilter={setMemberFilter}
             isAdmin={userRole === 'admin'}
           />
         </div>

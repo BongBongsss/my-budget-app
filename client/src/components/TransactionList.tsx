@@ -15,12 +15,15 @@ interface TransactionListProps {
   setYear: (y: number) => void;
   month: number;
   setMonth: (m: number) => void;
+  memberFilter: 'all' | '효' | '굥';
+  setMemberFilter: (m: 'all' | '효' | '굥') => void;
   isAdmin?: boolean;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onRefresh,
-  period, setPeriod, year, setYear, month, setMonth, isAdmin = true
+  period, setPeriod, year, setYear, month, setMonth, 
+  memberFilter, setMemberFilter, isAdmin = true
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -178,6 +181,32 @@ const TransactionList: React.FC<TransactionListProps> = ({
             {months.map(m => <option key={m} value={m}>{m}월</option>)}
           </select>
         )}
+
+        <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+        
+        <div className="flex gap-1">
+          <button 
+            className={`btn ${memberFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setMemberFilter('all')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            전체
+          </button>
+          <button 
+            className={`btn ${memberFilter === '효' ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setMemberFilter('효')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            효
+          </button>
+          <button 
+            className={`btn ${memberFilter === '굥' ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setMemberFilter('굥')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            굥
+          </button>
+        </div>
       </div>
 
       <div className="list-actions mb-4">
