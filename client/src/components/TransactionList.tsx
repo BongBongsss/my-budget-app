@@ -22,7 +22,7 @@ interface TransactionListProps {
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onRefresh,
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
   memberFilter, setMemberFilter, isAdmin = true
 }) => {
@@ -213,7 +213,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
         )}
 
         <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+        
         <div className="flex gap-1">
+          <button 
+            className={`btn ${memberFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setMemberFilter('all')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            전체
+          </button>
           <button 
             className={`btn ${memberFilter === '효' ? 'btn-primary' : 'btn-secondary'}`} 
             onClick={() => setMemberFilter('효')}
@@ -251,14 +259,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
             </div>
           </>
         )}
-        </div>
-            className={`btn ${memberFilter === '굥' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setMemberFilter('굥')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            굥
-          </button>
-        </div>
       </div>
 
       <div className="list-actions mb-4">
