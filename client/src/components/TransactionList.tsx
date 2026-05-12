@@ -186,7 +186,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const cellEllipsisStyle: React.CSSProperties = {
     overflow: 'hidden',
     textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap'
+    whiteSpace: 'nowrap',
+    width: '100%'
   };
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
@@ -355,13 +356,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={tx.time}>{tx.time}</td>
                   <td>{tx.member}</td>
                   <td>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
-                  <td title={getGroupName(tx.category)} style={cellEllipsisStyle}>{getGroupName(tx.category)}</td>
-                  <td title={tx.category} style={cellEllipsisStyle}>{tx.category}</td>
-                  <td title={tx.subcategory} style={cellEllipsisStyle}>{tx.subcategory}</td>
-                  <td title={tx.vendor} style={cellEllipsisStyle}>{tx.vendor}</td>
+                  <td title={getGroupName(tx.category)}><div style={cellEllipsisStyle}>{getGroupName(tx.category)}</div></td>
+                  <td title={tx.category}><div style={cellEllipsisStyle}>{tx.category}</div></td>
+                  <td title={tx.subcategory}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
+                  <td title={tx.vendor}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
                   <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
-                  <td title={tx.source} style={cellEllipsisStyle}>{tx.source}</td>
-                  <td title={tx.memo} style={cellEllipsisStyle}>{tx.memo}</td>
+                  <td title={tx.source}><div style={cellEllipsisStyle}>{tx.source}</div></td>
+                  <td title={tx.memo}><div style={cellEllipsisStyle}>{tx.memo}</div></td>
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex gap-1 justify-center">
                       {!tx.isVerified && (
