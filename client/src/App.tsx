@@ -105,6 +105,16 @@ function App() {
     }
   };
 
+  const handleBulkUpdateMember = async (ids: string[], member: string) => {
+    if (userRole !== 'admin') return;
+    try {
+      await Promise.all(ids.map(id => updateTransaction(id, { member })));
+      setTransactions(prev => prev.map(t => ids.includes(t.id!) ? { ...t, member } : t));
+    } catch (err) {
+      fetchData();
+    }
+  };
+
   const handleUndo = async () => {
     if (userRole !== 'admin' || !lastDeleted) return;
     try {
@@ -297,6 +307,7 @@ function App() {
             onDelete={handleDelete} 
             onBulkDelete={handleBulkDelete}
             onUpdate={handleUpdate}
+            onBulkUpdateMember={handleBulkUpdateMember}
             onRefresh={fetchData}
             period={period}
             setPeriod={setPeriod}

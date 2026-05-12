@@ -8,6 +8,7 @@ interface TransactionListProps {
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
+  onBulkUpdateMember?: (ids: string[], member: string) => void;
   onRefresh: () => void;
   period: 'all' | 'month' | 'year';
   setPeriod: (p: 'all' | 'month' | 'year') => void;
@@ -212,15 +213,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         )}
 
         <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
-        
         <div className="flex gap-1">
-          <button 
-            className={`btn ${memberFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setMemberFilter('all')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            전체
-          </button>
           <button 
             className={`btn ${memberFilter === '효' ? 'btn-primary' : 'btn-secondary'}`} 
             onClick={() => setMemberFilter('효')}
@@ -229,6 +222,36 @@ const TransactionList: React.FC<TransactionListProps> = ({
             효
           </button>
           <button 
+            className={`btn ${memberFilter === '굥' ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setMemberFilter('굥')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            굥
+          </button>
+        </div>
+
+        {isAdmin && (transactions.some(t => t.isVerified === false)) && transactions.length > 0 && (
+          <>
+            <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+            <div className="flex gap-1">
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onBulkUpdateMember?.(transactions.map(t => t.id!), '효')}
+                style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}
+              >
+                모두 효
+              </button>
+              <button 
+                className="btn btn-secondary" 
+                onClick={() => onBulkUpdateMember?.(transactions.map(t => t.id!), '굥')}
+                style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: '#fff1f2', color: '#9f1239', border: '1px solid #fecdd3' }}
+              >
+                모두 굥
+              </button>
+            </div>
+          </>
+        )}
+        </div>
             className={`btn ${memberFilter === '굥' ? 'btn-primary' : 'btn-secondary'}`} 
             onClick={() => setMemberFilter('굥')}
             style={{ fontSize: '0.75rem', padding: '2px 8px' }}
