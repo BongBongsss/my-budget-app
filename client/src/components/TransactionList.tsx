@@ -291,7 +291,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
           {(searchQuery || filterType !== 'group' || startDate || endDate) && (
             <div className="flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
-              <span style={{ color: '#2563eb' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
+              <span style={{ color: '#2563eb', marginRight: '15px' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
               <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>
             </div>
           )}
