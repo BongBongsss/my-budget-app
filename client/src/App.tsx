@@ -277,14 +277,22 @@ function App() {
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button 
                   className="btn btn-secondary" 
-                  onClick={() => handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '효')}
+                  onClick={() => {
+                    if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '효'로 설정하시겠습니까?`)) {
+                      handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '효');
+                    }
+                  }}
                   style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
                 >
                   모두 효
                 </button>
                 <button 
                   className="btn btn-secondary" 
-                  onClick={() => handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '굥')}
+                  onClick={() => {
+                    if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '굥'으로 설정하시겠습니까?`)) {
+                      handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '굥');
+                    }
+                  }}
                   style={{ backgroundColor: '#db2777', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
                 >
                   모두 굥
