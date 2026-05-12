@@ -169,12 +169,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return uniquePages.map((page, index) => (
       <React.Fragment key={index}>
         {page === '...' ? (
-          <span style={{ padding: '0 5px', color: '#64748b', alignSelf: 'center' }}>...</span>
+          <span style={{ padding: '0 5px', color: '#64748b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>...</span>
         ) : (
           <button 
             className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'}`} 
             onClick={() => setCurrentPage(page as number)}
-            style={{ minWidth: '35px', padding: '2px 8px' }}
+            style={{ minWidth: '35px', padding: '2px 8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             {page}
           </button>
@@ -355,9 +355,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={tx.time}>{tx.time}</td>
                   <td>{tx.member}</td>
                   <td>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
-                  <td>{getGroupName(tx.category)}</td>
-                  <td>{tx.category}</td>
-                  <td>{tx.subcategory}</td>
+                  <td title={getGroupName(tx.category)} style={cellEllipsisStyle}>{getGroupName(tx.category)}</td>
+                  <td title={tx.category} style={cellEllipsisStyle}>{tx.category}</td>
+                  <td title={tx.subcategory} style={cellEllipsisStyle}>{tx.subcategory}</td>
                   <td title={tx.vendor} style={cellEllipsisStyle}>{tx.vendor}</td>
                   <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
                   <td title={tx.source} style={cellEllipsisStyle}>{tx.source}</td>
