@@ -22,6 +22,7 @@ model Transaction {
   hash         String? @unique
   isVerified   Boolean @default(true)
   isDuplicate  Boolean @default(false)
+  member       String  @default("효")
 }
 
 model CategoryRule {

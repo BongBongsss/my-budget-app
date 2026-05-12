@@ -64,6 +64,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         currency: (t.currency || 'KRW').trim(),
         source: (t.source || 'file_import').trim(),
         memo: t.memo || null,
+        member: t.member || '효',
       };
 
       return {
@@ -111,6 +112,7 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       currency: transaction.currency || 'KRW',
       source: transaction.source || 'manual',
       memo: transaction.memo || null,
+      member: transaction.member || '효',
       // This hash is not used for duplicate detection.
       hash: randomUUID(),
       isVerified: true,

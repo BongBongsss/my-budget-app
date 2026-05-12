@@ -18,7 +18,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     amount: '',
     currency: 'KRW',
     source: 'manual',
-    memo: ''
+    memo: '',
+    member: '효'
   });
 
   useEffect(() => {
@@ -55,9 +56,10 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     <div className="card-form">
       <h3>Add New Transaction</h3>
       <form onSubmit={handleSubmit}>
-        <div className="grid-form" style={{ gridTemplateColumns: 'repeat(5, 1fr)' }}>
+        <div className="grid-form" style={{ gridTemplateColumns: 'repeat(6, 1fr)' }}>
           <div className="form-group"><label>날짜</label><input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} required/></div>
           <div className="form-group"><label>시간</label><input type="time" value={formData.time} onChange={(e) => setFormData({...formData, time: e.target.value})} /></div>
+          <div className="form-group"><label>사용자</label><select value={formData.member} onChange={(e) => setFormData({...formData, member: e.target.value})}><option value="효">효</option><option value="굥">굥</option></select></div>
           <div className="form-group"><label>타입</label><select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value as any})}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></div>
           <div className="form-group"><label>대분류</label><select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} required>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></div>
           <div className="form-group"><label>소분류</label><input type="text" value={formData.subcategory} onChange={(e) => setFormData({...formData, subcategory: e.target.value})} /></div>

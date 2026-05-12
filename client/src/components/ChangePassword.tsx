@@ -24,15 +24,15 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
   };
 
   const handleCleanup = async () => {
-    if (!window.confirm('기존 데이터의 중복을 체크하고 Hash를 생성하시겠습니까? (잠시 시간이 걸릴 수 있습니다)')) return;
+    if (!window.confirm('미확정 거래의 신규/중복 분류를 다시 계산하시겠습니까? (승인된 거래 기준으로 다시 나눕니다)')) return;
     
     setIsCleaning(true);
     try {
       const res = await cleanupTransactions();
-      alert(`정리 완료! (갱신: ${res.data.updatedCount}건, 중복 삭제: ${res.data.deletedCount}건)`);
+      alert(`재분류 완료! (변경: ${res.data.updatedCount}건, 삭제: ${res.data.deletedCount}건)`);
       window.location.reload();
     } catch (err) {
-      alert('데이터 정리 중 오류가 발생했습니다.');
+      alert('재분류 중 오류가 발생했습니다.');
     } finally {
       setIsCleaning(false);
     }
@@ -71,11 +71,11 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
 
       <div className="mt-6 pt-6 border-t" style={{ borderTop: '1px solid #eee', paddingTop: '20px' }}>
         <h4 className="flex items-center gap-2 mb-2 text-blue-600" style={{ color: '#2563eb', margin: '0 0 10px 0' }}>
-          <Database size={20} /> Data Maintenance
+          <Database size={20} /> 신규/중복 재분류
         </h4>
         <p className="text-sm text-gray-600 mb-4" style={{ fontSize: '0.85rem', color: '#666', marginBottom: '15px' }}>
-          기존 데이터의 중복 방지 지문(Hash)을 생성하고 중복된 내역을 정리합니다. 
-          신규 내역과 기존 내역이 겹쳐 보일 때 실행해 주세요.
+          미확정 거래를 승인된 거래와 다시 비교해서 신규와 중복으로 다시 나눕니다.
+          승인된 거래는 변경하지 않습니다.
         </p>
         <button 
           onClick={handleCleanup} 
@@ -84,7 +84,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
           style={{ width: '100%', justifyContent: 'center' }}
         >
           <RefreshCw size={18} className={isCleaning ? 'animate-spin' : ''} />
-          {isCleaning ? '데이터 정리 중...' : '데이터 중복 정리 및 Hash 갱신'}
+          {isCleaning ? '재분류 중...' : '신규/중복 재분류'}
         </button>
       </div>
     </div>

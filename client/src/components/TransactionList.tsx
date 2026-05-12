@@ -256,6 +256,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '30px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} /></th>
             <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜</th>
             <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간</th>
+            <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => requestSort('member')}>사용자</th>
             <th style={{ width: '60px', cursor: 'pointer' }} onClick={() => requestSort('type')}>타입</th>
             <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('group')}>상위 그룹</th>
             <th style={{ width: '90px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류</th>
@@ -275,6 +276,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%' }} /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%' }} /></td>
+                  <td><select value={editValues.member || '효'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option></select></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
                   <td>{getGroupName(editValues.category || '')}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
@@ -292,6 +294,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td title={tx.date}>{tx.date}</td>
                   <td title={tx.time}>{tx.time}</td>
+                  <td>{tx.member}</td>
                   <td>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
                   <td>{getGroupName(tx.category)}</td>
                   <td>{tx.category}</td>
