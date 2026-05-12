@@ -280,22 +280,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </div>
       )}
 
-      <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1100px' }}>
+      <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}>
         <thead>
           <tr>
-            <th style={{ width: '30px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} /></th>
-            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜</th>
-            <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간</th>
-            <th style={{ width: '50px', cursor: 'pointer' }} onClick={() => requestSort('member')}>효/굥</th>
-            <th style={{ width: '60px', cursor: 'pointer' }} onClick={() => requestSort('type')}>타입</th>
-            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('group')}>상위 그룹</th>
-            <th style={{ width: '90px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류</th>
-            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('subcategory')}>소분류</th>
-            <th style={{ width: '120px', textAlign: 'left', cursor: 'pointer' }} onClick={() => requestSort('vendor')}>내용</th>
-            <th style={{ width: '80px', textAlign: 'center', cursor: 'pointer' }} onClick={() => requestSort('amount')}>금액</th>
-            <th style={{ width: '100px', cursor: 'pointer' }} onClick={() => requestSort('source')}>결제수단</th>
+            <th style={{ width: '25px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} /></th>
+            <th style={{ width: '75px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜</th>
+            <th style={{ width: '40px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간</th>
+            <th style={{ width: '35px', cursor: 'pointer' }} onClick={() => requestSort('member')}>효/굥</th>
+            <th style={{ width: '45px', cursor: 'pointer' }} onClick={() => requestSort('type')}>타입</th>
+            <th style={{ width: '70px', cursor: 'pointer' }} onClick={() => requestSort('group')}>상위 그룹</th>
+            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류</th>
+            <th style={{ width: '70px', cursor: 'pointer' }} onClick={() => requestSort('subcategory')}>소분류</th>
+            <th style={{ width: '110px', textAlign: 'left', cursor: 'pointer' }} onClick={() => requestSort('vendor')}>내용</th>
+            <th style={{ width: '70px', textAlign: 'center', cursor: 'pointer' }} onClick={() => requestSort('amount')}>금액</th>
+            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('source')}>결제수단</th>
             <th>메모</th>
-            <th style={{ width: '120px', textAlign: 'center' }}>관리</th>
+            <th style={{ width: '100px', textAlign: 'center' }}>관리</th>
           </tr>
         </thead>
         <tbody>
