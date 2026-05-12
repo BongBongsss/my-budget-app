@@ -26,29 +26,11 @@ const Summary: React.FC<SummaryProps> = ({ transactions, period, setPeriod, year
   return (
     <div>
       <div className="flex justify-start items-center gap-2 mb-4">
-        <div className="flex gap-1">
-          <button 
-            className={`btn ${period === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setPeriod('all')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            전체
-          </button>
-          <button 
-            className={`btn ${period === 'month' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setPeriod('month')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            월별
-          </button>
-          <button 
-            className={`btn ${period === 'year' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setPeriod('year')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            연별
-          </button>
-        </div>
+        <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+          <option value="all">전체</option>
+          <option value="month">월별</option>
+          <option value="year">연별</option>
+        </select>
 
         {(period === 'month' || period === 'year') && (
           <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
