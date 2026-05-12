@@ -51,6 +51,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       },
     });
     const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
+    const batchKeys = new Set<string>();
 
     const dataToInsert = transactions.map((t) => {
       const normalized = {
@@ -66,6 +67,9 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         memo: t.memo || null,
         member: t.member || '효',
       };
+      const duplicateKey = buildDuplicateKey(normalized);
+      const isDuplicate = verifiedKeys.has(duplicateKey) || batchKeys.has(duplicateKey);
+      batchKeys.add(duplicateKey);
 
       return {
         id: randomUUID(),
@@ -73,8 +77,8 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
         // This hash is only a row-level unique value for the existing schema.
         // Duplicate detection uses buildDuplicateKey above.
         hash: randomUUID(),
-        isVerified: false,
-        isDuplicate: verifiedKeys.has(buildDuplicateKey(normalized)),
+        isVerified: t.isVerified ?? false,
+        isDuplicate: t.isDuplicate ?? isDuplicate,
       };
     });
 
