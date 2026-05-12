@@ -292,8 +292,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류</th>
             <th style={{ width: '70px', cursor: 'pointer' }} onClick={() => requestSort('subcategory')}>소분류</th>
             <th style={{ width: '110px', textAlign: 'left', cursor: 'pointer' }} onClick={() => requestSort('vendor')}>내용</th>
-            <th style={{ width: '70px', textAlign: 'center', cursor: 'pointer' }} onClick={() => requestSort('amount')}>금액</th>
-            <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('source')}>결제수단</th>
+            <th style={{ width: '85px', textAlign: 'center', cursor: 'pointer' }} onClick={() => requestSort('amount')}>금액</th>
+            <th style={{ width: '120px', cursor: 'pointer' }} onClick={() => requestSort('source')}>결제수단</th>
             <th>메모</th>
             <th style={{ width: '100px', textAlign: 'center' }}>관리</th>
           </tr>
