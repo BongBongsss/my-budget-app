@@ -99,6 +99,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return false;
   });
 
+  const filteredIncome = filteredTransactions
+    .filter(t => t.type === 'income')
+    .reduce((sum, t) => sum + t.amount, 0);
+  const filteredExpense = filteredTransactions
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
   const requestSort = (key: string) => {
@@ -280,6 +287,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
             
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
+            
+            <div className="flex gap-4 ml-4" style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+              <span style={{ color: '#2563eb' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
+              <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>
+            </div>
           </div>
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
