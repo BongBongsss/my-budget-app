@@ -151,13 +151,35 @@ const TransactionList: React.FC<TransactionListProps> = ({
     onRefresh();
   };
 
-  const getPaginationNumbers = () => {
+  const renderPagination = () => {
+    const pages: (number | string)[] = [];
     const delta = 2;
-    const range = [];
-    for (let i = Math.max(1, currentPage - delta); i <= Math.min(totalPages, currentPage + delta); i++) {
-      range.push(i);
+
+    for (let i = 1; i <= totalPages; i++) {
+      if (i === 1 || i === totalPages || (i >= currentPage - delta && i <= currentPage + delta)) {
+        pages.push(i);
+      } else if (i === currentPage - delta - 1 || i === currentPage + delta + 1) {
+        pages.push('...');
+      }
     }
-    return range;
+
+    const uniquePages = pages.filter((item, pos, self) => self.indexOf(item) === pos);
+
+    return uniquePages.map((page, index) => (
+      <React.Fragment key={index}>
+        {page === '...' ? (
+          <span style={{ padding: '0 5px', color: '#64748b', alignSelf: 'center' }}>...</span>
+        ) : (
+          <button 
+            className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'}`} 
+            onClick={() => setCurrentPage(page as number)}
+            style={{ minWidth: '35px', padding: '2px 8px' }}
+          >
+            {page}
+          </button>
+        )}
+      </React.Fragment>
+    ));
   };
 
   const cellEllipsisStyle: React.CSSProperties = {
@@ -368,9 +390,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
       </table>
       <div className="pagination mt-2 flex justify-center gap-2">
         <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>이전</button>
-        {getPaginationNumbers().map(page => (
-          <button key={page} className={`btn ${currentPage === page ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setCurrentPage(page)}>{page}</button>
-        ))}
+        {renderPagination()}
         <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>다음</button>
       </div>
     </div>
