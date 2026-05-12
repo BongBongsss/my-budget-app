@@ -32,6 +32,7 @@ function App() {
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥'>('all');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -158,7 +159,11 @@ function App() {
     return true;
   });
 
-  const allVerifiedForPeriod = filteredByPeriod.filter(t => t.isVerified !== false);
+  const allVerifiedForPeriod = filteredByPeriod.filter(t => {
+    const isVerified = t.isVerified !== false;
+    const matchesMember = memberFilter === 'all' || t.member === memberFilter;
+    return isVerified && matchesMember;
+  });
 
   const unverifiedTransactions = transactions.filter(t => t.isVerified === false);
   const newCount = unverifiedTransactions.filter(t => !t.isDuplicate).length;
@@ -166,6 +171,9 @@ function App() {
   const verifiedCount = transactions.filter(t => t.isVerified !== false).length;
 
   const filteredTransactions = (activeTab === 'all' ? filteredByPeriod : transactions).filter(t => {
+    const matchesMember = memberFilter === 'all' || t.member === memberFilter;
+    if (!matchesMember) return false;
+
     if (activeTab === 'all') return t.isVerified !== false;
     if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
     if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
@@ -223,6 +231,7 @@ function App() {
             period={period} setPeriod={setPeriod} 
             year={year} setYear={setYear} 
             month={month} setMonth={setMonth} 
+            memberFilter={memberFilter} setMemberFilter={setMemberFilter}
           />
           <SuggestionNotification onRuleApproved={fetchData} />
           <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
