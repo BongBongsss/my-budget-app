@@ -274,10 +274,24 @@ function App() {
 
             
             {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '10px' }}>
+              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '효')}
+                  style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
+                >
+                  모두 효
+                </button>
+                <button 
+                  className="btn btn-secondary" 
+                  onClick={() => handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '굥')}
+                  style={{ backgroundColor: '#db2777', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
+                >
+                  모두 굥
+                </button>
                 <button 
                   className="btn btn-danger" 
-                  style={{ backgroundColor: '#dc2626' }}
+                  style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
                   onClick={() => {
                     if (window.confirm('표시된 모든 내역을 삭제하시겠습니까?')) {
                       handleBulkDelete(filteredTransactions.map(t => t.id!));
@@ -288,7 +302,7 @@ function App() {
                 </button>
                 <button 
                   className="btn btn-primary" 
-                  style={{ backgroundColor: '#16a34a' }}
+                  style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
                   onClick={() => {
                     if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
                       handleVerify(filteredTransactions.map(t => t.id!));

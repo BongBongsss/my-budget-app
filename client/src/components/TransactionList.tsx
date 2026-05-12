@@ -237,28 +237,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
             굥
           </button>
         </div>
-
-        {isAdmin && (transactions.some(t => t.isVerified === false)) && transactions.length > 0 && (
-          <>
-            <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
-            <div className="flex gap-1">
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => onBulkUpdateMember?.(transactions.map(t => t.id!), '효')}
-                style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: '#eff6ff', color: '#1e40af', border: '1px solid #bfdbfe' }}
-              >
-                모두 효
-              </button>
-              <button 
-                className="btn btn-secondary" 
-                onClick={() => onBulkUpdateMember?.(transactions.map(t => t.id!), '굥')}
-                style={{ fontSize: '0.75rem', padding: '2px 8px', backgroundColor: '#fff1f2', color: '#9f1239', border: '1px solid #fecdd3' }}
-              >
-                모두 굥
-              </button>
-            </div>
-          </>
-        )}
       </div>
 
       <div className="list-actions mb-4">
