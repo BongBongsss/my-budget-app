@@ -272,7 +272,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 value={search} 
                 onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCurrentPage(1); }} 
                 className="edit-input" 
-                style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }}
+                style={{ fontSize: '0.8rem', padding: '2px 5px', width: 'auto' }}
               >
                 <option value="">항목 선택...</option>
                 {filterType === 'type' && uniqueValues.types.map(v => <option key={v} value={v}>{v}</option>)}
@@ -287,12 +287,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
             
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
-            
-            <div className="flex gap-4 ml-4" style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+          </div>
+
+          {(searchQuery || filterType !== 'group' || startDate || endDate) && (
+            <div className="flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
               <span style={{ color: '#2563eb' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
               <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>
             </div>
-          </div>
+          )}
+
           <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
             <option value={10}>10</option>
             <option value={50}>50</option>
