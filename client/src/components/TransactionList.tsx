@@ -160,6 +160,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return range;
   };
 
+  const cellEllipsisStyle: React.CSSProperties = {
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap'
+  };
+
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
 
@@ -329,10 +335,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td>{getGroupName(tx.category)}</td>
                   <td>{tx.category}</td>
                   <td>{tx.subcategory}</td>
-                  <td>{tx.vendor}</td>
+                  <td title={tx.vendor} style={cellEllipsisStyle}>{tx.vendor}</td>
                   <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
-                  <td>{tx.source}</td>
-                  <td>{tx.memo}</td>
+                  <td title={tx.source} style={cellEllipsisStyle}>{tx.source}</td>
+                  <td title={tx.memo} style={cellEllipsisStyle}>{tx.memo}</td>
                   <td style={{ textAlign: 'center' }}>
                     <div className="flex gap-1 justify-center">
                       {!tx.isVerified && (
