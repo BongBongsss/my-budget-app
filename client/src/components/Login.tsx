@@ -13,7 +13,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await axios.post('https://my-budget-app-nwm8.onrender.com/api/login', { username, password });
+      const res = await axios.post('/login', { username, password });
       onLogin(res.data.role);
     } catch (err) {
       alert('아이디 또는 비밀번호가 틀렸습니다.');

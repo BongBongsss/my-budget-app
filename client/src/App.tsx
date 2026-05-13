@@ -39,7 +39,7 @@ function App() {
   const fetchData = async () => {
     try {
       // 1. 인증 상태 및 역할 확인
-      const authRes = await axios.get('https://my-budget-app-nwm8.onrender.com/api/auth-status');
+      const authRes = await axios.get('/auth-status');
       setUserRole(authRes.data.role || 'viewer');
       setIsAuthenticated(true);
 
@@ -67,7 +67,7 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await axios.post('https://my-budget-app-nwm8.onrender.com/api/logout');
+    await axios.post('/logout');
     setIsAuthenticated(false);
     setTransactions([]);
   };

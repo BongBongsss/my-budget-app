@@ -1,6 +1,29 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
 
+export const getAllRecurringTransactions = async () => {
+  return await prisma.recurringTransaction.findMany();
+};
+
+export const addRecurringTransaction = async (data: any) => {
+  return await prisma.recurringTransaction.create({
+    data: {
+      id: randomUUID(),
+      vendor: data.vendor,
+      amount: data.amount,
+      category: data.category,
+      type: data.type || 'expense',
+      day_of_month: data.day_of_month,
+    },
+  });
+};
+
+export const deleteRecurringTransaction = async (id: string) => {
+  return await prisma.recurringTransaction.delete({
+    where: { id },
+  });
+};
+
 export const processRecurringTransactions = async () => {
   const recurring = await prisma.recurringTransaction.findMany();
   const today = new Date();
@@ -13,7 +36,8 @@ export const processRecurringTransactions = async () => {
         where: {
           date: dateStr,
           vendor: item.vendor,
-          source: 'recurring'
+          source: 'recurring',
+          isDeleted: false
         }
       });
       
@@ -27,6 +51,8 @@ export const processRecurringTransactions = async () => {
             category: item.category,
             type: item.type,
             source: 'recurring',
+            isDeleted: false,
+            isVerified: true
           }
         });
       }

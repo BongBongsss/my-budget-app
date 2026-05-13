@@ -1,43 +1,32 @@
 import { Router } from 'express';
 import { getPaymentRules, addPaymentRule, deletePaymentRule, applyPaymentRulesToExisting } from '../services/paymentService';
+import { asyncHandler } from '../utils/asyncHandler';
+import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  try {
-    const rules = await getPaymentRules();
-    res.json(rules);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+router.get('/', asyncHandler(async (req, res) => {
+  const rules = await getPaymentRules();
+  res.json(rules);
+}));
 
-router.post('/apply', async (req, res) => {
-  try {
-    const count = await applyPaymentRulesToExisting();
-    res.json({ success: true, updatedCount: count });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+router.post('/apply', asyncHandler(async (req, res) => {
+  const count = await applyPaymentRulesToExisting();
+  res.json({ success: true, updatedCount: count });
+}));
 
-router.post('/', async (req, res) => {
-  try {
-    const { paymentType, keyword } = req.body;
-    const rule = await addPaymentRule(paymentType, keyword);
-    res.status(201).json(rule);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+router.post('/', asyncHandler(async (req, res) => {
+  const { paymentType, keyword } = req.body;
+  if (!paymentType || !keyword) {
+    throw new BadRequestError('PaymentType and keyword are required');
   }
-});
+  const rule = await addPaymentRule(paymentType, keyword);
+  res.status(201).json(rule);
+}));
 
-router.delete('/:id', async (req, res) => {
-  try {
-    await deletePaymentRule(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+router.delete('/:id', asyncHandler(async (req, res) => {
+  await deletePaymentRule(req.params.id);
+  res.json({ success: true });
+}));
 
 export default router;

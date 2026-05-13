@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Trash2 } from 'lucide-react';
 
-const API_BASE = 'https://my-budget-app-nwm8.onrender.com/api';
+const API_BASE = '/api';
 
 interface ExclusionRule {
   id: string;
