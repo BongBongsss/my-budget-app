@@ -25,6 +25,13 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@prisma/client": "^7.8.0",
+    "@types/connect-pg-simple": "^7.0.3",
+    "@types/cors": "^2.8.19",
+    "@types/express-session": "^1.19.0",
+    "connect-pg-simple": "^10.0.0",
+    "cors": "^2.8.6",
+    "express-session": "^1.19.0",
     "node-cron": "^4.2.1"
   },
   "devDependencies": {

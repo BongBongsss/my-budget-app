@@ -1,16 +1,16 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { getIgnoredRules, ignoreRule, unignoreRule } from '../services/ignoredRuleService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const rules = await getIgnoredRules();
   res.json(rules);
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const { keyword } = req.body;
   if (!keyword) {
     throw new BadRequestError('Keyword is required');
@@ -19,8 +19,8 @@ router.post('/', asyncHandler(async (req, res) => {
   res.status(201).json({ success: true });
 }));
 
-router.delete('/:id', asyncHandler(async (req, res) => {
-  await unignoreRule(req.params.id);
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  await unignoreRule(req.params.id as string);
   res.json({ success: true });
 }));
 

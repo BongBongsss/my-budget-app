@@ -5,8 +5,8 @@ export const saveAssetHistory = async () => {
   const assets = await prisma.asset.findMany({
     where: { isDeleted: false }
   });
-  const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
-  const totalLiabilities = assets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
+  const totalAssets = assets.reduce((sum: number, a: any) => a.type !== 'liability' ? sum + a.balance : sum, 0);
+  const totalLiabilities = assets.reduce((sum: number, a: any) => a.type === 'liability' ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
   const yearMonth = new Date().toISOString().substring(0, 7);
 
