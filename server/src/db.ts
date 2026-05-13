@@ -1,6 +1,12 @@
 import { PrismaClient } from '@prisma/client';
 
-const prisma = new PrismaClient();
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.DATABASE_URL,
+    },
+  },
+});
 
 export const initDb = async () => {
   // 세션 테이블 수동 생성 (connect-pg-simple 자동 생성 오류 대비)

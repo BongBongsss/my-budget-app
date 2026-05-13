@@ -362,7 +362,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                     </td>
                   </tr>
                 ))}
-                </tbody>          </table>        </div>
+                </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

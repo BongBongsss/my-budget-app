@@ -45,11 +45,11 @@ export const getRuleCandidates = async (minOccurrence: number = 3): Promise<Rule
     prisma.ignoredRule.findMany()
   ]);
   const candidates: RuleCandidate[] = [];
-  const ignoredKeywords = new Set(ignoredRules.map(r => r.keyword));
+  const ignoredKeywords = new Set(ignoredRules.map((r: any) => r.keyword));
 
   for (const [vendor, counts] of Object.entries(vendorCategoryMap)) {
     // 이미 규칙이 있는 경우 또는 무시된 경우 제외
-    if (existingRules.find(r => r.keyword === vendor)) continue;
+    if (existingRules.find((r: any) => r.keyword === vendor)) continue;
     if (ignoredKeywords.has(vendor)) continue;
 
     for (const [category, count] of Object.entries(counts)) {

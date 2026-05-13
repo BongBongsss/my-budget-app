@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { 
   getAllTransactions, 
@@ -18,12 +18,12 @@ import { BadRequestError } from '../utils/errors';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/cleanup', asyncHandler(async (req, res) => {
+router.post('/cleanup', asyncHandler(async (req: Request, res: Response) => {
   const result = await cleanupTransactions();
   res.json({ success: true, ...result });
 }));
 
-router.post('/verify', asyncHandler(async (req, res) => {
+router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
   const { ids } = req.body;
   if (!Array.isArray(ids)) {
     throw new BadRequestError('Expected an array of IDs');
@@ -32,22 +32,22 @@ router.post('/verify', asyncHandler(async (req, res) => {
   res.json({ success: true, count: result.count });
 }));
 
-router.post('/apply-rules', asyncHandler(async (req, res) => {
+router.post('/apply-rules', asyncHandler(async (req: Request, res: Response) => {
   const count = await applyAutoRulesToExisting();
   res.json({ success: true, count });
 }));
 
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const transactions = await getAllTransactions();
   res.json(transactions);
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const transaction = await addTransaction(req.body);
   res.status(201).json(transaction);
 }));
 
-router.post('/import', upload.single('file'), asyncHandler(async (req, res) => {
+router.post('/import', upload.single('file'), asyncHandler(async (req: Request, res: Response) => {
   if (!req.file) {
     throw new BadRequestError('No file uploaded');
   }
@@ -67,7 +67,7 @@ router.post('/import', upload.single('file'), asyncHandler(async (req, res) => {
   res.status(200).json(transactions);
 }));
 
-router.post('/bulk', asyncHandler(async (req, res) => {
+router.post('/bulk', asyncHandler(async (req: Request, res: Response) => {
   const transactions = req.body;
   if (!Array.isArray(transactions)) {
     throw new BadRequestError('Expected an array of transactions');
@@ -77,12 +77,12 @@ router.post('/bulk', asyncHandler(async (req, res) => {
   res.status(201).json(results);
 }));
 
-router.put('/:id', asyncHandler(async (req, res) => {
-  await updateTransaction(req.params.id, req.body);
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  await updateTransaction(req.params.id as string, req.body);
   res.json({ success: true });
 }));
 
-router.delete('/bulk', asyncHandler(async (req, res) => {
+router.delete('/bulk', asyncHandler(async (req: Request, res: Response) => {
   const { ids } = req.body;
   if (!Array.isArray(ids)) {
     throw new BadRequestError('Expected an array of IDs');
@@ -91,8 +91,8 @@ router.delete('/bulk', asyncHandler(async (req, res) => {
   res.json({ success: true, count: ids.length });
 }));
 
-router.delete('/:id', asyncHandler(async (req, res) => {
-  await deleteTransaction(req.params.id);
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  await deleteTransaction(req.params.id as string);
   res.json({ success: true });
 }));
 

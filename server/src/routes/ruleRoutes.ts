@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { 
   getCategoryRules, 
   addCategoryRule, 
@@ -10,12 +10,12 @@ import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
-router.get('/', asyncHandler(async (req, res) => {
+router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const rules = await getCategoryRules();
   res.json(rules);
 }));
 
-router.post('/', asyncHandler(async (req, res) => {
+router.post('/', asyncHandler(async (req: Request, res: Response) => {
   const { keyword, assigned_category } = req.body;
   if (!keyword || !assigned_category) {
     throw new BadRequestError('Keyword and assigned_category are required');
@@ -24,17 +24,17 @@ router.post('/', asyncHandler(async (req, res) => {
   res.status(201).json(rule);
 }));
 
-router.put('/:id', asyncHandler(async (req, res) => {
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
   const { keyword, assigned_category } = req.body;
   if (!keyword || !assigned_category) {
     throw new BadRequestError('Keyword and assigned_category are required');
   }
-  await updateCategoryRule(req.params.id, keyword, assigned_category);
+  await updateCategoryRule(req.params.id as string, keyword, assigned_category);
   res.json({ success: true });
 }));
 
-router.delete('/:id', asyncHandler(async (req, res) => {
-  await deleteCategoryRule(req.params.id);
+router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
+  await deleteCategoryRule(req.params.id as string);
   res.json({ success: true });
 }));
 

@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const API_BASE = '/api';
+import instance from '../api';
 
 interface RuleCandidate {
   id: string;
@@ -24,9 +22,11 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const fetchCandidates = async () => {
     try {
-      const res = await axios.get('/suggestions/candidates');
-      setCandidates(res.data);
-      if (res.data.length > 0) setShow(true);
+      const res = await instance.get('/suggestions/candidates');
+      // Ensure res.data is an array
+      const data = Array.isArray(res.data) ? res.data : [];
+      setCandidates(data);
+      if (data.length > 0) setShow(true);
     } catch (err) {
       console.error('Failed to fetch candidates:', err);
     }
@@ -38,7 +38,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const handleIgnore = async (candidate: RuleCandidate) => {
     try {
-        await axios.post('/ignored-rules', { keyword: candidate.vendor });
+        await instance.post('/ignored-rules', { keyword: candidate.vendor });
         setCandidates(prev => prev.filter(c => c.id !== candidate.id));
     } catch (err) {
         alert('무시 처리 실패');
@@ -47,7 +47,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
 
   const handleApprove = async (candidate: RuleCandidate) => {
     try {
-      await axios.post('/suggestions/approve', {
+      await instance.post('/suggestions/approve', {
         vendor: candidate.vendor,
         category: candidate.suggestedCategory
       });
@@ -58,7 +58,7 @@ const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
     }
   };
 
-  if (!show || candidates.length === 0) return null;
+  if (!show || !Array.isArray(candidates) || candidates.length === 0) return null;
 
   return (
     <div className="suggestion-notification" style={{
