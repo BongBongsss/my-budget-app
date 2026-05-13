@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
+import api from './api';
 import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, verifyTransactions } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import Summary from './components/Summary';
@@ -11,8 +11,6 @@ import AssetManager from './components/AssetManager';
 import Login from './components/Login';
 import './index.css';
 import { Settings, Upload, LogOut, BarChart3, Wallet } from 'lucide-react';
-
-axios.defaults.withCredentials = true;
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -39,7 +37,7 @@ function App() {
   const fetchData = async () => {
     try {
       // 1. 인증 상태 및 역할 확인
-      const authRes = await axios.get('/auth-status');
+      const authRes = await api.get('/auth-status');
       setUserRole(authRes.data.role || 'viewer');
       setIsAuthenticated(true);
 
@@ -67,7 +65,7 @@ function App() {
   };
 
   const handleLogout = async () => {
-    await axios.post('/logout');
+    await api.post('/logout');
     setIsAuthenticated(false);
     setTransactions([]);
   };
