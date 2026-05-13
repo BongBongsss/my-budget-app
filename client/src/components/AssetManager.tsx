@@ -22,6 +22,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
     name: '', type: 'bank', balance: 0, memo: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const fetchData = async () => {
     try {
@@ -29,7 +30,10 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
       setAssets(res.data);
       originalAssets.current = res.data;
       setHistory(histRes.data);
-    } catch (err) { console.error(err); }
+    } catch (err: any) { 
+      console.error('Failed to fetch assets:', err); 
+      alert(`데이터를 가져오는 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+    }
   };
 
   useEffect(() => { fetchData(); }, []);
@@ -75,28 +79,63 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
   };
 
   const handleAdd = async () => {
-    if (!newAsset.name) return;
-    await addAsset(newAsset);
-    setNewAsset({ name: '', type: 'bank', balance: 0, memo: '' });
-    fetchData();
+    if (!newAsset.name || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await addAsset(newAsset);
+      setNewAsset({ name: '', type: 'bank', balance: 0, memo: '' });
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to add asset:', err);
+      alert(`자산 추가 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleUpdate = async (id: string) => {
-    await updateAsset(id, editForm);
-    setEditingId(null);
-    fetchData();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await updateAsset(id, editForm);
+      setEditingId(null);
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to update asset:', err);
+      alert(`자산 수정 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleDelete = async (id: string) => {
+    if (isSubmitting) return;
     if (confirm('삭제하시겠습니까?')) {
-      await deleteAsset(id);
-      fetchData();
+      setIsSubmitting(true);
+      try {
+        await deleteAsset(id);
+        await fetchData();
+      } catch (err: any) {
+        console.error('Failed to delete asset:', err);
+        alert(`자산 삭제 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
   const handleSaveHistory = async () => {
-    await saveAssetHistory();
-    fetchData();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      await saveAssetHistory();
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to save history:', err);
+      alert(`이력 저장 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);

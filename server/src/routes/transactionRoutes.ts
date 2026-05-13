@@ -8,133 +8,92 @@ import {
   bulkAddTransactions,
   applyAutoRulesToExisting,
   verifyTransactions,
-  cleanupTransactions
+  cleanupTransactions,
+  bulkDeleteTransactions
 } from '../services/transactionService';
 import { parseCSV, parseExcel } from '../services/importService';
-import prisma from '../db';
+import { asyncHandler } from '../utils/asyncHandler';
+import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/cleanup', async (req, res) => {
-  try {
-    const result = await cleanupTransactions();
-    res.json({ success: true, ...result });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+router.post('/cleanup', asyncHandler(async (req, res) => {
+  const result = await cleanupTransactions();
+  res.json({ success: true, ...result });
+}));
+
+router.post('/verify', asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    throw new BadRequestError('Expected an array of IDs');
   }
-});
+  const result = await verifyTransactions(ids);
+  res.json({ success: true, count: result.count });
+}));
 
-router.post('/verify', async (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'Expected an array of IDs' });
-    }
-    const result = await verifyTransactions(ids);
-    res.json({ success: true, count: result.count });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+router.post('/apply-rules', asyncHandler(async (req, res) => {
+  const count = await applyAutoRulesToExisting();
+  res.json({ success: true, count });
+}));
+
+router.get('/', asyncHandler(async (req, res) => {
+  const transactions = await getAllTransactions();
+  res.json(transactions);
+}));
+
+router.post('/', asyncHandler(async (req, res) => {
+  const transaction = await addTransaction(req.body);
+  res.status(201).json(transaction);
+}));
+
+router.post('/import', upload.single('file'), asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw new BadRequestError('No file uploaded');
   }
-});
 
-router.post('/apply-rules', async (req, res) => {
-  try {
-    const count = await applyAutoRulesToExisting();
-    res.json({ success: true, count });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+  const buffer = req.file.buffer;
+  const filename = req.file.originalname.toLowerCase();
+  let transactions;
+
+  if (filename.endsWith('.csv')) {
+    transactions = parseCSV(buffer);
+  } else if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
+    transactions = parseExcel(buffer);
+  } else {
+    throw new BadRequestError('Unsupported file format');
   }
-});
+  
+  res.status(200).json(transactions);
+}));
 
-router.get('/', async (req, res) => {
-  try {
-    const transactions = await getAllTransactions();
-    res.json(transactions);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+router.post('/bulk', asyncHandler(async (req, res) => {
+  const transactions = req.body;
+  if (!Array.isArray(transactions)) {
+    throw new BadRequestError('Expected an array of transactions');
   }
-});
+  await bulkAddTransactions(transactions);
+  const results = await getAllTransactions();
+  res.status(201).json(results);
+}));
 
-router.post('/', async (req, res) => {
-  try {
-    const transaction = await addTransaction(req.body);
-    res.status(201).json(transaction);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
+router.put('/:id', asyncHandler(async (req, res) => {
+  await updateTransaction(req.params.id, req.body);
+  res.json({ success: true });
+}));
+
+router.delete('/bulk', asyncHandler(async (req, res) => {
+  const { ids } = req.body;
+  if (!Array.isArray(ids)) {
+    throw new BadRequestError('Expected an array of IDs');
   }
-});
+  await bulkDeleteTransactions(ids);
+  res.json({ success: true, count: ids.length });
+}));
 
-router.post('/import', upload.single('file'), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: 'No file uploaded' });
-    }
-
-    const buffer = req.file.buffer;
-    const filename = req.file.originalname.toLowerCase();
-    let transactions;
-
-    if (filename.endsWith('.csv')) {
-      transactions = parseCSV(buffer);
-    } else if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
-      transactions = parseExcel(buffer);
-    } else {
-      return res.status(400).json({ error: 'Unsupported file format' });
-    }
-    
-    res.status(200).json(transactions);
-  } catch (error) {
-    console.error('Error during file import:', error);
-    res.status(500).json({ error: (error as Error).message || 'Failed to parse or import file' });
-  }
-});
-
-router.post('/bulk', async (req, res) => {
-  try {
-    const transactions = req.body;
-    if (!Array.isArray(transactions)) {
-      return res.status(400).json({ error: 'Expected an array of transactions' });
-    }
-    await bulkAddTransactions(transactions);
-    const results = await getAllTransactions();
-    res.status(201).json(results);
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-router.put('/:id', async (req, res) => {
-  try {
-    await updateTransaction(req.params.id, req.body);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-router.delete('/bulk', async (req, res) => {
-  try {
-    const { ids } = req.body;
-    if (!Array.isArray(ids)) {
-      return res.status(400).json({ error: 'Expected an array of IDs' });
-    }
-    await prisma.transaction.deleteMany({
-      where: { id: { in: ids } }
-    });
-    res.json({ success: true, count: ids.length });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
-
-router.delete('/:id', async (req, res) => {
-  try {
-    await deleteTransaction(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: (error as Error).message });
-  }
-});
+router.delete('/:id', asyncHandler(async (req, res) => {
+  await deleteTransaction(req.params.id);
+  res.json({ success: true });
+}));
 
 export default router;

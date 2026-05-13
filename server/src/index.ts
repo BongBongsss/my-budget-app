@@ -15,6 +15,8 @@ import exclusionRuleRoutes from './routes/exclusionRuleRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
+import { errorHandler } from './middleware/errorHandler';
+import { UnauthorizedError } from './utils/errors';
 
 dotenv.config();
 
@@ -28,7 +30,7 @@ app.set('trust proxy', 1);
 
 app.use(cors({ 
   origin: (origin, callback) => {
-    if (!origin || origin.endsWith('.vercel.app')) {
+    if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:3000') {
       callback(null, origin); // 요청한 origin을 그대로 반영
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -70,7 +72,7 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   if (req.session && req.session.authenticated) {
     return next();
   }
-  res.status(401).json({ error: 'Unauthorized' });
+  next(new UnauthorizedError());
 };
 
 // 비밀번호 설정 확인 (보안을 위해 존재 여부만 체크)
@@ -149,6 +151,8 @@ app.use('/api/exclusion-rules', exclusionRuleRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Budget Automation API is running' });
 });
+
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);

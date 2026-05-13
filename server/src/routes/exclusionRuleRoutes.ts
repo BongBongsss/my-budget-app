@@ -1,34 +1,27 @@
 import { Router } from 'express';
 import { getExclusionRules, addExclusionRule, deleteExclusionRule } from '../services/exclusionRuleService';
+import { asyncHandler } from '../utils/asyncHandler';
+import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
-router.get('/', async (req, res) => {
-  try {
-    const rules = await getExclusionRules();
-    res.json(rules);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to fetch exclusion rules' });
-  }
-});
+router.get('/', asyncHandler(async (req, res) => {
+  const rules = await getExclusionRules();
+  res.json(rules);
+}));
 
-router.post('/', async (req, res) => {
+router.post('/', asyncHandler(async (req, res) => {
   const { keyword } = req.body;
-  try {
-    const rule = await addExclusionRule(keyword);
-    res.status(201).json(rule);
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to add exclusion rule' });
+  if (!keyword) {
+    throw new BadRequestError('Keyword is required');
   }
-});
+  const rule = await addExclusionRule(keyword);
+  res.status(201).json(rule);
+}));
 
-router.delete('/:id', async (req, res) => {
-  try {
-    await deleteExclusionRule(req.params.id);
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: 'Failed to delete exclusion rule' });
-  }
-});
+router.delete('/:id', asyncHandler(async (req, res) => {
+  await deleteExclusionRule(req.params.id);
+  res.json({ success: true });
+}));
 
 export default router;

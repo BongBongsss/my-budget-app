@@ -31,6 +31,7 @@ const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
 
 export const getAllTransactions = async (): Promise<Transaction[]> => {
   return await prisma.transaction.findMany({
+    where: { isDeleted: false },
     orderBy: { date: 'desc' },
   });
 };
@@ -41,7 +42,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
     const verifiedTransactions = await prisma.transaction.findMany({
-      where: { isVerified: true },
+      where: { isVerified: true, isDeleted: false },
       select: {
         date: true,
         time: true,
@@ -133,21 +134,23 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 };
 
 export const deleteTransaction = async (id: string) => {
-  return await prisma.transaction.delete({
+  return await prisma.transaction.update({
     where: { id },
+    data: { isDeleted: true }
   });
 };
 
 export const bulkDeleteTransactions = async (ids: string[]) => {
-  return await prisma.transaction.deleteMany({
-    where: { id: { in: ids } }
+  return await prisma.transaction.updateMany({
+    where: { id: { in: ids } },
+    data: { isDeleted: true }
   });
 };
 
 export const cleanupTransactions = async () => {
   const [verifiedTransactions, unverifiedTransactions] = await Promise.all([
     prisma.transaction.findMany({
-      where: { isVerified: true },
+      where: { isVerified: true, isDeleted: false },
       select: {
         date: true,
         time: true,
@@ -157,7 +160,7 @@ export const cleanupTransactions = async () => {
       },
     }),
     prisma.transaction.findMany({
-      where: { isVerified: false },
+      where: { isVerified: false, isDeleted: false },
       select: {
         id: true,
         date: true,
@@ -195,7 +198,8 @@ export const applyAutoRulesToExisting = async () => {
   const transactions = await prisma.transaction.findMany({
     where: {
       NOT: [{ category: '기타' }, { category: '' }],
-      isVerified: true
+      isVerified: true,
+      isDeleted: false
     }
   });
 

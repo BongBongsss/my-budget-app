@@ -57,6 +57,37 @@ export const updateCategoryGroupRule = async (id: string, categoryName: string, 
   });
 };
 
+// 카테고리 관리
+export const getAllCategories = async () => {
+  return await prisma.category.findMany({
+    where: { isDeleted: false },
+    orderBy: { name: 'asc' },
+  });
+};
+
+export const createCategory = async (name: string) => {
+  return await prisma.category.create({
+    data: {
+      id: randomUUID(),
+      name,
+    },
+  });
+};
+
+export const deleteCategory = async (id: string) => {
+  return await prisma.category.update({
+    where: { id },
+    data: { isDeleted: true },
+  });
+};
+
+export const updateCategoryGroup = async (categoryIds: string[], groupName: string) => {
+  return await prisma.category.updateMany({
+    where: { id: { in: categoryIds } },
+    data: { groupName },
+  });
+};
+
 // 카테고리 자동 지정 (여러 건 일괄 처리 - 성능 최적화)
 export const bulkAutoCategorize = async (vendors: string[]): Promise<Record<string, string>> => {
   const rules = await getCategoryRules();

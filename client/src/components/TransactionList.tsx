@@ -40,6 +40,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const categoryToGroupMap: Record<string, string> = {};
   categories.forEach(cat => {

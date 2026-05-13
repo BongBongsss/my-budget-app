@@ -22,6 +22,7 @@ model Transaction {
   hash         String? @unique
   isVerified   Boolean @default(true)
   isDuplicate  Boolean @default(false)
+  isDeleted    Boolean @default(false)
   member       String  @default("효")
 }
 
@@ -32,9 +33,10 @@ model CategoryRule {
 }
 
 model Category {
-  id        String @id
-  name      String @unique
-  groupName String @default("기타")
+  id        String  @id
+  name      String  @unique
+  groupName String  @default("기타")
+  isDeleted Boolean @default(false)
 }
 
 model CategoryGroupRule {
@@ -71,6 +73,7 @@ model Asset {
   name      String   @unique
   type      String   // 'cash', 'bank', 'stock', 'realestate', 'liability', etc.
   balance   Float    @default(0)
+  isDeleted Boolean  @default(false)
   memo      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

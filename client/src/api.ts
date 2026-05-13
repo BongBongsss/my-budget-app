@@ -1,9 +1,49 @@
 import axios from 'axios';
 
-const API_BASE = 'https://my-budget-app-nwm8.onrender.com/api';
+// 환경 변수에서 API base URL을 가져오고, 없으면 기본값으로 운영 환경 URL을 사용
+const API_BASE = import.meta.env.VITE_API_BASE || 'https://my-budget-app-nwm8.onrender.com/api';
 
-// 모든 요청에 대해 쿠키(세션) 정보를 포함하도록 설정
-axios.defaults.withCredentials = true;
+const instance = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true,
+});
+
+/**
+ * Global Error Interceptor
+ * 서버에서 오는 공통 에러 포맷({ status, code, message })을 처리합니다.
+ */
+instance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    const originalRequest = error.config;
+    
+    if (error.response) {
+      const { status, data } = error.response;
+      const errorMessage = data?.message || 'An unexpected error occurred';
+      const errorCode = data?.code || 'UNKNOWN_ERROR';
+
+      // 401 Unauthorized: 인증 만료 시 로그인 페이지로 리다이렉트 권장
+      if (status === 401 && !originalRequest._retry) {
+        console.error('Session expired or unauthorized. Redirecting to login...');
+        // window.location.href = '/login'; // 실제 환경에 맞게 조정 가능
+      }
+
+      // 에러 객체에 서버에서 온 정보를 담아 다시 던짐 (컴포넌트에서 활용 가능)
+      const enhancedError = new Error(errorMessage);
+      (enhancedError as any).status = status;
+      (enhancedError as any).code = errorCode;
+      (enhancedError as any).details = data?.details;
+
+      return Promise.reject(enhancedError);
+    }
+
+    return Promise.reject(error);
+  }
+);
+
+export default instance;
+
+// --- Interfaces ---
 
 export interface Transaction {
   id?: string;
@@ -34,30 +74,6 @@ export interface CategoryItem {
   groupName?: string;
 }
 
-export const getTransactions = () => axios.get<Transaction[]>(`${API_BASE}/transactions`);
-export const applyAutoRules = () => axios.post<{ success: boolean, count: number }>(`${API_BASE}/transactions/apply-rules`);
-export const addTransaction = (tx: Partial<Transaction>) => axios.post<Transaction>(`${API_BASE}/transactions`, tx);
-export const updateTransaction = (id: string, tx: Partial<Transaction>) => axios.put(`${API_BASE}/transactions/${id}`, tx);
-export const deleteTransaction = (id: string) => axios.delete(`${API_BASE}/transactions/${id}`);
-export const bulkDeleteTransactions = (ids: string[]) => axios.delete(`${API_BASE}/transactions/bulk`, { data: { ids } });
-export const verifyTransactions = (ids: string[]) => axios.post(`${API_BASE}/transactions/verify`, { ids });
-export const cleanupTransactions = () => axios.post(`${API_BASE}/transactions/cleanup`);
-
-export const importFile = (file: File) => {
-  const formData = new FormData();
-  formData.append('file', file);
-  return axios.post<Transaction[]>(`${API_BASE}/transactions/import`, formData, {
-    headers: { 'Content-Type': 'multipart/form-data' }
-  });
-};
-
-export const bulkAddTransactions = (txs: Transaction[]) => axios.post(`${API_BASE}/transactions/bulk`, txs);
-
-export const getRules = () => axios.get<CategoryRule[]>(`${API_BASE}/rules`);
-export const addRule = (rule: Partial<CategoryRule>) => axios.post<CategoryRule>(`${API_BASE}/rules`, rule);
-export const updateRule = (id: string, rule: Partial<CategoryRule>) => axios.put(`${API_BASE}/rules/${id}`, rule);
-export const deleteRule = (id: string) => axios.delete(`${API_BASE}/rules/${id}`);
-
 export interface RecurringTransaction {
   id?: string;
   vendor: string;
@@ -77,34 +93,62 @@ export interface Asset {
   updatedAt?: string;
 }
 
-// ... 기존 API 코드 ...
-
 export interface PaymentRule {
   id?: string;
   paymentType: 'card' | 'transfer';
   keyword: string;
 }
 
-// ... (기존 코드들)
+// --- API Methods ---
 
-export const getPaymentRules = () => axios.get<PaymentRule[]>(`${API_BASE}/payment-rules`);
-export const addPaymentRule = (rule: Partial<PaymentRule>) => axios.post<PaymentRule>(`${API_BASE}/payment-rules`, rule);
-export const deletePaymentRule = (id: string) => axios.delete(`${API_BASE}/payment-rules/${id}`);
-export const applyPaymentRules = () => axios.post<{ success: boolean, updatedCount: number }>(`${API_BASE}/payment-rules/apply`);
+// Transactions
+export const getTransactions = () => instance.get<Transaction[]>('/transactions');
+export const applyAutoRules = () => instance.post<{ success: boolean, count: number }>('/transactions/apply-rules');
+export const addTransaction = (tx: Partial<Transaction>) => instance.post<Transaction>('/transactions', tx);
+export const updateTransaction = (id: string, tx: Partial<Transaction>) => instance.put(`/transactions/${id}`, tx);
+export const deleteTransaction = (id: string) => instance.delete(`/transactions/${id}`);
+export const bulkDeleteTransactions = (ids: string[]) => instance.delete('/transactions/bulk', { data: { ids } });
+export const verifyTransactions = (ids: string[]) => instance.post('/transactions/verify', { ids });
+export const cleanupTransactions = () => instance.post('/transactions/cleanup');
 
-export const getCategories = () => axios.get<CategoryItem[]>(`${API_BASE}/categories`);
-export const autoCategorizeVendor = (vendor: string) => axios.get<{ category: string }>(`${API_BASE}/categories/auto`, { params: { vendor } });
-export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => axios.post(`${API_BASE}/categories/batch-group`, { categoryIds, groupName });
-export const addCategory = (cat: Partial<CategoryItem>) => axios.post<CategoryItem>(`${API_BASE}/categories`, cat);
-export const deleteCategory = (id: string) => axios.delete(`${API_BASE}/categories/${id}`);
+export const importFile = (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  return instance.post<Transaction[]>('/transactions/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  });
+};
 
-export const getRecurring = () => axios.get<RecurringTransaction[]>(`${API_BASE}/recurring`);
-export const addRecurring = (rec: Partial<RecurringTransaction>) => axios.post<RecurringTransaction>(`${API_BASE}/recurring`, rec);
-export const deleteRecurring = (id: string) => axios.delete(`${API_BASE}/recurring/${id}`);
+export const bulkAddTransactions = (txs: Transaction[]) => instance.post('/transactions/bulk', txs);
 
-export const getAssets = () => axios.get<Asset[]>(`${API_BASE}/assets`);
-export const getAssetHistory = () => axios.get<any[]>(`${API_BASE}/assets/history`);
-export const saveAssetHistory = () => axios.post(`${API_BASE}/assets/history/save`);
-export const addAsset = (asset: Partial<Asset>) => axios.post<Asset>(`${API_BASE}/assets`, asset);
-export const updateAsset = (id: string, asset: Partial<Asset>) => axios.put<Asset>(`${API_BASE}/assets/${id}`, asset);
-export const deleteAsset = (id: string) => axios.delete(`${API_BASE}/assets/${id}`);
+// Rules
+export const getRules = () => instance.get<CategoryRule[]>('/rules');
+export const addRule = (rule: Partial<CategoryRule>) => instance.post<CategoryRule>('/rules', rule);
+export const updateRule = (id: string, rule: Partial<CategoryRule>) => instance.put(`/rules/${id}`, rule);
+export const deleteRule = (id: string) => instance.delete(`/rules/${id}`);
+
+// Payment Rules
+export const getPaymentRules = () => instance.get<PaymentRule[]>('/payment-rules');
+export const addPaymentRule = (rule: Partial<PaymentRule>) => instance.post<PaymentRule>('/payment-rules', rule);
+export const deletePaymentRule = (id: string) => instance.delete(`/payment-rules/${id}`);
+export const applyPaymentRules = () => instance.post<{ success: boolean, updatedCount: number }>('/payment-rules/apply');
+
+// Categories
+export const getCategories = () => instance.get<CategoryItem[]>('/categories');
+export const autoCategorizeVendor = (vendor: string) => instance.get<{ category: string }>('/categories/auto', { params: { vendor } });
+export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => instance.post('/categories/batch-group', { categoryIds, groupName });
+export const addCategory = (cat: Partial<CategoryItem>) => instance.post<CategoryItem>('/categories', cat);
+export const deleteCategory = (id: string) => instance.delete(`/categories/${id}`);
+
+// Recurring
+export const getRecurring = () => instance.get<RecurringTransaction[]>('/recurring');
+export const addRecurring = (rec: Partial<RecurringTransaction>) => instance.post<RecurringTransaction>('/recurring', rec);
+export const deleteRecurring = (id: string) => instance.delete(`/recurring/${id}`);
+
+// Assets
+export const getAssets = () => instance.get<Asset[]>('/assets');
+export const getAssetHistory = () => instance.get<any[]>('/assets/history');
+export const saveAssetHistory = () => instance.post('/assets/history/save');
+export const addAsset = (asset: Partial<Asset>) => instance.post<Asset>('/assets', asset);
+export const updateAsset = (id: string, asset: Partial<Asset>) => instance.put<Asset>(`/assets/${id}`, asset);
+export const deleteAsset = (id: string) => instance.delete(`/assets/${id}`);
