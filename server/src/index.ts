@@ -27,11 +27,10 @@ const PgSession = connectPgSimple(session);
 
 // Render와 같은 프록시 환경에서 세션 쿠키(secure)를 전달하기 위해 필요
 app.set('trust proxy', 1);
-
-app.use(cors({ 
-  origin: (origin, callback) => {
+app.use(cors({
+  origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string | string[]) => void) => {
     if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:3000') {
-      callback(null, origin); // 요청한 origin을 그대로 반영
+      callback(null, origin); 
     } else {
       callback(new Error('Not allowed by CORS'));
     }
