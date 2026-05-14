@@ -104,3 +104,8 @@ model DeletedHash {
   hash      String   @id
   createdAt DateTime @default(now())
 }
+
+model Auth {
+  role         String @id // 'admin' or 'viewer'
+  passwordHash String
+}

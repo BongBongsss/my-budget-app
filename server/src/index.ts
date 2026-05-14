@@ -2,7 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import session from 'express-session';
-import { initDb } from './db';
+import bcrypt from 'bcryptjs';
+import prisma, { initDb } from './db';
 import transactionRoutes from './routes/transactionRoutes';
 import ruleRoutes from './routes/ruleRoutes';
 import categoryRoutes from './routes/categoryRoutes';
@@ -16,7 +17,8 @@ import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
 import { errorHandler } from './middleware/errorHandler';
-import { UnauthorizedError } from './utils/errors';
+import { UnauthorizedError, BadRequestError } from './utils/errors';
+import { asyncHandler } from './utils/asyncHandler';
 
 dotenv.config();
 
@@ -25,12 +27,13 @@ const PORT = process.env.PORT || 5000;
 
 const PgSession = connectPgSimple(session);
 
-// Render와 같은 프록시 환경에서 세션 쿠키(secure)를 전달하기 위해 필요
+// Render의 프록시 설정을 신뢰하여 쿠키 전달
 app.set('trust proxy', 1);
+
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string | string[]) => void) => {
     if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:3000') {
-      callback(null, origin); 
+      callback(null, origin);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
@@ -39,6 +42,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -52,12 +56,12 @@ app.use(session({
   saveUninitialized: false,
   proxy: true,
   name: 'budget-app-session',
-  cookie: { 
-    secure: process.env.NODE_ENV === 'production', 
-    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', 
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     httpOnly: true,
     maxAge: 7 * 24 * 60 * 60 * 1000
-  } 
+  }
 }));
 
 declare module 'express-session' {
@@ -74,33 +78,29 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   next(new UnauthorizedError());
 };
 
-// 비밀번호 설정 확인 (보안을 위해 존재 여부만 체크)
-if (!process.env.ADMIN_PASSWORD) {
-  console.warn("⚠️ WARNING: ADMIN_PASSWORD environment variable is NOT set!");
-} else {
-  console.log("✅ ADMIN_PASSWORD environment variable is detected.");
-}
-
-let currentPassword = process.env.ADMIN_PASSWORD;
-
-app.post('/api/login', (req, res) => {
+app.post('/api/login', asyncHandler(async (req: any, res: any) => {
   const { username, password } = req.body;
-  const VIEWER_PASSWORD = 'viewer123';
 
-  if (username === 'admin' && password === currentPassword) {
-    req.session.authenticated = true;
-    req.session.role = 'admin';
-    res.json({ success: true, role: 'admin' });
-  } else if (username === 'viewer' && password === VIEWER_PASSWORD) {
-    req.session.authenticated = true;
-    req.session.role = 'viewer';
-    res.json({ success: true, role: 'viewer' });
-  } else {
-    res.status(401).json({ error: 'Invalid ID or Password' });
+  if (username !== 'admin' && username !== 'viewer') {
+    throw new UnauthorizedError('Invalid ID or Password');
   }
-});
 
-app.get('/api/auth-status', (req, res) => {
+  const auth = await prisma.auth.findUnique({ where: { role: username } });
+  if (!auth) {
+    throw new UnauthorizedError('Authentication data not initialized');
+  }
+
+  const isMatch = await bcrypt.compare(password, auth.passwordHash);
+  if (isMatch) {
+    req.session.authenticated = true;
+    req.session.role = username as 'admin' | 'viewer';
+    res.json({ success: true, role: username });
+  } else {
+    throw new UnauthorizedError('Invalid ID or Password');
+  }
+}));
+
+app.get('/api/auth-status', (req: any, res: any) => {
     if (req.session.authenticated) {
         res.json({ isAuthenticated: true, role: req.session.role || 'viewer' });
     } else {
@@ -108,24 +108,38 @@ app.get('/api/auth-status', (req, res) => {
     }
 });
 
-app.post('/api/logout', (req, res) => {
+app.post('/api/logout', (req: any, res: any) => {
   req.session.destroy(() => {
     res.json({ success: true });
   });
 });
 
-app.post('/api/change-password', (req, res) => {
+app.post('/api/change-password', asyncHandler(async (req: any, res: any) => {
   const { current, newPassword } = req.body;
-  if (current === currentPassword) {
-    currentPassword = newPassword;
-    res.json({ success: true });
-  } else {
-    res.status(401).json({ error: 'Wrong current password' });
+  const role = req.session.role;
+
+  if (!role) throw new UnauthorizedError();
+  if (!newPassword) throw new BadRequestError('New password is required');
+
+  const auth = await prisma.auth.findUnique({ where: { role } });
+  if (!auth) throw new UnauthorizedError();
+
+  const isMatch = await bcrypt.compare(current, auth.passwordHash);
+  if (!isMatch) {
+    throw new UnauthorizedError('Wrong current password');
   }
-});
+
+  const newHash = await bcrypt.hash(newPassword, 10);
+  await prisma.auth.update({
+    where: { role },
+    data: { passwordHash: newHash }
+  });
+
+  res.json({ success: true });
+}));
 
 app.use('/api', (req, res, next) => {
-    if (req.path === '/login' || req.path === '/health') return next();
+    if (req.path === '/login' || req.path === '/health' || req.path === '/auth-status') return next();
     isAuthenticated(req, res, next);
 });
 
@@ -133,7 +147,7 @@ initDb().then(() => {
     cron.schedule('0 0 * * *', () => {
       processRecurringTransactions();
     });
-    
+
     processRecurringTransactions();
 });
 

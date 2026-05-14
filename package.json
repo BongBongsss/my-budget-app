@@ -29,12 +29,14 @@
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cors": "^2.8.19",
     "@types/express-session": "^1.19.0",
+    "bcryptjs": "^3.0.3",
     "connect-pg-simple": "^10.0.0",
     "cors": "^2.8.6",
     "express-session": "^1.19.0",
     "node-cron": "^4.2.1"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
     "@types/node-cron": "^3.0.11",
     "electron": "^41.3.0",
     "electron-builder": "^26.8.1"
