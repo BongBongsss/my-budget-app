@@ -31,6 +31,7 @@ function App() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥'>('all');
+  const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string} | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -182,6 +183,17 @@ function App() {
     const matchesMember = memberFilter === 'all' || t.member === memberFilter;
     if (!matchesMember) return false;
 
+    // getGroupName helper for filtering
+    const categoryToGroupMap: Record<string, string> = {};
+    categories.forEach(cat => { categoryToGroupMap[cat.name] = cat.groupName || '기타'; });
+    const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
+
+    // 차트 필터 적용
+    if (chartFilter) {
+      const groupName = getGroupName(t.category);
+      if (t.type !== chartFilter.type || groupName !== chartFilter.group) return false;
+    }
+
     if (activeTab === 'all') return t.isVerified !== false;
     if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
     if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
@@ -242,7 +254,7 @@ function App() {
             memberFilter={memberFilter} setMemberFilter={setMemberFilter}
           />
           <SuggestionNotification onRuleApproved={fetchData} />
-          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} />
+          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={setChartFilter} />
           
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
@@ -270,7 +282,13 @@ function App() {
               중복 ({duplicateCount})
             </button>
 
-            
+            {chartFilter && (
+                <div style={{ marginLeft: '10px', padding: '6px 12px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '6px', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.85rem' }}>
+                    <span>차트 필터: <strong>{chartFilter.group}</strong> ({chartFilter.type === 'income' ? '수입' : '지출'})</span>
+                    <button onClick={() => setChartFilter(null)} style={{ border: 'none', background: 'none', cursor: 'pointer', fontWeight: 'bold' }}>×</button>
+                </div>
+            )}
+
             {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 <button 

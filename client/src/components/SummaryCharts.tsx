@@ -11,9 +11,10 @@ interface SummaryChartsProps {
   transactions: Transaction[];
   categories: CategoryItem[];
   period: 'all' | 'month' | 'year';
+  onHighlight: (filter: { type: 'income' | 'expense', group: string } | null) => void;
 }
 
-const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period }) => {
+const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period, onHighlight }) => {
   const [incomeView, setIncomeView] = useState<'pie' | 'bar'>('pie');
   const [expenseView, setExpenseView] = useState<'pie' | 'bar'>('pie');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
@@ -102,8 +103,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const handleGroupClick = (type: 'income' | 'expense', group: string) => {
     if (activeHighlight?.type === type && activeHighlight?.group === group) {
       setActiveHighlight(null);
+      onHighlight(null);
     } else {
-      setActiveHighlight({ type, group });
+      const newHighlight = { type, group };
+      setActiveHighlight(newHighlight);
+      onHighlight(newHighlight);
     }
   };
 
