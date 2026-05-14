@@ -76,6 +76,21 @@ For multi-step tasks, state a brief plan:
 
 Strong success criteria let you loop independently. Weak criteria ("make it work") require constant clarification.
 
+## 5. Platform Compatibility & Environment Integrity
+
+**Technically mitigate the gap between development (Windows) and deployment (Linux) environments.**
+
+- **OS Differences**: Adhere to case-sensitivity in file systems (Linux) and consistently use lowercase/kebab-case for file and directory paths.
+- **Dependency Integrity**: When specific platform binaries (e.g., `esbuild`, `rollup`, `prisma`) are required for deployment (Vercel, Render), explicitly include them in `package.json` or pin versions to prevent environment mismatches.
+- **Pre-build Validation**: Always run `npx tsc --noEmit` before every `git push` to pre-verify type-level compatibility and prevent build failures.
+
+---
+
+## 개정 이력 (Revision History)
+
+- **2026-05-14**: "5. Platform Compatibility & Environment Integrity" 섹션 추가.
+  - **사유**: Windows 개발 환경에서 정상 동작하던 코드가 Render/Vercel(Linux) 배포 시 Prisma 버전 불일치 및 플랫폼별 빌드 바이너리(`rollup`, `esbuild`) 누락으로 인해 반복적인 배포 실패를 겪음. 이를 시스템적으로 방지하기 위해 환경 통합 및 사전 검증 원칙을 명문화함.
+
 ---
 
 **These guidelines are working if:** fewer unnecessary changes in diffs, fewer rewrites due to overcomplication, and clarifying questions come before implementation rather than after mistakes.
