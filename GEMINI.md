@@ -84,10 +84,20 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Dependency Integrity**: When specific platform binaries (e.g., `esbuild`, `rollup`, `prisma`) are required for deployment (Vercel, Render), explicitly include them in `package.json` or pin versions to prevent environment mismatches.
 - **Pre-build Validation**: Always run `npx tsc --noEmit` before every `git push` to pre-verify type-level compatibility and prevent build failures.
 
+## 6. Documentation Integrity
+
+**Maintain project knowledge and traceability through rigorous documentation.**
+
+- **Mandatory Revision History**: When modifying any `.md` files (guidelines, design docs, etc.), always update or add a "개정 이력 (Revision History)" section at the end of the file.
+- **Content of History**: Each entry must include the **date of modification** and a detailed **reasoning/background** for the change.
+- **Language Policy**: While the main content of guidelines should be in **English** for technical consistency, the Revision History must be written in **Korean** for better accessibility and clarity for the developer.
+
 ---
 
 ## 개정 이력 (Revision History)
 
+- **2026-05-14**: "6. Documentation Integrity" 섹션 추가.
+  - **사유**: 프로젝트의 지속적인 유지보수와 지식 보존을 위해 모든 문서 수정 시 개정 이력을 의무적으로 남기는 원칙을 수립함. 언어 정책(본문 영문, 이력 국문)을 명문화함.
 - **2026-05-14**: "5. Platform Compatibility & Environment Integrity" 섹션 추가.
   - **사유**: Windows 개발 환경에서 정상 동작하던 코드가 Render/Vercel(Linux) 배포 시 Prisma 버전 불일치 및 플랫폼별 빌드 바이너리(`rollup`, `esbuild`) 누락으로 인해 반복적인 배포 실패를 겪음. 이를 시스템적으로 방지하기 위해 환경 통합 및 사전 검증 원칙을 명문화함.
 
