@@ -27,3 +27,10 @@ This document defines the rules for database operations to ensure data remains c
 ## 6. Dependency Management
 - **Version Pinning:** Core library versions (e.g., `prisma`, `@prisma/client`) must be pinned (removing the `^` or `~` prefixes) in `package.json` to ensure identical environments across development and production.
 - **Independent Installation:** Each workspace component must declare its own dependencies to support isolated builds in deployment environments.
+
+---
+
+## 개정 이력 (Revision History)
+
+- **2026-05-14**: "6. Dependency Management" 섹션 추가.
+  - **사유**: Prisma 버전 불일치 및 배포 환경에서의 의존성 로드 에러를 방지하기 위해 핵심 라이브러리 버전 고정 및 독립적 의존성 관리 원칙을 수립함.
