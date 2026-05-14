@@ -23,6 +23,28 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
 
+  // 공통 데이터 처리 로직
+  const getProcessedData = (type: 'income' | 'expense') => {
+    const filtered = transactions.filter(t => t.type === type);
+    const categoryData = filtered.reduce((acc: any, t: Transaction) => {
+      const groupName = getGroupName(t.category, categories);
+      acc[groupName] = (acc[groupName] || 0) + t.amount;
+      return acc;
+    }, {});
+
+    const activeGroups = Object.keys(categoryData)
+      .filter(group => categoryData[group] > 0)
+      .sort((a, b) => categoryData[b] - categoryData[a]);
+
+    const totalAmount = activeGroups.reduce((sum: number, group: string) => sum + categoryData[group], 0);
+
+    const palette = type === 'income' ? INCOME_PALETTE : EXPENSE_PALETTE;
+    const groupColorMap: Record<string, string> = {};
+    activeGroups.forEach((group, idx) => { groupColorMap[group] = palette[idx % palette.length]; });
+
+    return { filtered, categoryData, activeGroups, totalAmount, groupColorMap };
+  };
+
   const incomeData = getProcessedData('income');
   const expenseData = getProcessedData('expense');
 

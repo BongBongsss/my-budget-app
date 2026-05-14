@@ -87,7 +87,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         return typeLabel === searchQuery;
     }
     if (filterType === 'category') return tx.category === searchQuery;
-    if (filterType === 'group') return getGroupName(tx.category) === searchQuery;
+    if (filterType === 'group') return getGroupName(tx.category, categories) === searchQuery;
     if (filterType === 'subcategory') return (tx.subcategory || '') === searchQuery;
     if (filterType === 'source') return (tx.source || '') === searchQuery;
     
