@@ -9,6 +9,7 @@ import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
 import AssetManager from './components/AssetManager';
 import Login from './components/Login';
+import { getGroupName } from './utils/categoryUtils';
 import './index.css';
 import { Settings, Upload, LogOut, BarChart3, Wallet } from 'lucide-react';
 
@@ -184,13 +185,9 @@ function App() {
     if (!matchesMember) return false;
 
     // getGroupName helper for filtering
-    const categoryToGroupMap: Record<string, string> = {};
-    categories.forEach(cat => { categoryToGroupMap[cat.name] = cat.groupName || '기타'; });
-    const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
-
     // 차트 필터 적용
     if (chartFilter) {
-      const groupName = getGroupName(t.category);
+      const groupName = getGroupName(t.category, categories);
       if (t.type !== chartFilter.type || groupName !== chartFilter.group) return false;
     }
 

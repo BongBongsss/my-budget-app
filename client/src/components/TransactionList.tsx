@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp } from 'lucide-react';
+import { getGroupName } from '../utils/categoryUtils';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -42,16 +43,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkMemo, setBulkMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const categoryToGroupMap: Record<string, string> = {};
-  categories.forEach(cat => {
-    categoryToGroupMap[cat.name] = cat.groupName || '미분류';
-  });
-
-  const getGroupName = (categoryName: string) => categoryToGroupMap[categoryName] || '미분류';
-
   const uniqueValues = {
     types: Array.from(new Set(transactions.map(t => t.type === 'expense' ? '지출' : t.type === 'income' ? '수입' : '미반영'))),
-    groups: Array.from(new Set(transactions.map(t => getGroupName(t.category)))).sort(),
+    groups: Array.from(new Set(transactions.map(t => getGroupName(t.category, categories)))).sort(),
     categories: Array.from(new Set(transactions.map(t => t.category))).sort(),
     subcategories: Array.from(new Set(transactions.map(t => t.subcategory || '').filter(Boolean))).sort(),
     sources: Array.from(new Set(transactions.map(t => t.source || '').filter(Boolean))).sort(),
@@ -121,8 +115,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (!sortConfig) return 0;
     const { key, direction } = sortConfig;
     
-    let aVal: any = key === 'group' ? getGroupName(a.category) : (a as any)[key];
-    let bVal: any = key === 'group' ? getGroupName(b.category) : (b as any)[key];
+    let aVal: any = key === 'group' ? getGroupName(a.category, categories) : (a as any)[key];
+    let bVal: any = key === 'group' ? getGroupName(b.category, categories) : (b as any)[key];
     
     if (key === 'type') {
       aVal = a.type === 'expense' ? '지출' : a.type === 'income' ? '수입' : '미반영';
@@ -354,7 +348,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
                   <td><select value={editValues.member || '효'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option></select></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
-                  <td>{getGroupName(editValues.category || '')}</td>
+                  <td>{getGroupName(editValues.category || '', categories)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%' }} /></td>
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%' }} /></td>
@@ -372,7 +366,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={tx.time}>{tx.time}</td>
                   <td>{tx.member}</td>
                   <td>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
-                  <td title={getGroupName(tx.category)}><div style={cellEllipsisStyle}>{getGroupName(tx.category)}</div></td>
+                  <td title={getGroupName(tx.category, categories)}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
                   <td title={tx.category}><div style={cellEllipsisStyle}>{tx.category}</div></td>
                   <td title={tx.subcategory}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
                   <td title={tx.vendor}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
