@@ -47,3 +47,10 @@ The project is strictly divided into two main layers:
 ### B. Environment Validation
 - **Startup Checks:** The server must validate essential environment variables (`DATABASE_URL`, `ADMIN_PASSWORD`, etc.) during the bootstrap phase. 
 - **Graceful Shutdown:** If critical configurations are missing, the process should log a clear error and terminate immediately to prevent unpredictable behavior.
+
+---
+
+## 개정 이력 (Revision History)
+
+- **2026-05-14**: "4. Infrastructure & Deployment" 섹션 추가.
+  - **사유**: Render 배포 시 빌드 결과물 경로 및 서버 실행 경로 불일치로 인한 구동 실패를 겪음. 배포 안정성을 위해 빌드/실행 경로 원칙과 환경 변수 검증 절차를 명문화함.

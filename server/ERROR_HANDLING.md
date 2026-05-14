@@ -36,3 +36,10 @@ Use domain-specific error classes instead of generic `Error` objects:
 ## 5. Pre-Push Validation
 - **Local Type Check:** Run `npx tsc --noEmit` before every push to ensure zero type errors.
 - **Compiler Warnings:** Treat compiler warnings and deprecation notices (e.g., TS5107) as errors that must be resolved to maintain long-term stability.
+
+---
+
+## 개정 이력 (Revision History)
+
+- **2026-05-14**: "5. Pre-Push Validation" 섹션 추가.
+  - **사유**: 개발 단계에서 인지하지 못한 타입 에러 및 컴파일러 경고가 배포 빌드 실패로 이어지는 것을 방지하기 위해 로컬 사전 검증 절차를 의무화함.
