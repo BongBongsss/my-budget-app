@@ -4,6 +4,7 @@ import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, Logarithm
 import { Pie, Bar } from 'react-chartjs-2';
 import { PieChart, BarChart3 } from 'lucide-react';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import { getGroupName } from '../utils/categoryUtils';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title, ChartDataLabels);
 
@@ -22,43 +23,6 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
 
-  const categoryToGroupMap: Record<string, string> = {};
-  categories.forEach(cat => { categoryToGroupMap[cat.name] = cat.groupName || '기타'; });
-
-  const getGroupName = (categoryName: string) => {
-    return categoryToGroupMap[categoryName] || categoryName.split('>')[0].trim() || '기타';
-  };
-
-  const getCurrentPeriodInfo = () => {
-    if (transactions.length === 0) return "";
-    const firstDate = transactions[0].date;
-    if (period === 'month') return firstDate.substring(0, 7); 
-    if (period === 'year') return firstDate.substring(0, 4); 
-    return "All Time";
-  };
-
-  // 공통 데이터 처리 로직
-  const getProcessedData = (type: 'income' | 'expense') => {
-    const filtered = transactions.filter(t => t.type === type);
-    const categoryData = filtered.reduce((acc: any, t: Transaction) => {
-      const groupName = getGroupName(t.category);
-      acc[groupName] = (acc[groupName] || 0) + t.amount;
-      return acc;
-    }, {});
-
-    const activeGroups = Object.keys(categoryData)
-      .filter(group => categoryData[group] > 0)
-      .sort((a, b) => categoryData[b] - categoryData[a]);
-
-    const totalAmount = activeGroups.reduce((sum: number, group: string) => sum + categoryData[group], 0);
-
-    const palette = type === 'income' ? INCOME_PALETTE : EXPENSE_PALETTE;
-    const groupColorMap: Record<string, string> = {};
-    activeGroups.forEach((group, idx) => { groupColorMap[group] = palette[idx % palette.length]; });
-
-    return { filtered, categoryData, activeGroups, totalAmount, groupColorMap };
-  };
-
   const incomeData = getProcessedData('income');
   const expenseData = getProcessedData('expense');
 
@@ -69,7 +33,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       else if (period === 'year') key = t.date.substring(0, 7);
       else key = t.date;
       if (!acc[key]) acc[key] = {};
-      const groupName = getGroupName(t.category);
+      const groupName = getGroupName(t.category, categories);
       acc[key][groupName] = (acc[key][groupName] || 0) + t.amount;
       return acc;
     }, {});
