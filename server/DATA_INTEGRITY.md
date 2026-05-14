@@ -23,3 +23,7 @@ This document defines the rules for database operations to ensure data remains c
 ## 5. Idempotency (Prevention of Duplicates)
 - **Import Handling:** When importing data from files, check for existing records (e.g., by matching date, amount, and description) before inserting to prevent duplicate transactions.
 - **Request Handling:** Ensure that rapid retries or duplicate UI submissions do not create duplicate records.
+
+## 6. Dependency Management
+- **Version Pinning:** Core library versions (e.g., `prisma`, `@prisma/client`) must be pinned (removing the `^` or `~` prefixes) in `package.json` to ensure identical environments across development and production.
+- **Independent Installation:** Each workspace component must declare its own dependencies to support isolated builds in deployment environments.

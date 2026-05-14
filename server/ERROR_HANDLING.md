@@ -32,3 +32,7 @@ Use domain-specific error classes instead of generic `Error` objects:
 - **Log levels:** Use appropriate logging levels (ERROR for system failures, WARN for input errors).
 - **Security:** Do not expose raw system stack traces or sensitive database details to the client in the `message` field. Always map technical details to generic, user-friendly messages for the client.
 - **Persistence:** Log full error details (including stack traces) to server logs or a logging service for diagnostic purposes.
+
+## 5. Pre-Push Validation
+- **Local Type Check:** Run `npx tsc --noEmit` before every push to ensure zero type errors.
+- **Compiler Warnings:** Treat compiler warnings and deprecation notices (e.g., TS5107) as errors that must be resolved to maintain long-term stability.
