@@ -38,3 +38,12 @@ The project is strictly divided into two main layers:
 - **Consistency:** Uniform error handling and data processing.
 - **Reusability:** Business logic can be used in multiple contexts (API, Cron, CLI).
 - **Testability:** Business logic can be unit-tested without needing a web server or DB connection.
+
+## 4. Infrastructure & Deployment
+### A. Build and Runtime Paths
+- **Build Output:** Compiled code must reside in the `dist` directory.
+- **Execution Path:** Execution commands must use project-root-relative paths (e.g., `node server/dist/index.js`) to ensure compatibility with various deployment environments.
+
+### B. Environment Validation
+- **Startup Checks:** The server must validate essential environment variables (`DATABASE_URL`, `ADMIN_PASSWORD`, etc.) during the bootstrap phase. 
+- **Graceful Shutdown:** If critical configurations are missing, the process should log a clear error and terminate immediately to prevent unpredictable behavior.
