@@ -88,9 +88,18 @@ The revision history should include:
 
 Prefer English for technical body content. Korean is acceptable for revision history or user-facing project notes when it improves clarity for the owner.
 
+## Pending Local Package Changes
+
+- `client/package.json`, `server/package.json`, and root `package-lock.json` may remain modified in the local worktree.
+- These package changes were intentionally excluded from recent audit-log commits because they may affect dependency installation, local dev scripts, or deployment behavior.
+- Do not include these files in unrelated commits unless the user explicitly asks to review and apply package/deployment changes.
+- If future deployment or install errors occur, review these files separately before committing or reverting them.
+
 ---
 
 ## 개정 이력 (Revision History)
 
+- **2026-06-02**: Added pending local package-change note.
+  - **사유**: `client/package.json`, `server/package.json`, `package-lock.json` 변경이 로그 기능과 별개로 남아 있어, Codex가 다음 작업에서 실수로 함께 커밋하지 않도록 기록함.
 - **2026-06-02**: Created Codex-specific guidance based on `GEMINI.md`.
   - **사유**: Codex 작업 시 프로젝트 문서 참조, Windows 로컬 환경, 배포 민감 파일, DB/감사 로그 검증 기준을 명확히 하기 위해 추가함.

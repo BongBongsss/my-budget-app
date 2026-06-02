@@ -92,10 +92,21 @@ Strong success criteria let you loop independently. Weak criteria ("make it work
 - **Content of History**: Each entry must include the **date of modification** and a detailed **reasoning/background** for the change.
 - **Language Policy**: While the main content of guidelines should be in **English** for technical consistency, the Revision History must be written in **Korean** for better accessibility and clarity for the developer.
 
+## 7. Pending Local Package Changes
+
+**Be careful with package/deployment-sensitive files that may remain locally modified.**
+
+- `client/package.json`, `server/package.json`, and root `package-lock.json` may remain modified in the local worktree.
+- These package changes were intentionally excluded from recent audit-log commits because they may affect dependency installation, local dev scripts, or deployment behavior.
+- Do not include these files in unrelated commits unless the user explicitly asks to review and apply package/deployment changes.
+- If future deployment or install errors occur, review these files separately before committing or reverting them.
+
 ---
 
 ## 개정 이력 (Revision History)
 
+- **2026-06-02**: "7. Pending Local Package Changes" section added.
+  - **사유**: `client/package.json`, `server/package.json`, `package-lock.json` 변경이 로그 기능과 별개로 로컬에 남아 있어, Gemini 또는 다른 에이전트가 다음 작업에서 실수로 함께 커밋하지 않도록 주의사항을 기록함.
 - **2026-05-14**: "6. Documentation Integrity" 섹션 추가.
   - **사유**: 프로젝트의 지속적인 유지보수와 지식 보존을 위해 모든 문서 수정 시 개정 이력을 의무적으로 남기는 원칙을 수립함. 언어 정책(본문 영문, 이력 국문)을 명문화함.
 - **2026-05-14**: "5. Platform Compatibility & Environment Integrity" 섹션 추가.
