@@ -120,6 +120,7 @@ model AuditLog {
   actorRole  String?
   ipAddress  String?
   createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   @@index([entityType, entityId])
   @@index([action])

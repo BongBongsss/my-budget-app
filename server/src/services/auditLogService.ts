@@ -1,6 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Prisma, Transaction } from '@prisma/client';
 import prisma from '../db';
+import { BadRequestError, NotFoundError } from '../utils/errors';
 
 export type AuditActor = {
   role?: string;
@@ -66,12 +67,12 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
     });
 
     if (!auditLog || auditLog.entityType !== 'transaction' || auditLog.action !== 'delete') {
-      throw new Error('Restorable delete log not found.');
+      throw new NotFoundError('Restorable delete log not found.');
     }
 
     const beforeData = auditLog.beforeData as Partial<Transaction> | null;
     if (!beforeData?.id) {
-      throw new Error('Delete log does not contain restorable transaction data.');
+      throw new BadRequestError('Delete log does not contain restorable transaction data.');
     }
 
     const restoreData = {

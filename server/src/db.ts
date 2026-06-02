@@ -75,8 +75,13 @@ export const initDb = async () => {
         "afterData" jsonb,
         "actorRole" text,
         "ipAddress" text,
-        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
     `);
 
     await prisma.$executeRawUnsafe(`
