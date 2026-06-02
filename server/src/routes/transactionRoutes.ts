@@ -18,6 +18,11 @@ import { BadRequestError } from '../utils/errors';
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
+const getAuditActor = (req: Request) => ({
+  role: req.session?.role,
+  ipAddress: req.ip,
+});
+
 router.post('/cleanup', asyncHandler(async (req: Request, res: Response) => {
   const result = await cleanupTransactions();
   res.json({ success: true, ...result });
@@ -43,7 +48,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
-  const transaction = await addTransaction(req.body);
+  const transaction = await addTransaction(req.body, getAuditActor(req));
   res.status(201).json(transaction);
 }));
 
@@ -72,13 +77,13 @@ router.post('/bulk', asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(transactions)) {
     throw new BadRequestError('Expected an array of transactions');
   }
-  await bulkAddTransactions(transactions);
+  await bulkAddTransactions(transactions, getAuditActor(req));
   const results = await getAllTransactions();
   res.status(201).json(results);
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
-  await updateTransaction(req.params.id as string, req.body);
+  await updateTransaction(req.params.id as string, req.body, getAuditActor(req));
   res.json({ success: true });
 }));
 
@@ -87,12 +92,12 @@ router.delete('/bulk', asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(ids)) {
     throw new BadRequestError('Expected an array of IDs');
   }
-  await bulkDeleteTransactions(ids);
+  await bulkDeleteTransactions(ids, getAuditActor(req));
   res.json({ success: true, count: ids.length });
 }));
 
 router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
-  await deleteTransaction(req.params.id as string);
+  await deleteTransaction(req.params.id as string, getAuditActor(req));
   res.json({ success: true });
 }));
 

@@ -3,10 +3,27 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // 1. Mocking Prisma (DB 호출을 가짜로 대체하여 실제 DB를 건드리지 않게 합니다)
 vi.mock('../db', () => ({
   default: {
+    $transaction: vi.fn((callback) => callback({
+      transaction: {
+        findUnique: vi.fn(),
+        findMany: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+      },
+      auditLog: {
+        create: vi.fn(),
+        createMany: vi.fn(),
+      },
+    })),
     transaction: {
       findMany: vi.fn(),
+      findUnique: vi.fn(),
       update: vi.fn(),
       updateMany: vi.fn(),
+    },
+    auditLog: {
+      create: vi.fn(),
+      createMany: vi.fn(),
     },
   },
 }));
@@ -37,13 +54,25 @@ describe('TransactionService (Soft Delete Test)', () => {
 
   it('deleteTransaction은 데이터를 실제로 지우지 않고 isDeleted를 true로 바꿔야 한다 (Soft Delete)', async () => {
     const targetId = 'test-id';
+    const tx = {
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue({ id: targetId, isDeleted: false }),
+        update: vi.fn().mockResolvedValue({ id: targetId, isDeleted: true }),
+      },
+      auditLog: {
+        create: vi.fn(),
+      },
+    };
+
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
 
     await deleteTransaction(targetId);
 
     // 검증: delete 대신 update가 호출되었으며, isDeleted를 true로 설정했는가?
-    expect(prisma.transaction.update).toHaveBeenCalledWith({
+    expect(tx.transaction.update).toHaveBeenCalledWith({
       where: { id: targetId },
       data: { isDeleted: true }
     });
+    expect(tx.auditLog.create).toHaveBeenCalled();
   });
 });

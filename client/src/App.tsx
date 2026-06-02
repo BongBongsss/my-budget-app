@@ -8,10 +8,11 @@ import SummaryCharts from './components/SummaryCharts';
 import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
 import AssetManager from './components/AssetManager';
+import AuditLogView from './components/AuditLogView';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, LogOut, BarChart3, Wallet } from 'lucide-react';
+import { Settings, Upload, LogOut, BarChart3, Wallet, History } from 'lucide-react';
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -19,7 +20,7 @@ function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate'>('all');
-  const [currentView, setCurrentView] = useState<'budget' | 'assets'>('budget');
+  const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'logs'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
 
@@ -218,6 +219,12 @@ function App() {
           >
             <Wallet size={18} /> 자산 관리
           </button>
+          <button
+            className={`nav-item ${currentView === 'logs' ? 'active' : ''}`}
+            onClick={() => setCurrentView('logs')}
+          >
+            <History size={18} /> 활동 로그
+          </button>
         </nav>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
           {/* Admin 전용 버튼: Import */}
@@ -355,10 +362,12 @@ function App() {
             isAdmin={userRole === 'admin'}
           />
         </div>
-      ) : (
+      ) : currentView === 'assets' ? (
         <div className="view-assets animate-fadeIn">
           <AssetManager userRole={userRole} />
         </div>
+      ) : (
+        <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
       )}
 
       <SettingsModal

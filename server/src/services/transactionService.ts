@@ -2,6 +2,7 @@ import prisma from '../db';
 import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
+import { AuditActor, buildAuditLogData } from './auditLogService';
 
 type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'vendor' | 'amount' | 'source'>;
 
@@ -36,7 +37,7 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
   });
 };
 
-export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) => {
+export const bulkAddTransactions = async (transactions: Partial<Transaction>[], actor?: AuditActor) => {
   try {
     const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
@@ -83,9 +84,21 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[]) 
       };
     });
 
-    await prisma.transaction.createMany({
-      data: dataToInsert as any,
-      skipDuplicates: false,
+    await prisma.$transaction(async (tx) => {
+      await tx.transaction.createMany({
+        data: dataToInsert as any,
+        skipDuplicates: false,
+      });
+
+      await tx.auditLog.createMany({
+        data: dataToInsert.map((transaction) => buildAuditLogData({
+          entityType: 'transaction',
+          entityId: transaction.id,
+          action: 'create',
+          afterData: transaction,
+          actor,
+        })),
+      });
     });
 
     return dataToInsert;
@@ -102,10 +115,11 @@ export const verifyTransactions = async (ids: string[]) => {
   });
 };
 
-export const addTransaction = async (transaction: Partial<Transaction>) => {
+export const addTransaction = async (transaction: Partial<Transaction>, actor?: AuditActor) => {
   const category = transaction.category || await autoCategorize(transaction.vendor || 'Unknown');
-  return await prisma.transaction.create({
-    data: {
+  return await prisma.$transaction(async (tx) => {
+    const created = await tx.transaction.create({
+      data: {
       id: randomUUID(),
       date: transaction.date || new Date().toISOString().split('T')[0],
       time: transaction.time || '',
@@ -122,28 +136,98 @@ export const addTransaction = async (transaction: Partial<Transaction>) => {
       hash: randomUUID(),
       isVerified: true,
       isDuplicate: false
-    },
+      },
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'transaction',
+        entityId: created.id,
+        action: 'create',
+        afterData: created,
+        actor,
+      }),
+    });
+
+    return created;
   });
 };
 
-export const updateTransaction = async (id: string, updates: Partial<Transaction>) => {
-  return await prisma.transaction.update({
-    where: { id },
-    data: updates,
+export const updateTransaction = async (id: string, updates: Partial<Transaction>, actor?: AuditActor) => {
+  return await prisma.$transaction(async (tx) => {
+    const before = await tx.transaction.findUnique({
+      where: { id },
+    });
+
+    const updated = await tx.transaction.update({
+      where: { id },
+      data: updates,
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'transaction',
+        entityId: id,
+        action: 'update',
+        beforeData: before,
+        afterData: updated,
+        actor,
+      }),
+    });
+
+    return updated;
   });
 };
 
-export const deleteTransaction = async (id: string) => {
-  return await prisma.transaction.update({
-    where: { id },
-    data: { isDeleted: true }
+export const deleteTransaction = async (id: string, actor?: AuditActor) => {
+  return await prisma.$transaction(async (tx) => {
+    const before = await tx.transaction.findUnique({
+      where: { id },
+    });
+
+    const deleted = await tx.transaction.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'transaction',
+        entityId: id,
+        action: 'delete',
+        beforeData: before,
+        afterData: deleted,
+        actor,
+      }),
+    });
+
+    return deleted;
   });
 };
 
-export const bulkDeleteTransactions = async (ids: string[]) => {
-  return await prisma.transaction.updateMany({
-    where: { id: { in: ids } },
-    data: { isDeleted: true }
+export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) => {
+  return await prisma.$transaction(async (tx) => {
+    const beforeItems = await tx.transaction.findMany({
+      where: { id: { in: ids } },
+    });
+
+    const result = await tx.transaction.updateMany({
+      where: { id: { in: ids } },
+      data: { isDeleted: true },
+    });
+
+    await tx.auditLog.createMany({
+      data: beforeItems.map((before) => buildAuditLogData({
+        entityType: 'transaction',
+        entityId: before.id,
+        action: 'delete',
+        beforeData: before,
+        afterData: { ...before, isDeleted: true },
+        actor,
+      })),
+    });
+
+    return result;
   });
 };
 

@@ -13,6 +13,7 @@ import assetRoutes from './routes/assetRoutes';
 import suggestionRoutes from './routes/suggestionRoutes';
 import ignoredRuleRoutes from './routes/ignoredRuleRoutes';
 import exclusionRuleRoutes from './routes/exclusionRuleRoutes';
+import auditLogRoutes from './routes/auditLogRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
@@ -143,14 +144,6 @@ app.use('/api', (req, res, next) => {
     isAuthenticated(req, res, next);
 });
 
-initDb().then(() => {
-    cron.schedule('0 0 * * *', () => {
-      processRecurringTransactions();
-    });
-
-    processRecurringTransactions();
-});
-
 app.use('/api/rules', ruleRoutes);
 app.use('/api/categories', categoryRoutes);
 app.use('/api/recurring', recurringRoutes);
@@ -160,6 +153,7 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/ignored-rules', ignoredRuleRoutes);
 app.use('/api/exclusion-rules', exclusionRuleRoutes);
+app.use('/api/audit-logs', auditLogRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Budget Automation API is running' });
@@ -167,7 +161,26 @@ app.get('/api/health', (req, res) => {
 
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-  console.log(`📌 API Routes registered: /api/rules, /api/categories, /api/recurring, /api/payment-rules, /api/transactions`);
-});
+const startServer = async () => {
+  try {
+    await initDb();
+
+    cron.schedule('0 0 * * *', () => {
+      processRecurringTransactions().catch((error) => {
+        console.error('Recurring transaction processing failed:', error);
+      });
+    });
+
+    await processRecurringTransactions();
+
+    app.listen(PORT, () => {
+      console.log(`Server is running on port ${PORT}`);
+      console.log(`API Routes registered: /api/rules, /api/categories, /api/recurring, /api/payment-rules, /api/transactions`);
+    });
+  } catch (error) {
+    console.error('Failed to initialize database. Server startup aborted:', error);
+    process.exit(1);
+  }
+};
+
+startServer();

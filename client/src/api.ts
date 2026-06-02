@@ -99,6 +99,18 @@ export interface PaymentRule {
   keyword: string;
 }
 
+export interface AuditLog {
+  id: string;
+  entityType: string;
+  entityId: string;
+  action: 'create' | 'update' | 'delete' | 'restore';
+  beforeData?: any;
+  afterData?: any;
+  actorRole?: string;
+  ipAddress?: string;
+  createdAt: string;
+}
+
 // --- API Methods ---
 
 // Transactions
@@ -120,6 +132,12 @@ export const importFile = (file: File) => {
 };
 
 export const bulkAddTransactions = (txs: Transaction[]) => instance.post('/transactions/bulk', txs);
+
+// Audit logs
+export const getAuditLogs = (params?: { entityType?: string; action?: string; limit?: number }) => (
+  instance.get<AuditLog[]>('/audit-logs', { params })
+);
+export const restoreAuditLog = (id: string) => instance.post(`/audit-logs/${id}/restore`);
 
 // Rules
 export const getRules = () => instance.get<CategoryRule[]>('/rules');

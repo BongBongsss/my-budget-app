@@ -10,9 +10,9 @@ const prisma = new PrismaClient({
 });
 
 export const initDb = async () => {
-  // 세션 테이블 및 인덱스 확인/생성 (connect-pg-simple 호환용)
+  // Session table check/creation
   try {
-    // 1. 테이블 생성
+    // 1. Create table
     await prisma.$executeRawUnsafe(`
       CREATE TABLE IF NOT EXISTS "session" (
         "sid" varchar NOT NULL COLLATE "default",
@@ -21,26 +21,83 @@ export const initDb = async () => {
       ) WITH (OIDS=FALSE);
     `);
 
-    // 2. 기본키 제약 조건 추가 (이미 존재할 경우 에러 무시)
-    try {
+    // 2. Add primary key constraint if missing
+    const [primaryKeyState] = await prisma.$queryRaw<Array<{ has_primary_key: boolean; sid_is_primary_key: boolean }>>`
+      SELECT
+        EXISTS (
+          SELECT 1
+          FROM pg_constraint
+          WHERE conrelid = '"session"'::regclass
+            AND contype = 'p'
+        ) AS "has_primary_key",
+        EXISTS (
+          SELECT 1
+          FROM pg_constraint c
+          JOIN pg_attribute a
+            ON a.attrelid = c.conrelid
+           AND a.attnum = ANY(c.conkey)
+          WHERE c.conrelid = '"session"'::regclass
+            AND c.contype = 'p'
+            AND a.attname = 'sid'
+        ) AS "sid_is_primary_key";
+    `;
+
+    if (!primaryKeyState.sid_is_primary_key) {
+      if (primaryKeyState.has_primary_key) {
+        throw new Error('Session table has a primary key, but it is not on sid.');
+      }
+
       await prisma.$executeRawUnsafe(`
         ALTER TABLE "session" ADD CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
       `);
-    } catch (e) {
-      // 이미 존재함
     }
 
-    // 3. 인덱스 생성
+    // 3. Create index
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
     `);
 
-    console.log("✅ Session table check/creation completed.");
+    console.log("Session table check/creation completed.");
   } catch (err) {
-    console.error("❌ Failed to create session table:", err);
+    console.error("Failed to create session table:", err);
+    throw err;
   }
 
-  // 초기 비밀번호 시딩 (환경 변수 기반)
+  // Audit log table check/creation
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "AuditLog" (
+        "id" text NOT NULL PRIMARY KEY,
+        "entityType" text NOT NULL,
+        "entityId" text NOT NULL,
+        "action" text NOT NULL,
+        "beforeData" jsonb,
+        "afterData" jsonb,
+        "actorRole" text,
+        "ipAddress" text,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "AuditLog_entityType_entityId_idx" ON "AuditLog" ("entityType", "entityId");
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "AuditLog_action_idx" ON "AuditLog" ("action");
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "AuditLog_createdAt_idx" ON "AuditLog" ("createdAt");
+    `);
+
+    console.log("Audit log table check/creation completed.");
+  } catch (err) {
+    console.error("Failed to create audit log table:", err);
+    throw err;
+  }
+
+  // Initial password seeding
   try {
     const adminPassword = process.env.ADMIN_PASSWORD;
     const viewerPassword = process.env.VIEWER_PASSWORD || 'viewer123';
@@ -50,7 +107,7 @@ export const initDb = async () => {
       if (!existingAdmin) {
         const hash = await bcrypt.hash(adminPassword, 10);
         await prisma.auth.create({ data: { role: 'admin', passwordHash: hash } });
-        console.log("🔑 Initial Admin password seeded to DB.");
+        console.log("Initial Admin password seeded to DB.");
       }
     }
 
@@ -58,21 +115,27 @@ export const initDb = async () => {
     if (!existingViewer) {
       const hash = await bcrypt.hash(viewerPassword, 10);
       await prisma.auth.create({ data: { role: 'viewer', passwordHash: hash } });
-      console.log("🔑 Initial Viewer password seeded to DB.");
+      console.log("Initial Viewer password seeded to DB.");
     }
   } catch (err) {
-    console.error("❌ Auth seeding failed:", err);
+    console.error("Auth seeding failed:", err);
+    throw err;
   }
 
-  // 기본 카테고리 시딩
-  const categories = ['생활비', '자기계발', '문화/여가', '건강/의료', '교통/통신', '기타'];
+  // Default categories seeding
+  try {
+    const categories = ['생활비', '자기계발', '문화/여가', '건강/의료', '교통/통신', '기타'];
 
-  for (const name of categories) {
-    await prisma.category.upsert({
-      where: { name },
-      update: {},
-      create: { id: Date.now().toString() + name, name },
-    });
+    for (const name of categories) {
+      await prisma.category.upsert({
+        where: { name },
+        update: {},
+        create: { id: Date.now().toString() + name, name },
+      });
+    }
+  } catch (err) {
+    console.error("Category seeding failed:", err);
+    throw err;
   }
 };
 
