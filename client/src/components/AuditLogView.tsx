@@ -71,17 +71,16 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
     fetchLogs();
   }, [action]);
 
-  const deletedEntityIds = useMemo(() => {
-    const restoredIds = new Set(
-      logs
-        .filter((log) => log.action === 'restore')
-        .map((log) => log.entityId)
-    );
-
+  const restoredAfterDeleteLogIds = useMemo(() => {
     return new Set(
       logs
-        .filter((log) => log.action === 'delete' && !restoredIds.has(log.entityId))
-        .map((log) => log.entityId)
+        .filter((log) => log.action === 'delete')
+        .filter((deleteLog) => logs.some((restoreLog) => (
+          restoreLog.entityId === deleteLog.entityId
+          && restoreLog.action === 'restore'
+          && new Date(restoreLog.createdAt).getTime() > new Date(deleteLog.createdAt).getTime()
+        )))
+        .map((log) => log.id)
     );
   }, [logs]);
 
@@ -146,7 +145,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             const canRestore = isAdmin
               && log.action === 'delete'
               && log.entityType === 'transaction'
-              && deletedEntityIds.has(log.entityId);
+              && !restoredAfterDeleteLogIds.has(log.id);
 
             return (
               <tr key={log.id}>
