@@ -4,7 +4,7 @@ import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 import { AuditActor, buildAuditLogData } from './auditLogService';
 
-type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'vendor' | 'amount' | 'source'>;
+type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'type' | 'vendor' | 'amount' | 'source'>;
 
 const normalizeText = (value: string | null | undefined) => {
   return String(value || '')
@@ -17,13 +17,13 @@ const normalizeAmount = (value: number | null | undefined) => {
   return Math.round(Math.abs(Number(value || 0)) * 100);
 };
 
-// Import duplicate matching intentionally ignores fields users commonly edit
-// after verification: type, category, subcategory, and memo.
-// Source is kept because the same amount/vendor/time can move through different accounts.
+// Import duplicate matching uses stable source fields only.
+// User-edited fields such as category, subcategory, memo, and member are excluded.
 const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
   return [
     normalizeText(tx.date),
     normalizeText(tx.time),
+    normalizeText(tx.type),
     normalizeText(tx.vendor),
     normalizeAmount(tx.amount),
     normalizeText(tx.source),
@@ -39,7 +39,13 @@ export const getAllTransactions = async (): Promise<Transaction[]> => {
 
 export const bulkAddTransactions = async (transactions: Partial<Transaction>[], actor?: AuditActor) => {
   try {
-    const uniqueVendors = Array.from(new Set(transactions.map(t => t.vendor || 'Unknown')));
+    const importableTransactions = transactions.filter((t) => {
+      const vendor = (t.vendor || '').trim();
+      const amount = Math.abs(Number(t.amount || 0));
+      return vendor !== '' && vendor !== 'Unknown' && amount > 0;
+    });
+
+    const uniqueVendors = Array.from(new Set(importableTransactions.map(t => t.vendor || 'Unknown')));
     const categoryMap = await bulkAutoCategorize(uniqueVendors);
 
     const verifiedTransactions = await prisma.transaction.findMany({
@@ -47,15 +53,15 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[], 
       select: {
         date: true,
         time: true,
+        type: true,
         vendor: true,
         amount: true,
         source: true,
       },
     });
     const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
-    const batchKeys = new Set<string>();
 
-    const dataToInsert = transactions.map((t) => {
+    const dataToInsert = importableTransactions.map((t) => {
       const normalized = {
         date: t.date || new Date().toISOString().split('T')[0],
         time: (t.time || '').trim(),
@@ -70,8 +76,7 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[], 
         member: t.member || '효',
       };
       const duplicateKey = buildDuplicateKey(normalized);
-      const isDuplicate = verifiedKeys.has(duplicateKey) || batchKeys.has(duplicateKey);
-      batchKeys.add(duplicateKey);
+      const isDuplicate = verifiedKeys.has(duplicateKey);
 
       return {
         id: randomUUID(),
@@ -83,6 +88,10 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[], 
         isDuplicate: t.isDuplicate ?? isDuplicate,
       };
     });
+
+    if (dataToInsert.length === 0) {
+      return [];
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.transaction.createMany({
@@ -238,6 +247,7 @@ export const cleanupTransactions = async () => {
       select: {
         date: true,
         time: true,
+        type: true,
         vendor: true,
         amount: true,
         source: true,

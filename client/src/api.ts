@@ -109,6 +109,15 @@ export interface AuditLog {
   actorRole?: string;
   ipAddress?: string;
   createdAt: string;
+  isRestorable?: boolean;
+}
+
+export interface AuditLogPage {
+  logs: AuditLog[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
 }
 
 // --- API Methods ---
@@ -134,8 +143,8 @@ export const importFile = (file: File) => {
 export const bulkAddTransactions = (txs: Transaction[]) => instance.post('/transactions/bulk', txs);
 
 // Audit logs
-export const getAuditLogs = (params?: { entityType?: string; action?: string; limit?: number }) => (
-  instance.get<AuditLog[]>('/audit-logs', { params })
+export const getAuditLogs = (params?: { entityType?: string; action?: string; page?: number; limit?: number }) => (
+  instance.get<AuditLogPage>('/audit-logs', { params })
 );
 export const restoreAuditLog = (id: string) => instance.post(`/audit-logs/${id}/restore`);
 

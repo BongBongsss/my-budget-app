@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Filter, RefreshCw, RotateCcw } from 'lucide-react';
 import { AuditLog, getAuditLogs, restoreAuditLog } from '../api';
 
@@ -50,6 +50,10 @@ const getChangeSummary = (log: AuditLog) => {
 function AuditLogView({ isAdmin, onRestored }: Props) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [action, setAction] = useState('');
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
@@ -59,9 +63,12 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
       const res = await getAuditLogs({
         entityType: 'transaction',
         action: action || undefined,
-        limit: 150,
+        page,
+        limit: itemsPerPage,
       });
-      setLogs(res.data);
+      setLogs(res.data.logs);
+      setTotal(res.data.total);
+      setTotalPages(res.data.totalPages);
     } finally {
       setLoading(false);
     }
@@ -69,20 +76,11 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
 
   useEffect(() => {
     fetchLogs();
-  }, [action]);
+  }, [action, page, itemsPerPage]);
 
-  const restoredAfterDeleteLogIds = useMemo(() => {
-    return new Set(
-      logs
-        .filter((log) => log.action === 'delete')
-        .filter((deleteLog) => logs.some((restoreLog) => (
-          restoreLog.entityId === deleteLog.entityId
-          && restoreLog.action === 'restore'
-          && new Date(restoreLog.createdAt).getTime() > new Date(deleteLog.createdAt).getTime()
-        )))
-        .map((log) => log.id)
-    );
-  }, [logs]);
+  useEffect(() => {
+    setPage(1);
+  }, [action, itemsPerPage]);
 
   const handleRestore = async (log: AuditLog) => {
     if (!isAdmin) return;
@@ -125,6 +123,15 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             <RefreshCw size={16} style={{ marginRight: '6px' }} />
             새로고침
           </button>
+          <select
+            value={itemsPerPage}
+            onChange={(e) => setItemsPerPage(Number(e.target.value))}
+            style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white' }}
+          >
+            <option value={10}>10</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
         </div>
       </div>
 
@@ -145,7 +152,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             const canRestore = isAdmin
               && log.action === 'delete'
               && log.entityType === 'transaction'
-              && !restoredAfterDeleteLogIds.has(log.id);
+              && log.isRestorable;
 
             return (
               <tr key={log.id}>
@@ -190,6 +197,25 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
           )}
         </tbody>
       </table>
+      <div className="pagination mt-2 flex justify-center gap-2" style={{ alignItems: 'center' }}>
+        <button
+          className="btn btn-secondary"
+          disabled={page === 1 || loading}
+          onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+        >
+          이전
+        </button>
+        <span style={{ color: '#64748b', fontSize: '0.9rem' }}>
+          {page} / {totalPages} ({total.toLocaleString()}건)
+        </span>
+        <button
+          className="btn btn-secondary"
+          disabled={page >= totalPages || loading}
+          onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+        >
+          다음
+        </button>
+      </div>
     </div>
   );
 }

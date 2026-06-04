@@ -49,6 +49,13 @@ const pick = (row: Record<string, any>, ...keys: string[]) => {
   return undefined;
 };
 
+const hasImportableData = (row: Record<string, any>) => {
+  const vendor = pick(row, '내용', '가맹점명', '상호', 'vendor', 'Vendor');
+  const amount = pick(row, '금액', 'amount', 'Amount');
+
+  return vendor !== undefined && amount !== undefined;
+};
+
 const normalizeData = (row: Record<string, any>): ParsedTransaction => {
   const dateRaw = pick(row, '날짜', '일자', 'date', 'Date');
   const timeRaw = pick(row, '시간', 'time', 'Time');
@@ -90,7 +97,7 @@ const normalizeData = (row: Record<string, any>): ParsedTransaction => {
 export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
   const csvString = buffer.toString('utf-8');
   const result = Papa.parse(csvString, { header: true, skipEmptyLines: true });
-  return (result.data as Record<string, any>[]).map(normalizeData);
+  return (result.data as Record<string, any>[]).filter(hasImportableData).map(normalizeData);
 };
 
 export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
@@ -98,5 +105,5 @@ export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
-  return data.map(normalizeData);
+  return data.filter(hasImportableData).map(normalizeData);
 };

@@ -11,7 +11,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' }),
-    type: 'expense' as 'income' | 'expense',
+    type: 'expense' as 'income' | 'expense' | 'exclude',
     category: categories[0]?.name || '',
     subcategory: '',
     vendor: '',

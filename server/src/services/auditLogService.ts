@@ -47,17 +47,59 @@ export const getAuditLogs = async (filters: {
   entityType?: string;
   action?: string;
   limit?: number;
+  page?: number;
 }) => {
-  const limit = Math.min(Math.max(filters.limit || 100, 1), 300);
+  const limit = Math.min(Math.max(filters.limit || 10, 1), 100);
+  const page = Math.max(filters.page || 1, 1);
+  const skip = (page - 1) * limit;
+  const where = {
+    entityType: filters.entityType || undefined,
+    action: filters.action || undefined,
+  };
 
-  return prisma.auditLog.findMany({
-    where: {
-      entityType: filters.entityType || undefined,
-      action: filters.action || undefined,
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit,
-  });
+  const [logs, total] = await Promise.all([
+    prisma.auditLog.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take: limit,
+    }),
+    prisma.auditLog.count({ where }),
+  ]);
+  const deleteLogs = logs.filter((log) => log.entityType === 'transaction' && log.action === 'delete');
+  const restoreLogs = deleteLogs.length > 0
+    ? await prisma.auditLog.findMany({
+        where: {
+          entityType: 'transaction',
+          action: 'restore',
+          OR: deleteLogs.map((log) => ({
+            entityId: log.entityId,
+            createdAt: { gt: log.createdAt },
+          })),
+        },
+        select: {
+          entityId: true,
+          createdAt: true,
+        },
+      })
+    : [];
+  const logsWithRestoreState = logs.map((log) => ({
+    ...log,
+    isRestorable: log.entityType === 'transaction'
+      && log.action === 'delete'
+      && !restoreLogs.some((restoreLog) => (
+        restoreLog.entityId === log.entityId
+        && restoreLog.createdAt.getTime() > log.createdAt.getTime()
+      )),
+  }));
+
+  return {
+    logs: logsWithRestoreState,
+    total,
+    page,
+    limit,
+    totalPages: Math.max(Math.ceil(total / limit), 1),
+  };
 };
 
 export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: AuditActor) => {

@@ -11,13 +11,15 @@ const getAuditActor = (req: Request) => ({
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
-  const logs = await getAuditLogs({
+  const page = typeof req.query.page === 'string' ? Number(req.query.page) : undefined;
+  const result = await getAuditLogs({
     entityType: typeof req.query.entityType === 'string' ? req.query.entityType : undefined,
     action: typeof req.query.action === 'string' ? req.query.action : undefined,
     limit: Number.isFinite(limit) ? limit : undefined,
+    page: Number.isFinite(page) ? page : undefined,
   });
 
-  res.json(logs);
+  res.json(result);
 }));
 
 router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => {

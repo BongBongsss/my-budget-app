@@ -38,7 +38,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState<'date' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'source' | 'memo'>('group');
   const [bulkCategory, setBulkCategory] = useState('');
-  const [bulkType, setBulkType] = useState<'expense' | 'income' | ''>('');
+  const [bulkType, setBulkType] = useState<'expense' | 'income' | 'exclude' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -347,7 +347,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
                   <td><select value={editValues.member || '효'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option></select></td>
-                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option></select></td>
+                  <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td>{getGroupName(editValues.category || '', categories)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%' }} /></td>
