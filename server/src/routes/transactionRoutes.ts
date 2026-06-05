@@ -4,6 +4,7 @@ import {
   getAllTransactions, 
   addTransaction, 
   updateTransaction, 
+  bulkUpdateTransactions,
   deleteTransaction,
   bulkAddTransactions,
   stageImportRows,
@@ -83,6 +84,18 @@ router.post('/bulk', asyncHandler(async (req: Request, res: Response) => {
   await bulkAddTransactions(transactions, getAuditActor(req));
   const results = await getAllTransactions();
   res.status(201).json(results);
+}));
+
+router.post('/bulk-update', asyncHandler(async (req: Request, res: Response) => {
+  const { ids, updates } = req.body;
+  if (!Array.isArray(ids)) {
+    throw new BadRequestError('Expected an array of IDs');
+  }
+  if (!updates || typeof updates !== 'object') {
+    throw new BadRequestError('Expected updates object');
+  }
+  const result = await bulkUpdateTransactions(ids, updates, getAuditActor(req));
+  res.json({ success: true, count: result.count });
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, verifyTransactions } from './api';
+import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
@@ -123,8 +123,9 @@ function App() {
   const handleBulkUpdateMember = async (ids: string[], member: string) => {
     if (userRole !== 'admin') return;
     try {
-      await Promise.all(ids.map(id => updateTransaction(id, { member })));
+      await bulkUpdateTransactions(ids, { member });
       setTransactions(prev => prev.map(t => ids.includes(t.id!) ? { ...t, member } : t));
+      await fetchData();
     } catch (err) {
       fetchData();
     }

@@ -450,6 +450,75 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
   });
 };
 
+export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Transaction>, actor?: AuditActor) => {
+  return await prisma.$transaction(async (tx) => {
+    let count = 0;
+
+    const allowedImportUpdates = {
+      date: updates.date,
+      time: updates.time,
+      type: updates.type,
+      category: updates.category,
+      subcategory: updates.subcategory,
+      vendor: updates.vendor,
+      amount: updates.amount,
+      currency: updates.currency,
+      source: updates.source,
+      memo: updates.memo,
+      member: updates.member,
+    };
+    const importData = Object.fromEntries(
+      Object.entries(allowedImportUpdates).filter(([, value]) => value !== undefined)
+    );
+
+    for (const id of ids) {
+      const before = await tx.transaction.findUnique({ where: { id } });
+
+      if (before) {
+        const updated = await tx.transaction.update({
+          where: { id },
+          data: updates,
+        });
+
+        await tx.auditLog.create({
+          data: buildAuditLogData({
+            entityType: 'transaction',
+            entityId: id,
+            action: 'update',
+            beforeData: before,
+            afterData: updated,
+            actor,
+          }),
+        });
+        count++;
+        continue;
+      }
+
+      const importBefore = await tx.importRow.findUnique({ where: { id } });
+      if (!importBefore) continue;
+
+      const updatedImportRow = await tx.importRow.update({
+        where: { id },
+        data: importData,
+      });
+
+      await tx.auditLog.create({
+        data: buildAuditLogData({
+          entityType: 'importRow',
+          entityId: id,
+          action: 'update',
+          beforeData: importBefore,
+          afterData: updatedImportRow,
+          actor,
+        }),
+      });
+      count++;
+    }
+
+    return { count };
+  });
+};
+
 export const deleteTransaction = async (id: string, actor?: AuditActor) => {
   return await prisma.$transaction(async (tx) => {
     const before = await tx.transaction.findUnique({
