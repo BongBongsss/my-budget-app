@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { Prisma, Transaction } from '@prisma/client';
+import { Asset, Prisma, Transaction } from '@prisma/client';
 import prisma from '../db';
 import { BadRequestError, NotFoundError } from '../utils/errors';
 
@@ -66,18 +66,20 @@ export const getAuditLogs = async (filters: {
     }),
     prisma.auditLog.count({ where }),
   ]);
-  const deleteLogs = logs.filter((log) => log.entityType === 'transaction' && log.action === 'delete');
+  const restorableEntityTypes = ['transaction', 'importRow', 'asset'];
+  const deleteLogs = logs.filter((log) => restorableEntityTypes.includes(log.entityType) && log.action === 'delete');
   const restoreLogs = deleteLogs.length > 0
     ? await prisma.auditLog.findMany({
         where: {
-          entityType: 'transaction',
           action: 'restore',
           OR: deleteLogs.map((log) => ({
+            entityType: log.entityType,
             entityId: log.entityId,
             createdAt: { gt: log.createdAt },
           })),
         },
         select: {
+          entityType: true,
           entityId: true,
           createdAt: true,
         },
@@ -85,10 +87,11 @@ export const getAuditLogs = async (filters: {
     : [];
   const logsWithRestoreState = logs.map((log) => ({
     ...log,
-    isRestorable: log.entityType === 'transaction'
+    isRestorable: restorableEntityTypes.includes(log.entityType)
       && log.action === 'delete'
       && !restoreLogs.some((restoreLog) => (
-        restoreLog.entityId === log.entityId
+        restoreLog.entityType === log.entityType
+        && restoreLog.entityId === log.entityId
         && restoreLog.createdAt.getTime() > log.createdAt.getTime()
       )),
   }));
@@ -108,8 +111,96 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
       where: { id: auditLogId },
     });
 
-    if (!auditLog || auditLog.entityType !== 'transaction' || auditLog.action !== 'delete') {
+    if (!auditLog || auditLog.action !== 'delete' || !['transaction', 'importRow', 'asset'].includes(auditLog.entityType)) {
       throw new NotFoundError('Restorable delete log not found.');
+    }
+
+    if (auditLog.entityType === 'asset') {
+      const beforeData = auditLog.beforeData as Partial<Asset> | null;
+      if (!beforeData?.id) {
+        throw new BadRequestError('Delete log does not contain restorable asset data.');
+      }
+
+      const restoreData = {
+        name: beforeData.name || 'Restored Asset',
+        type: beforeData.type || 'other',
+        balance: beforeData.balance || 0,
+        memo: beforeData.memo || null,
+        isDeleted: false,
+      };
+
+      const restored = await tx.asset.upsert({
+        where: { id: beforeData.id },
+        update: restoreData,
+        create: {
+          id: beforeData.id,
+          ...restoreData,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: buildAuditLogData({
+          entityType: 'asset',
+          entityId: restored.id,
+          action: 'restore',
+          beforeData,
+          afterData: restored,
+          actor,
+        }),
+      });
+
+      return restored;
+    }
+
+    if (auditLog.entityType === 'importRow') {
+      const beforeData = auditLog.beforeData as any;
+      if (!beforeData?.id) {
+        throw new BadRequestError('Delete log does not contain restorable import row data.');
+      }
+
+      const restoreData = {
+        batchId: beforeData.batchId || null,
+        rowNumber: beforeData.rowNumber ?? null,
+        status: beforeData.status || 'new',
+        invalidReason: beforeData.invalidReason || null,
+        sourceTransactionId: beforeData.sourceTransactionId || null,
+        date: beforeData.date || new Date().toISOString().split('T')[0],
+        time: beforeData.time || '',
+        type: beforeData.type || 'expense',
+        category: beforeData.category || '기타',
+        subcategory: beforeData.subcategory || null,
+        vendor: beforeData.vendor || 'Unknown',
+        amount: beforeData.amount || 0,
+        currency: beforeData.currency || 'KRW',
+        source: beforeData.source || 'file_import',
+        memo: beforeData.memo || null,
+        member: beforeData.member || 'unknown',
+        rawData: (beforeData.rawData || beforeData) as Prisma.InputJsonValue,
+        committedAt: null,
+        transactionId: null,
+      };
+
+      const restored = await tx.importRow.upsert({
+        where: { id: beforeData.id },
+        update: restoreData,
+        create: {
+          id: beforeData.id,
+          ...restoreData,
+        },
+      });
+
+      await tx.auditLog.create({
+        data: buildAuditLogData({
+          entityType: 'importRow',
+          entityId: restored.id,
+          action: 'restore',
+          beforeData,
+          afterData: restored,
+          actor,
+        }),
+      });
+
+      return restored;
     }
 
     const beforeData = auditLog.beforeData as Partial<Transaction> | null;

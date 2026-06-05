@@ -108,4 +108,63 @@ describe('AuditLogService', () => {
       }),
     }));
   });
+
+  it('restores an ignored import row to its previous status and writes a restore log', async () => {
+    const deletedImportRow = {
+      id: 'row-1',
+      batchId: 'batch-1',
+      rowNumber: 3,
+      status: 'duplicate',
+      invalidReason: null,
+      sourceTransactionId: null,
+      date: '2026-06-02',
+      time: '',
+      type: 'expense',
+      category: 'Food',
+      subcategory: '',
+      vendor: 'Store',
+      amount: 12000,
+      currency: 'KRW',
+      source: 'card',
+      memo: null,
+      member: 'unknown',
+      rawData: { vendor: 'Store' },
+      committedAt: null,
+      transactionId: null,
+    };
+    const tx = {
+      auditLog: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'log-2',
+          entityType: 'importRow',
+          entityId: 'row-1',
+          action: 'delete',
+          beforeData: deletedImportRow,
+        }),
+        create: vi.fn(),
+      },
+      importRow: {
+        upsert: vi.fn().mockResolvedValue(deletedImportRow),
+      },
+    };
+
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreTransactionFromAuditLog('log-2', { role: 'admin' }))
+      .resolves
+      .toEqual(deletedImportRow);
+
+    expect(tx.importRow.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'row-1' },
+      update: expect.objectContaining({ status: 'duplicate', transactionId: null }),
+    }));
+    expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        entityType: 'importRow',
+        entityId: 'row-1',
+        action: 'restore',
+        actorRole: 'admin',
+      }),
+    }));
+  });
 });

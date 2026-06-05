@@ -23,7 +23,46 @@ model Transaction {
   isVerified   Boolean @default(true)
   isDuplicate  Boolean @default(false)
   isDeleted    Boolean @default(false)
-  member       String  @default("미지정")
+  member              String       @default("효")
+}
+
+model ImportBatch {
+  id        String      @id @default(uuid())
+  filename  String?
+  totalRows Int         @default(0)
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @default(now()) @updatedAt
+  rows      ImportRow[]
+}
+
+model ImportRow {
+  id                  String       @id @default(uuid())
+  batchId             String?
+  batch               ImportBatch? @relation(fields: [batchId], references: [id])
+  rowNumber           Int?
+  status              String
+  invalidReason       String?
+  sourceTransactionId String?      @unique
+  date                String
+  time                String?
+  type                String
+  category            String
+  subcategory         String?
+  vendor              String
+  amount              Float
+  currency            String?
+  source              String?
+  memo                String?
+  member              String       @default("미지정")
+  rawData             Json?
+  committedAt         DateTime?
+  transactionId       String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @default(now()) @updatedAt
+
+  @@index([status])
+  @@index([batchId])
+  @@index([createdAt])
 }
 
 model CategoryRule {
@@ -56,6 +95,7 @@ model Session {
   sess   Json
   expire DateTime
 
+  @@index([expire], map: "IDX_session_expire")
   @@map("session")
 }
 
@@ -76,7 +116,7 @@ model Asset {
   isDeleted Boolean  @default(false)
   memo      String?
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 }
 
 model AssetHistory {
@@ -120,7 +160,7 @@ model AuditLog {
   actorRole  String?
   ipAddress  String?
   createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([entityType, entityId])
   @@index([action])

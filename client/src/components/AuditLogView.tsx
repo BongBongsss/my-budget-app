@@ -21,6 +21,12 @@ const actionColors: Record<string, { bg: string; color: string }> = {
   restore: { bg: '#fef3c7', color: '#92400e' },
 };
 
+const entityLabels: Record<string, string> = {
+  transaction: '거래',
+  importRow: 'Import 후보',
+  asset: '자산',
+};
+
 const formatAmount = (amount?: number) => {
   if (typeof amount !== 'number') return '';
   return `${amount.toLocaleString()}원`;
@@ -28,6 +34,13 @@ const formatAmount = (amount?: number) => {
 
 const getTransactionSummary = (log: AuditLog) => {
   const data = log.afterData || log.beforeData || {};
+  if (log.entityType === 'asset') {
+    const name = data.name || '자산';
+    const balance = formatAmount(data.balance);
+    const type = data.type ? ` / ${data.type}` : '';
+    return `${name}${balance ? ` / ${balance}` : ''}${type}`;
+  }
+
   const vendor = data.vendor || '거래';
   const amount = formatAmount(data.amount);
   const category = data.category ? ` / ${data.category}` : '';
@@ -40,7 +53,9 @@ const getChangeSummary = (log: AuditLog) => {
     return '';
   }
 
-  const fields = ['date', 'type', 'category', 'vendor', 'amount', 'memo', 'member'];
+  const fields = log.entityType === 'asset'
+    ? ['name', 'type', 'balance', 'memo']
+    : ['date', 'type', 'category', 'vendor', 'amount', 'memo', 'member'];
   const changed = fields.filter((field) => log.beforeData[field] !== log.afterData[field]);
 
   if (changed.length === 0) return '변경된 필드 없음';
@@ -49,6 +64,7 @@ const getChangeSummary = (log: AuditLog) => {
 
 function AuditLogView({ isAdmin, onRestored }: Props) {
   const [logs, setLogs] = useState<AuditLog[]>([]);
+  const [entityType, setEntityType] = useState('');
   const [action, setAction] = useState('');
   const [page, setPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -61,7 +77,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
     setLoading(true);
     try {
       const res = await getAuditLogs({
-        entityType: 'transaction',
+        entityType: entityType || undefined,
         action: action || undefined,
         page,
         limit: itemsPerPage,
@@ -76,15 +92,15 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
 
   useEffect(() => {
     fetchLogs();
-  }, [action, page, itemsPerPage]);
+  }, [entityType, action, page, itemsPerPage]);
 
   useEffect(() => {
     setPage(1);
-  }, [action, itemsPerPage]);
+  }, [entityType, action, itemsPerPage]);
 
   const handleRestore = async (log: AuditLog) => {
     if (!isAdmin) return;
-    if (!window.confirm('이 삭제 거래를 복구할까요?')) return;
+    if (!window.confirm('삭제된 항목을 복구할까요?')) return;
 
     setRestoringId(log.id);
     try {
@@ -102,12 +118,22 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         <div>
           <h3 style={{ margin: 0 }}>활동 로그</h3>
           <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px' }}>
-            거래 추가, 수정, 삭제, 복구 이력을 확인합니다.
+            거래와 Import 후보의 추가, 수정, 삭제, 복구 이력을 확인합니다.
           </div>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={18} color="#64748b" />
+          <select
+            value={entityType}
+            onChange={(e) => setEntityType(e.target.value)}
+            style={{ padding: '8px', border: '1px solid #cbd5e1', borderRadius: '6px', background: 'white' }}
+          >
+            <option value="">전체 대상</option>
+            <option value="transaction">거래</option>
+            <option value="importRow">Import 후보</option>
+            <option value="asset">자산</option>
+          </select>
           <select
             value={action}
             onChange={(e) => setAction(e.target.value)}
@@ -149,10 +175,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         <tbody>
           {logs.map((log) => {
             const colors = actionColors[log.action] || { bg: '#e2e8f0', color: '#475569' };
-            const canRestore = isAdmin
-              && log.action === 'delete'
-              && log.entityType === 'transaction'
-              && log.isRestorable;
+            const canRestore = isAdmin && log.action === 'delete' && log.isRestorable;
 
             return (
               <tr key={log.id}>
@@ -162,7 +185,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
                     {actionLabels[log.action] || log.action}
                   </span>
                 </td>
-                <td>{log.entityType === 'transaction' ? '거래' : log.entityType}</td>
+                <td>{entityLabels[log.entityType] || log.entityType}</td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{getTransactionSummary(log)}</div>
                   {getChangeSummary(log) && (

@@ -15,6 +15,35 @@ export interface ParsedTransaction {
   isDuplicate?: boolean;
 }
 
+export interface ParsedImportRow {
+  rowNumber: number;
+  rawData: Record<string, any>;
+  transaction: ParsedTransaction;
+  invalidReasons: string[];
+}
+
+const K = {
+  date: '\uB0A0\uC9DC',
+  day: '\uC77C\uC790',
+  time: '\uC2DC\uAC04',
+  amount: '\uAE08\uC561',
+  content: '\uB0B4\uC6A9',
+  merchant: '\uAC00\uB9F9\uC810\uBA85',
+  name: '\uC0C1\uD638',
+  type: '\uAD6C\uBD84',
+  income: '\uC218\uC785',
+  deposit: '\uC785\uAE08',
+  expense: '\uC9C0\uCD9C',
+  withdrawal: '\uCD9C\uAE08',
+  category: '\uB300\uBD84\uB958',
+  categoryAlt: '\uCE74\uD14C\uACE0\uB9AC',
+  subcategory: '\uC18C\uBD84\uB958',
+  currency: '\uD1B5\uD654',
+  source: '\uACB0\uC81C\uC218\uB2E8',
+  memo: '\uBA54\uBAA8',
+  other: '\uAE30\uD0C0',
+};
+
 const excelSerialDateToIso = (serial: number): string => {
   const date = new Date((serial - 25569) * 86400 * 1000);
   return date.toISOString().split('T')[0];
@@ -50,26 +79,26 @@ const pick = (row: Record<string, any>, ...keys: string[]) => {
 };
 
 const hasImportableData = (row: Record<string, any>) => {
-  const vendor = pick(row, '내용', '가맹점명', '상호', 'vendor', 'Vendor');
-  const amount = pick(row, '금액', 'amount', 'Amount');
+  const vendor = pick(row, K.content, K.merchant, K.name, 'vendor', 'Vendor');
+  const amount = pick(row, K.amount, 'amount', 'Amount');
 
   return vendor !== undefined && amount !== undefined;
 };
 
 const normalizeData = (row: Record<string, any>): ParsedTransaction => {
-  const dateRaw = pick(row, '날짜', '일자', 'date', 'Date');
-  const timeRaw = pick(row, '시간', 'time', 'Time');
-  const amountRaw = String(pick(row, '금액', 'amount', 'Amount') || '0')
+  const dateRaw = pick(row, K.date, K.day, 'date', 'Date');
+  const timeRaw = pick(row, K.time, 'time', 'Time');
+  const amountRaw = String(pick(row, K.amount, 'amount', 'Amount') || '0')
     .replace(/,/g, '')
     .replace(/[^\d.-]/g, '');
 
   const amount = Number.parseFloat(amountRaw) || 0;
-  const typeText = String(pick(row, '타입', '구분', 'type', 'Type') || '');
+  const typeText = String(pick(row, K.type, 'type', 'Type') || '');
 
   let type: 'income' | 'expense';
-  if (typeText.includes('수입') || typeText.includes('입금')) {
+  if (typeText.includes(K.income) || typeText.includes(K.deposit)) {
     type = 'income';
-  } else if (typeText.includes('지출') || typeText.includes('출금')) {
+  } else if (typeText.includes(K.expense) || typeText.includes(K.withdrawal)) {
     type = 'expense';
   } else {
     type = amount >= 0 ? 'income' : 'expense';
@@ -84,14 +113,39 @@ const normalizeData = (row: Record<string, any>): ParsedTransaction => {
     date: normalizeDate(dateRaw),
     time,
     type,
-    category: String(pick(row, '대분류', '카테고리', 'category', 'Category') || '기타'),
-    subcategory: String(pick(row, '소분류', 'subcategory', 'Subcategory') || ''),
-    vendor: String(pick(row, '내용', '가맹점명', '상호', 'vendor', 'Vendor') || 'Unknown').trim(),
+    category: String(pick(row, K.category, K.categoryAlt, 'category', 'Category') || K.other),
+    subcategory: String(pick(row, K.subcategory, 'subcategory', 'Subcategory') || ''),
+    vendor: String(pick(row, K.content, K.merchant, K.name, 'vendor', 'Vendor') || 'Unknown').trim(),
     amount: Math.abs(amount),
-    currency: String(pick(row, '화폐', '통화', 'currency', 'Currency') || 'KRW'),
-    source: String(pick(row, '결제수단', 'source', 'Source') || 'file_import'),
-    memo: String(pick(row, '메모', 'memo', 'Memo') || ''),
+    currency: String(pick(row, K.currency, 'currency', 'Currency') || 'KRW'),
+    source: String(pick(row, K.source, 'source', 'Source') || 'file_import'),
+    memo: String(pick(row, K.memo, 'memo', 'Memo') || ''),
   };
+};
+
+const getInvalidReasons = (row: Record<string, any>, transaction?: ParsedTransaction) => {
+  const reasons: string[] = [];
+
+  if (!hasImportableData(row)) reasons.push('vendor or amount missing');
+
+  if (transaction) {
+    if (!transaction.vendor || transaction.vendor === 'Unknown') reasons.push('vendor is Unknown');
+    if (Math.abs(Number(transaction.amount || 0)) <= 0) reasons.push('amount is zero');
+  }
+
+  return Array.from(new Set(reasons));
+};
+
+const parseRowsForImport = (data: Record<string, any>[]): ParsedImportRow[] => {
+  return data.map((row, index) => {
+    const transaction = normalizeData(row);
+    return {
+      rowNumber: index + 2,
+      rawData: row,
+      transaction,
+      invalidReasons: getInvalidReasons(row, transaction),
+    };
+  });
 };
 
 export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
@@ -100,10 +154,24 @@ export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
   return (result.data as Record<string, any>[]).filter(hasImportableData).map(normalizeData);
 };
 
+export const parseCSVForImport = (buffer: Buffer): ParsedImportRow[] => {
+  const csvString = buffer.toString('utf-8');
+  const result = Papa.parse(csvString, { header: true, skipEmptyLines: true });
+  return parseRowsForImport(result.data as Record<string, any>[]);
+};
+
 export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
   const workbook = XLSX.read(buffer, { type: 'buffer' });
   const firstSheetName = workbook.SheetNames[0];
   const worksheet = workbook.Sheets[firstSheetName];
   const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
   return data.filter(hasImportableData).map(normalizeData);
+};
+
+export const parseExcelForImport = (buffer: Buffer): ParsedImportRow[] => {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[firstSheetName];
+  const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+  return parseRowsForImport(data);
 };

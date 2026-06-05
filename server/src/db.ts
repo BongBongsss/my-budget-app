@@ -1,3 +1,4 @@
+import './env';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 
@@ -99,6 +100,109 @@ export const initDb = async () => {
     console.log("Audit log table check/creation completed.");
   } catch (err) {
     console.error("Failed to create audit log table:", err);
+    throw err;
+  }
+
+  // Import staging table check/creation and legacy unverified transaction migration
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ImportBatch" (
+        "id" text NOT NULL PRIMARY KEY,
+        "filename" text,
+        "totalRows" integer NOT NULL DEFAULT 0,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ImportRow" (
+        "id" text NOT NULL PRIMARY KEY,
+        "batchId" text,
+        "rowNumber" integer,
+        "status" text NOT NULL,
+        "invalidReason" text,
+        "sourceTransactionId" text UNIQUE,
+        "date" text NOT NULL,
+        "time" text,
+        "type" text NOT NULL,
+        "category" text NOT NULL,
+        "subcategory" text,
+        "vendor" text NOT NULL,
+        "amount" double precision NOT NULL,
+        "currency" text,
+        "source" text,
+        "memo" text,
+        "member" text NOT NULL DEFAULT '미지정',
+        "rawData" jsonb,
+        "committedAt" timestamp(3),
+        "transactionId" text,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      DO $$
+      BEGIN
+        IF NOT EXISTS (
+          SELECT 1 FROM pg_constraint WHERE conname = 'ImportRow_batchId_fkey'
+        ) THEN
+          ALTER TABLE "ImportRow"
+          ADD CONSTRAINT "ImportRow_batchId_fkey"
+          FOREIGN KEY ("batchId") REFERENCES "ImportBatch"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+        END IF;
+      END $$;
+    `);
+
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ImportRow_status_idx" ON "ImportRow" ("status");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ImportRow_batchId_idx" ON "ImportRow" ("batchId");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ImportRow_createdAt_idx" ON "ImportRow" ("createdAt");`);
+
+    await prisma.$executeRawUnsafe(`
+      INSERT INTO "ImportRow" (
+        "id", "status", "sourceTransactionId", "date", "time", "type", "category", "subcategory",
+        "vendor", "amount", "currency", "source", "memo", "member", "rawData", "createdAt", "updatedAt"
+      )
+      SELECT
+        'legacy-' || "id",
+        CASE WHEN "isDuplicate" THEN 'duplicate' ELSE 'new' END,
+        "id",
+        "date",
+        "time",
+        "type",
+        "category",
+        "subcategory",
+        "vendor",
+        "amount",
+        "currency",
+        "source",
+        "memo",
+        "member",
+        to_jsonb(t),
+        CURRENT_TIMESTAMP,
+        CURRENT_TIMESTAMP
+      FROM "Transaction" t
+      WHERE "isVerified" = false
+        AND "isDeleted" = false
+        AND NOT EXISTS (
+          SELECT 1 FROM "ImportRow" r WHERE r."sourceTransactionId" = t."id"
+        );
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      UPDATE "Transaction"
+      SET "isDeleted" = true
+      WHERE "isVerified" = false
+        AND "isDeleted" = false
+        AND EXISTS (
+          SELECT 1 FROM "ImportRow" r WHERE r."sourceTransactionId" = "Transaction"."id"
+        );
+    `);
+
+    console.log("Import staging table check/migration completed.");
+  } catch (err) {
+    console.error("Failed to initialize import staging tables:", err);
     throw err;
   }
 

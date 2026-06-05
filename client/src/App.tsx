@@ -14,15 +14,29 @@ import { getGroupName } from './utils/categoryUtils';
 import './index.css';
 import { Settings, Upload, LogOut, BarChart3, Wallet, History } from 'lucide-react';
 
+type ImportSummary = {
+  total: number;
+  newCount: number;
+  duplicateCount: number;
+  invalidCount: number;
+  replaced?: {
+    total: number;
+    newCount: number;
+    duplicateCount: number;
+    invalidCount: number;
+  };
+};
+
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate'>('all');
+  const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'logs'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
+  const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
   
   const [lastDeleted, setLastDeleted] = useState<Transaction[] | null>(null);
@@ -32,7 +46,7 @@ function App() {
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
-  const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥'>('all');
+  const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥' | '미지정'>('all');
   const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string} | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -144,11 +158,14 @@ function App() {
     const file = e.target.files[0];
     try {
       const res = await importFile(file);
-      await bulkAddTransactions(res.data);
+      setTransactions(res.data.transactions);
       await fetchData();
       setActiveTab('new');
+      setImportSummary(res.data.summary);
     } catch (err: any) {
       alert('Error importing file');
+    } finally {
+      e.target.value = '';
     }
   };
 
@@ -176,12 +193,16 @@ function App() {
     return isVerified && matchesMember;
   });
 
-  const unverifiedTransactions = transactions.filter(t => t.isVerified === false);
-  const newCount = unverifiedTransactions.filter(t => !t.isDuplicate).length;
-  const duplicateCount = unverifiedTransactions.filter(t => t.isDuplicate).length;
-  const verifiedCount = transactions.filter(t => t.isVerified !== false).length;
+  const unverifiedTransactions = filteredByPeriod.filter(t => {
+    const matchesMember = memberFilter === 'all' || t.member === memberFilter;
+    return t.isVerified === false && matchesMember;
+  });
+  const newCount = unverifiedTransactions.filter(t => t.importStatus === 'new' || (!t.importStatus && !t.isDuplicate)).length;
+  const duplicateCount = unverifiedTransactions.filter(t => t.importStatus === 'duplicate' || (!t.importStatus && t.isDuplicate)).length;
+  const invalidCount = unverifiedTransactions.filter(t => t.importStatus === 'invalid' || t.isInvalid).length;
+  const verifiedCount = allVerifiedForPeriod.length;
 
-  const filteredTransactions = (activeTab === 'all' ? filteredByPeriod : transactions).filter(t => {
+  const filteredTransactions = filteredByPeriod.filter(t => {
     const matchesMember = memberFilter === 'all' || t.member === memberFilter;
     if (!matchesMember) return false;
 
@@ -193,8 +214,9 @@ function App() {
     }
 
     if (activeTab === 'all') return t.isVerified !== false;
-    if (activeTab === 'new') return t.isVerified === false && !t.isDuplicate;
-    if (activeTab === 'duplicate') return t.isVerified === false && t.isDuplicate;
+    if (activeTab === 'new') return t.isVerified === false && (t.importStatus === 'new' || (!t.importStatus && !t.isDuplicate));
+    if (activeTab === 'duplicate') return t.isVerified === false && (t.importStatus === 'duplicate' || (!t.importStatus && t.isDuplicate));
+    if (activeTab === 'invalid') return t.isVerified === false && (t.importStatus === 'invalid' || t.isInvalid);
     return true;
   });
 
@@ -281,9 +303,17 @@ function App() {
             <button 
               className={activeTab === 'duplicate' ? 'btn btn-warning' : 'btn btn-secondary'} 
               onClick={() => setActiveTab('duplicate')}
-              style={{ backgroundColor: activeTab === 'duplicate' ? '#f59e0b' : '', color: activeTab === 'duplicate' ? 'white' : '' }}
+              style={{ marginRight: '10px', backgroundColor: activeTab === 'duplicate' ? '#f59e0b' : '', color: activeTab === 'duplicate' ? 'white' : '' }}
             >
               중복 ({duplicateCount})
+            </button>
+
+            <button
+              className={activeTab === 'invalid' ? 'btn btn-danger' : 'btn btn-secondary'}
+              onClick={() => setActiveTab('invalid')}
+              style={{ backgroundColor: activeTab === 'invalid' ? '#7f1d1d' : '', color: activeTab === 'invalid' ? 'white' : '' }}
+            >
+              무효 ({invalidCount})
             </button>
 
             {chartFilter && (
@@ -293,30 +323,34 @@ function App() {
                 </div>
             )}
 
-            {(activeTab === 'new' || activeTab === 'duplicate') && userRole === 'admin' && filteredTransactions.length > 0 && (
+            {(['new', 'duplicate', 'invalid'].includes(activeTab)) && userRole === 'admin' && filteredTransactions.length > 0 && (
               <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={() => {
-                    if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '효'로 설정하시겠습니까?`)) {
-                      handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '효');
-                    }
-                  }}
-                  style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
-                >
-                  모두 효
-                </button>
-                <button 
-                  className="btn btn-secondary" 
-                  onClick={() => {
-                    if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '굥'으로 설정하시겠습니까?`)) {
-                      handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '굥');
-                    }
-                  }}
-                  style={{ backgroundColor: '#db2777', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
-                >
-                  모두 굥
-                </button>
+                {activeTab !== 'invalid' && (
+                  <>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '효'로 설정하시겠습니까?`)) {
+                          handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '효');
+                        }
+                      }}
+                      style={{ backgroundColor: '#2563eb', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
+                    >
+                      모두 효
+                    </button>
+                    <button
+                      className="btn btn-secondary"
+                      onClick={() => {
+                        if (window.confirm(`표시된 ${filteredTransactions.length}개의 항목을 모두 '굥'으로 설정하시겠습니까?`)) {
+                          handleBulkUpdateMember(filteredTransactions.map(t => t.id!), '굥');
+                        }
+                      }}
+                      style={{ backgroundColor: '#db2777', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
+                    >
+                      모두 굥
+                    </button>
+                  </>
+                )}
                 <button 
                   className="btn btn-danger" 
                   style={{ backgroundColor: '#dc2626', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
@@ -328,17 +362,19 @@ function App() {
                 >
                   모두 삭제
                 </button>
-                <button 
-                  className="btn btn-primary" 
-                  style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
-                  onClick={() => {
-                    if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
-                      handleVerify(filteredTransactions.map(t => t.id!));
-                    }
-                  }}
-                >
-                  모두 승인하기
-                </button>
+                {activeTab !== 'invalid' && (
+                  <button
+                    className="btn btn-primary"
+                    style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
+                    onClick={() => {
+                      if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
+                        handleVerify(filteredTransactions.map(t => t.id!));
+                      }
+                    }}
+                  >
+                    모두 승인하기
+                  </button>
+                )}
               </div>
             )}
           </div>
@@ -350,6 +386,7 @@ function App() {
             onBulkDelete={handleBulkDelete}
             onUpdate={handleUpdate}
             onBulkUpdateMember={handleBulkUpdateMember}
+            onVerify={handleVerify}
             onRefresh={fetchData}
             period={period}
             setPeriod={setPeriod}
@@ -360,6 +397,7 @@ function App() {
             memberFilter={memberFilter}
             setMemberFilter={setMemberFilter}
             isAdmin={userRole === 'admin'}
+            pageScope={activeTab}
           />
         </div>
       ) : currentView === 'assets' ? (
@@ -368,6 +406,54 @@ function App() {
         </div>
       ) : (
         <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
+      )}
+
+      {importSummary && (
+        <div className="modal-overlay">
+          <div className="import-result-modal">
+            <div className="modal-header" style={{ marginBottom: '1rem' }}>
+              <div>
+                <h3 style={{ margin: 0 }}>Import 완료</h3>
+                <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
+                  방금 가져온 파일의 검토 결과입니다.
+                </p>
+              </div>
+            </div>
+
+            {importSummary.replaced && importSummary.replaced.total > 0 && (
+              <div className="import-result-note">
+                <strong>이전 검토 목록 정리</strong>
+                <p>
+                  새 파일을 가져오면 검토 중이던 후보를 이전 목록으로 넘기고,
+                  방금 가져온 결과만 보여줍니다. 같은 파일을 다시 가져와도 항목이 누적되지 않습니다.
+                </p>
+                <div className="import-result-grid compact">
+                  <div><span>정리됨</span><strong>{importSummary.replaced.total.toLocaleString()}건</strong></div>
+                  <div><span>신규</span><strong>{importSummary.replaced.newCount.toLocaleString()}건</strong></div>
+                  <div><span>중복</span><strong>{importSummary.replaced.duplicateCount.toLocaleString()}건</strong></div>
+                  <div><span>무효</span><strong>{importSummary.replaced.invalidCount.toLocaleString()}건</strong></div>
+                </div>
+              </div>
+            )}
+
+            <div className="import-result-section-title">
+              <strong>이번 import 결과</strong>
+              <span>아래 건수만 신규/중복/무효 탭에 표시됩니다.</span>
+            </div>
+            <div className="import-result-grid">
+              <div><span>이번 전체</span><strong>{importSummary.total.toLocaleString()}건</strong></div>
+              <div><span>이번 신규</span><strong>{importSummary.newCount.toLocaleString()}건</strong></div>
+              <div><span>이번 중복</span><strong>{importSummary.duplicateCount.toLocaleString()}건</strong></div>
+              <div><span>이번 무효</span><strong>{importSummary.invalidCount.toLocaleString()}건</strong></div>
+            </div>
+
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+              <button className="btn btn-primary" onClick={() => setImportSummary(null)}>
+                확인
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       <SettingsModal

@@ -59,6 +59,11 @@ export interface Transaction {
   memo?: string;
   isVerified?: boolean;
   isDuplicate?: boolean;
+  isInvalid?: boolean;
+  importStatus?: 'new' | 'duplicate' | 'invalid' | 'committed' | 'ignored';
+  invalidReason?: string;
+  rowNumber?: number;
+  batchId?: string;
   member?: string;
 }
 
@@ -135,7 +140,23 @@ export const cleanupTransactions = () => instance.post('/transactions/cleanup');
 export const importFile = (file: File) => {
   const formData = new FormData();
   formData.append('file', file);
-  return instance.post<Transaction[]>('/transactions/import', formData, {
+  return instance.post<{
+    success: boolean;
+    summary: {
+      batchId: string;
+      total: number;
+      newCount: number;
+      duplicateCount: number;
+      invalidCount: number;
+      replaced?: {
+        total: number;
+        newCount: number;
+        duplicateCount: number;
+        invalidCount: number;
+      };
+    };
+    transactions: Transaction[];
+  }>('/transactions/import', formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   });
 };

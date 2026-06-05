@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp } from 'lucide-react';
 import { getGroupName } from '../utils/categoryUtils';
@@ -10,6 +10,7 @@ interface TransactionListProps {
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
+  onVerify?: (ids: string[]) => void;
   onRefresh: () => void;
   period: 'all' | 'month' | 'year';
   setPeriod: (p: 'all' | 'month' | 'year') => void;
@@ -17,20 +18,22 @@ interface TransactionListProps {
   setYear: (y: number) => void;
   month: number;
   setMonth: (m: number) => void;
-  memberFilter: 'all' | '효' | '굥';
-  setMemberFilter: (m: 'all' | '효' | '굥') => void;
+  memberFilter: 'all' | '효' | '굥' | '미지정';
+  setMemberFilter: (m: 'all' | '효' | '굥' | '미지정') => void;
   isAdmin?: boolean;
+  pageScope?: string;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onRefresh,
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
-  memberFilter, setMemberFilter, isAdmin = true
+  memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default'
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
-  const [currentPage, setCurrentPage] = useState(1);
+  const [pageByScope, setPageByScope] = useState<Record<string, number>>({});
+  const currentPage = pageByScope[pageScope] || 1;
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,6 +46,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkMemo, setBulkMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const setCurrentPage = (value: number | ((prev: number) => number)) => {
+    setPageByScope((pages) => {
+      const prev = pages[pageScope] || 1;
+      const next = typeof value === 'function' ? value(prev) : value;
+      return { ...pages, [pageScope]: next };
+    });
+  };
+
+  useEffect(() => {
+    setSelectedIds([]);
+    setEditingId(null);
+  }, [pageScope]);
+
   const uniqueValues = {
     types: Array.from(new Set(transactions.map(t => t.type === 'expense' ? '지출' : t.type === 'income' ? '수입' : '미반영'))),
     groups: Array.from(new Set(transactions.map(t => getGroupName(t.category, categories)))).sort(),
@@ -52,6 +68,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
 
   const handleBulkUpdate = async () => {
+    if (!isAdmin) return;
     if (selectedIds.length === 0) return;
     const updates: Partial<Transaction> = {};
     if (bulkCategory) updates.category = bulkCategory;
@@ -128,28 +145,44 @@ const TransactionList: React.FC<TransactionListProps> = ({
     return 0;
   });
 
-  const totalPages = Math.ceil(sortedTransactions.length / itemsPerPage);
+  const totalPages = Math.max(Math.ceil(sortedTransactions.length / itemsPerPage), 1);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
   const paginatedTransactions = sortedTransactions.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
 
   const toggleSelect = (id: string) => {
+    if (!isAdmin) return;
     setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]);
   };
 
   const startEdit = (tx: Transaction) => {
+    if (!isAdmin) return;
     setEditingId(tx.id!);
     setEditValues(tx);
   };
 
   const saveEdit = async (id: string) => {
+    if (!isAdmin) return;
     await onUpdate(id, editValues);
     setEditingId(null);
     setEditValues({});
   };
 
   const handleSingleVerify = async (id: string) => {
+    if (!isAdmin) return;
+    if (onVerify) {
+      await onVerify([id]);
+      return;
+    }
+
     await onUpdate(id, { isVerified: true });
     onRefresh();
   };
@@ -239,6 +272,13 @@ const TransactionList: React.FC<TransactionListProps> = ({
           >
             굥
           </button>
+          <button
+            className={`btn ${memberFilter === '미지정' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setMemberFilter('미지정')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            미지정
+          </button>
         </div>
       </div>
 
@@ -299,7 +339,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </div>
       </div>
 
-      {selectedIds.length > 0 && (
+      {isAdmin && selectedIds.length > 0 && (
         <div className="flex gap-2 items-center mb-6 p-2 bg-gray-100 rounded border border-blue-200">
             <button className="btn btn-danger" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={() => { onBulkDelete(selectedIds); setSelectedIds([]); }} title="Delete Selected"><Trash2 size={16} /></button>
             <div style={{ borderLeft: '1px solid #cbd5e1', height: '20px', margin: '0 5px' }}></div>
@@ -323,7 +363,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
       <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}>
         <thead>
           <tr>
-            <th style={{ width: '25px' }}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} /></th>
+            <th style={{ width: '25px' }}>{isAdmin && <input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} />}</th>
             <th style={{ width: '75px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜</th>
             <th style={{ width: '40px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간</th>
             <th style={{ width: '35px', cursor: 'pointer' }} onClick={() => requestSort('member')}>효/굥</th>
@@ -341,12 +381,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
         <tbody>
           {paginatedTransactions.map((tx) => (
             <tr key={tx.id!}>
-              <td><input type="checkbox" checked={selectedIds.includes(tx.id!)} onChange={() => toggleSelect(tx.id!)} /></td>
+              <td>{isAdmin && <input type="checkbox" checked={selectedIds.includes(tx.id!)} onChange={() => toggleSelect(tx.id!)} />}</td>
               {editingId === tx.id! ? (
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
-                  <td><select value={editValues.member || '효'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option></select></td>
+                  <td><select value={editValues.member || '미지정'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option><option value="미지정">미지정</option></select></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td>{getGroupName(editValues.category || '', categories)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
@@ -374,25 +414,29 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={tx.source}><div style={cellEllipsisStyle}>{tx.source}</div></td>
                   <td title={tx.memo}><div style={cellEllipsisStyle}>{tx.memo}</div></td>
                   <td style={{ textAlign: 'center' }}>
-                    <div className="flex gap-1 justify-center">
-                      {!tx.isVerified && (
-                        <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
-                          <ThumbsUp size={16} color="green" />
+                    {isAdmin ? (
+                      <div className="flex gap-1 justify-center">
+                        {!tx.isVerified && !tx.isInvalid && (
+                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
+                            <ThumbsUp size={16} color="green" />
+                          </button>
+                        )}
+                        <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`이 항목을 삭제하시겠습니까?\n${tx.date} ${tx.time || ''} ${tx.vendor} ${tx.amount.toLocaleString()}원`)) {
+                              onDelete(tx.id!);
+                            }
+                          }}
+                          className="btn-icon"
+                          title="삭제"
+                        >
+                          <Trash2 size={16} />
                         </button>
-                      )}
-                      <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
-                      <button
-                        onClick={() => {
-                          if (window.confirm(`이 항목을 삭제하시겠습니까?\n${tx.date} ${tx.time || ''} ${tx.vendor} ${tx.amount.toLocaleString()}원`)) {
-                            onDelete(tx.id!);
-                          }
-                        }}
-                        className="btn-icon"
-                        title="삭제"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
+                      </div>
+                    ) : (
+                      <span style={{ color: '#94a3b8' }}>-</span>
+                    )}
                   </td>
                 </>
               )}

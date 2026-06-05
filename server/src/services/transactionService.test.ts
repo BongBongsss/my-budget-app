@@ -15,6 +15,16 @@ vi.mock('../db', () => ({
         create: vi.fn(),
         createMany: vi.fn(),
       },
+      importRow: {
+        findMany: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        updateMany: vi.fn(),
+        createMany: vi.fn(),
+      },
+      importBatch: {
+        create: vi.fn(),
+      },
     })),
     transaction: {
       findMany: vi.fn(),
@@ -26,6 +36,16 @@ vi.mock('../db', () => ({
     auditLog: {
       create: vi.fn(),
       createMany: vi.fn(),
+    },
+    importRow: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      update: vi.fn(),
+      updateMany: vi.fn(),
+      createMany: vi.fn(),
+    },
+    importBatch: {
+      create: vi.fn(),
     },
     categoryRule: {
       findMany: vi.fn(),
@@ -40,6 +60,7 @@ describe('TransactionService (Soft Delete Test)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (prisma.categoryRule.findMany as any).mockResolvedValue([]);
+    (prisma.importRow.findMany as any).mockResolvedValue([]);
   });
 
   it('getAllTransactions는 isDeleted가 false인 데이터만 가져와야 한다', async () => {
@@ -53,7 +74,7 @@ describe('TransactionService (Soft Delete Test)', () => {
     // 검증: Prisma 호출 시 where 절에 isDeleted: false가 포함되었는가?
     expect(prisma.transaction.findMany).toHaveBeenCalledWith(
       expect.objectContaining({
-        where: { isDeleted: false }
+        where: { isDeleted: false, isVerified: true }
       })
     );
   });

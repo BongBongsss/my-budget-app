@@ -2,6 +2,10 @@ node_modules/
 dist/
 server/dist/
 .env
+.env.*
+!.env.example
+!server/.env.example
+!server/.env.local.example
 .DS_Store
 *.log
 budget.db

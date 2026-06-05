@@ -1,6 +1,6 @@
+import './env';
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import session from 'express-session';
 import bcrypt from 'bcryptjs';
 import prisma, { initDb } from './db';
@@ -20,8 +20,6 @@ import connectPgSimple from 'connect-pg-simple';
 import { errorHandler } from './middleware/errorHandler';
 import { UnauthorizedError, BadRequestError } from './utils/errors';
 import { asyncHandler } from './utils/asyncHandler';
-
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -77,6 +75,13 @@ const isAuthenticated = (req: any, res: any, next: any) => {
     return next();
   }
   next(new UnauthorizedError());
+};
+
+const isAdmin = (req: any, res: any, next: any) => {
+  if (req.session?.role === 'admin') {
+    return next();
+  }
+  next(new UnauthorizedError('Admin role required'));
 };
 
 app.post('/api/login', asyncHandler(async (req: any, res: any) => {
@@ -142,6 +147,12 @@ app.post('/api/change-password', asyncHandler(async (req: any, res: any) => {
 app.use('/api', (req, res, next) => {
     if (req.path === '/login' || req.path === '/health' || req.path === '/auth-status') return next();
     isAuthenticated(req, res, next);
+});
+
+app.use('/api', (req, res, next) => {
+    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();
+    if (req.path === '/logout' || req.path === '/change-password') return next();
+    isAdmin(req, res, next);
 });
 
 app.use('/api/rules', ruleRoutes);

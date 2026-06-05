@@ -6,12 +6,13 @@ import {
   updateTransaction, 
   deleteTransaction,
   bulkAddTransactions,
+  stageImportRows,
   applyAutoRulesToExisting,
   verifyTransactions,
   cleanupTransactions,
   bulkDeleteTransactions
 } from '../services/transactionService';
-import { parseCSV, parseExcel } from '../services/importService';
+import { parseCSVForImport, parseExcelForImport } from '../services/importService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
 
@@ -59,17 +60,19 @@ router.post('/import', upload.single('file'), asyncHandler(async (req: Request, 
 
   const buffer = req.file.buffer;
   const filename = req.file.originalname.toLowerCase();
-  let transactions;
+  let rows;
 
   if (filename.endsWith('.csv')) {
-    transactions = parseCSV(buffer);
+    rows = parseCSVForImport(buffer);
   } else if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
-    transactions = parseExcel(buffer);
+    rows = parseExcelForImport(buffer);
   } else {
     throw new BadRequestError('Unsupported file format');
   }
-  
-  res.status(200).json(transactions);
+
+  const summary = await stageImportRows(rows, req.file.originalname, getAuditActor(req));
+  const results = await getAllTransactions();
+  res.status(201).json({ success: true, summary, transactions: results });
 }));
 
 router.post('/bulk', asyncHandler(async (req: Request, res: Response) => {

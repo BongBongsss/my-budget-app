@@ -96,6 +96,78 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   margin-bottom: 1.5rem;
 }
 
+.import-result-modal {
+  background: white;
+  width: min(560px, calc(100vw - 2rem));
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 20px 25px -5px rgba(15, 23, 42, 0.18), 0 10px 10px -5px rgba(15, 23, 42, 0.08);
+}
+
+.import-result-note {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.import-result-note strong {
+  color: #334155;
+}
+
+.import-result-note p {
+  margin: 0.35rem 0 0.75rem;
+  color: #64748b;
+  font-size: 0.88rem;
+}
+
+.import-result-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.import-result-section-title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 1.25rem 0 0.65rem;
+}
+
+.import-result-section-title strong {
+  color: #334155;
+  font-size: 0.98rem;
+}
+
+.import-result-section-title span {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.import-result-grid div {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 0.75rem;
+  background: white;
+}
+
+.import-result-grid.compact div {
+  padding: 0.55rem 0.65rem;
+}
+
+.import-result-grid span {
+  display: block;
+  color: #64748b;
+  font-size: 0.78rem;
+  margin-bottom: 0.2rem;
+}
+
+.import-result-grid strong {
+  color: #1e293b;
+  font-size: 1rem;
+}
+
 .category-table {
   width: 100%;
   border-collapse: collapse;

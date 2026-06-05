@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getAuditLogs, restoreTransactionFromAuditLog } from '../services/auditLogService';
+import { saveAssetHistory } from '../services/assetService';
 import { asyncHandler } from '../utils/asyncHandler';
 
 const router = Router();
@@ -24,6 +25,9 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => {
   const transaction = await restoreTransactionFromAuditLog(String(req.params.id), getAuditActor(req));
+  if ((transaction as any)?.type && Object.prototype.hasOwnProperty.call(transaction as any, 'balance')) {
+    await saveAssetHistory();
+  }
   res.json({ success: true, transaction });
 }));
 

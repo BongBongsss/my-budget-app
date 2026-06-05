@@ -10,8 +10,8 @@ interface SummaryProps {
   setYear: (y: number) => void;
   month: number;
   setMonth: (m: number) => void;
-  memberFilter: 'all' | '효' | '굥';
-  setMemberFilter: (m: 'all' | '효' | '굥') => void;
+  memberFilter: 'all' | '효' | '굥' | '미지정';
+  setMemberFilter: (m: 'all' | '효' | '굥' | '미지정') => void;
 }
 
 const Summary: React.FC<SummaryProps> = ({ transactions, period, setPeriod, year, setYear, month, setMonth, memberFilter, setMemberFilter }) => {
@@ -66,6 +66,13 @@ const Summary: React.FC<SummaryProps> = ({ transactions, period, setPeriod, year
             style={{ fontSize: '0.75rem', padding: '2px 8px' }}
           >
             굥
+          </button>
+          <button
+            className={`btn ${memberFilter === '미지정' ? 'btn-primary' : 'btn-secondary'}`}
+            onClick={() => setMemberFilter('미지정')}
+            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
+          >
+            미지정
           </button>
         </div>
       </div>

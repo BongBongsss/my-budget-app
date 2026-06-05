@@ -1,5 +1,6 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
+import { AuditActor, buildAuditLogData } from './auditLogService';
 
 export const saveAssetHistory = async () => {
   const assets = await prisma.asset.findMany({
@@ -33,31 +34,77 @@ export const getAllAssets = async () => {
   });
 };
 
-export const addAsset = async (data: any) => {
-  const asset = await prisma.asset.create({
-    data: {
-      id: randomUUID(),
-      ...data,
-      isDeleted: false
-    },
+export const addAsset = async (data: any, actor?: AuditActor) => {
+  const asset = await prisma.$transaction(async (tx) => {
+    const created = await tx.asset.create({
+      data: {
+        id: randomUUID(),
+        ...data,
+        isDeleted: false
+      },
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'asset',
+        entityId: created.id,
+        action: 'create',
+        afterData: created,
+        actor,
+      }),
+    });
+
+    return created;
   });
   await saveAssetHistory();
   return asset;
 };
 
-export const updateAsset = async (id: string, data: any) => {
-  const asset = await prisma.asset.update({
-    where: { id },
-    data,
+export const updateAsset = async (id: string, data: any, actor?: AuditActor) => {
+  const asset = await prisma.$transaction(async (tx) => {
+    const before = await tx.asset.findUnique({ where: { id } });
+    const updated = await tx.asset.update({
+      where: { id },
+      data,
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'asset',
+        entityId: updated.id,
+        action: 'update',
+        beforeData: before,
+        afterData: updated,
+        actor,
+      }),
+    });
+
+    return updated;
   });
   await saveAssetHistory();
   return asset;
 };
 
-export const deleteAsset = async (id: string) => {
-  const asset = await prisma.asset.update({
-    where: { id },
-    data: { isDeleted: true }
+export const deleteAsset = async (id: string, actor?: AuditActor) => {
+  const asset = await prisma.$transaction(async (tx) => {
+    const before = await tx.asset.findUnique({ where: { id } });
+    const deleted = await tx.asset.update({
+      where: { id },
+      data: { isDeleted: true }
+    });
+
+    await tx.auditLog.create({
+      data: buildAuditLogData({
+        entityType: 'asset',
+        entityId: deleted.id,
+        action: 'delete',
+        beforeData: before,
+        afterData: deleted,
+        actor,
+      }),
+    });
+
+    return deleted;
   });
   await saveAssetHistory();
   return asset;
