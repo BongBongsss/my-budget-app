@@ -250,7 +250,7 @@ function App() {
             <History size={18} /> 활동 로그
           </button>
         </nav>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
           <NoticeCenter isAdmin={userRole === 'admin'} />
 
           {/* Admin 전용 버튼: Import */}

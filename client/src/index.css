@@ -6,8 +6,17 @@
   background-color: #e0f2fe; /* 옅은 하늘색으로 변경 */
 }
 
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+}
+
 .container {
-  max-width: 1200px; /* 컨테이너 폭 확장 */
+  width: 100%;
+  max-width: 1400px; /* 컨테이너 폭 확장 */
   margin: 0 auto;
   padding: 2rem;
 }
@@ -61,6 +70,8 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   border-radius: 12px;
   box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
   font-size: 13px; /* 글자 크기를 13px로 조정 */
+  max-width: 100%;
+  overflow-x: auto;
 }
 
 table { width: 100%; border-collapse: collapse; }
