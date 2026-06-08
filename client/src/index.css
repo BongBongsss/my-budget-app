@@ -24,11 +24,44 @@ body {
 h1 { font-size: 2.5rem; margin-bottom: 2rem; color: #1e293b; }
 h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.app-title {
+  flex: 1 1 260px;
+  min-width: 0;
+  margin: 0;
+  font-size: 1.5rem;
+}
+
+.app-nav {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+.header-actions {
+  flex: 1 1 320px;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .grid { 
   display: grid; 
   gap: 1.5rem; 
   margin-top: 1rem;
   margin-bottom: 1rem;
+}
+.grid > * {
+  min-width: 0;
 }
 .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
 .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
@@ -341,6 +374,10 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   padding: 4px;
   border-radius: 12px;
   box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .nav-item {

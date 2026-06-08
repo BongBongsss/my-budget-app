@@ -228,9 +228,9 @@ function App() {
 
   return (
     <div className="container">
-      <header className="header" style={{ display: 'grid', gridTemplateColumns: '1fr auto 1fr', alignItems: 'center', marginBottom: '1rem' }}>
-        <h1 style={{ margin: 0, fontSize: '1.5rem' }}>Smart Budget Manager</h1>
-        <nav className="main-nav" style={{ display: 'flex', gap: '10px', justifyContent: 'center' }}>
+      <header className="header app-header">
+        <h1 className="app-title">Smart Budget Manager</h1>
+        <nav className="main-nav app-nav">
           <button 
             className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
             onClick={() => setCurrentView('budget')}
@@ -250,7 +250,7 @@ function App() {
             <History size={18} /> 활동 로그
           </button>
         </nav>
-        <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end', flexWrap: 'wrap' }}>
+        <div className="header-actions">
           <NoticeCenter isAdmin={userRole === 'admin'} />
 
           {/* Admin 전용 버튼: Import */}
