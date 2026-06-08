@@ -5,8 +5,10 @@ export const getIgnoredRules = async () => {
 };
 
 export const ignoreRule = async (keyword: string) => {
-  return await prisma.ignoredRule.create({
-    data: { keyword }
+  return await prisma.ignoredRule.upsert({
+    where: { keyword },
+    update: {},
+    create: { keyword }
   });
 };
 
