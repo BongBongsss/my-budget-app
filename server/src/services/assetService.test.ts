@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 // Prisma Mocking
 vi.mock('../db', () => ({
   default: {
+    $transaction: vi.fn(),
     asset: {
       findMany: vi.fn(),
     },
@@ -13,11 +14,12 @@ vi.mock('../db', () => ({
 }));
 
 import prisma from '../db';
-import { saveAssetHistory } from './assetService';
+import { saveAssetHistory, updateAsset } from './assetService';
 
 describe('AssetService - History Calculation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    (prisma.assetHistory.upsert as any).mockResolvedValue({});
   });
 
   it('자산과 부채를 합산하여 순자산을 정확히 계산하고 저장해야 한다', async () => {
@@ -70,5 +72,50 @@ describe('AssetService - History Calculation', () => {
         })
       })
     );
+  });
+
+  it('asset update should ignore system fields so updatedAt can be refreshed by Prisma', async () => {
+    const before = {
+      id: 'asset-1',
+      name: 'Old',
+      type: 'liability',
+      balance: 1,
+      memo: '',
+      createdAt: new Date('2026-05-06T00:00:00.000Z'),
+      updatedAt: new Date('2026-05-06T00:00:00.000Z'),
+      isDeleted: false,
+    };
+    const tx = {
+      asset: {
+        findUnique: vi.fn().mockResolvedValue(before),
+        update: vi.fn().mockResolvedValue({ ...before, name: 'New' }),
+      },
+      auditLog: {
+        create: vi.fn().mockResolvedValue({}),
+      },
+    };
+    (prisma.$transaction as any).mockImplementation((callback: any) => callback(tx));
+    (prisma.asset.findMany as any).mockResolvedValue([]);
+
+    await updateAsset('asset-1', {
+      id: 'asset-1',
+      name: 'New',
+      type: 'liability',
+      balance: 15000000,
+      memo: 'memo',
+      createdAt: '2026-05-06T00:00:00.000Z',
+      updatedAt: '2026-05-06T00:00:00.000Z',
+      isDeleted: true,
+    });
+
+    expect(tx.asset.update).toHaveBeenCalledWith({
+      where: { id: 'asset-1' },
+      data: {
+        name: 'New',
+        type: 'liability',
+        balance: 15000000,
+        memo: 'memo',
+      },
+    });
   });
 });

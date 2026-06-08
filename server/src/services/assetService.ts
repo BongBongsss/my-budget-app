@@ -2,6 +2,15 @@ import prisma from '../db';
 import { randomUUID } from 'crypto';
 import { AuditActor, buildAuditLogData } from './auditLogService';
 
+const pickAssetInput = (data: any) => {
+  const input: any = {};
+  if (data.name !== undefined) input.name = data.name;
+  if (data.type !== undefined) input.type = data.type;
+  if (data.balance !== undefined) input.balance = data.balance;
+  if (data.memo !== undefined) input.memo = data.memo;
+  return input;
+};
+
 export const saveAssetHistory = async () => {
   const assets = await prisma.asset.findMany({
     where: { isDeleted: false }
@@ -39,7 +48,7 @@ export const addAsset = async (data: any, actor?: AuditActor) => {
     const created = await tx.asset.create({
       data: {
         id: randomUUID(),
-        ...data,
+        ...pickAssetInput(data),
         isDeleted: false
       },
     });
@@ -65,7 +74,7 @@ export const updateAsset = async (id: string, data: any, actor?: AuditActor) => 
     const before = await tx.asset.findUnique({ where: { id } });
     const updated = await tx.asset.update({
       where: { id },
-      data,
+      data: pickAssetInput(data),
     });
 
     await tx.auditLog.create({
