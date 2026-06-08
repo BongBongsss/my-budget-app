@@ -206,6 +206,58 @@ export const initDb = async () => {
     throw err;
   }
 
+  // Review request table check/creation
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "ReviewRequest" (
+        "id" text NOT NULL PRIMARY KEY,
+        "targetType" text NOT NULL,
+        "targetId" text,
+        "type" text NOT NULL DEFAULT 'question',
+        "title" text NOT NULL,
+        "body" text NOT NULL,
+        "status" text NOT NULL DEFAULT 'open',
+        "authorRole" text,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ReviewRequest_targetType_targetId_idx" ON "ReviewRequest" ("targetType", "targetId");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ReviewRequest_status_idx" ON "ReviewRequest" ("status");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "ReviewRequest_createdAt_idx" ON "ReviewRequest" ("createdAt");`);
+
+    console.log("Review request table check/creation completed.");
+  } catch (err) {
+    console.error("Failed to initialize review request table:", err);
+    throw err;
+  }
+
+  // Notice table check/creation
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "Notice" (
+        "id" text NOT NULL PRIMARY KEY,
+        "title" text NOT NULL,
+        "body" text NOT NULL,
+        "isActive" boolean NOT NULL DEFAULT true,
+        "readByAdmin" boolean NOT NULL DEFAULT false,
+        "readByViewer" boolean NOT NULL DEFAULT false,
+        "authorRole" text,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Notice_isActive_idx" ON "Notice" ("isActive");`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "Notice_createdAt_idx" ON "Notice" ("createdAt");`);
+
+    console.log("Notice table check/creation completed.");
+  } catch (err) {
+    console.error("Failed to initialize notice table:", err);
+    throw err;
+  }
+
   // Initial password seeding
   try {
     const adminPassword = process.env.ADMIN_PASSWORD;

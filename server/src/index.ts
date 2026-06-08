@@ -14,6 +14,8 @@ import suggestionRoutes from './routes/suggestionRoutes';
 import ignoredRuleRoutes from './routes/ignoredRuleRoutes';
 import exclusionRuleRoutes from './routes/exclusionRuleRoutes';
 import auditLogRoutes from './routes/auditLogRoutes';
+import reviewRequestRoutes from './routes/reviewRequestRoutes';
+import noticeRoutes from './routes/noticeRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
@@ -38,7 +40,7 @@ app.use(cors({
     }
   },
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -148,6 +150,9 @@ app.use('/api', (req, res, next) => {
     if (req.path === '/login' || req.path === '/health' || req.path === '/auth-status') return next();
     isAuthenticated(req, res, next);
 });
+
+app.use('/api/review-requests', reviewRequestRoutes);
+app.use('/api/notices', noticeRoutes);
 
 app.use('/api', (req, res, next) => {
     if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) return next();

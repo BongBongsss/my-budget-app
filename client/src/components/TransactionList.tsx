@@ -1,6 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { Transaction, CategoryItem } from '../api';
-import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp } from 'lucide-react';
+import {
+  CategoryItem,
+  ReviewRequest,
+  Transaction,
+  createReviewRequest,
+  deleteReviewRequest,
+  getReviewRequests,
+  updateReviewRequestStatus,
+} from '../api';
+import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp, MessageCircle } from 'lucide-react';
 import { getGroupName } from '../utils/categoryUtils';
 
 interface TransactionListProps {
@@ -11,7 +19,7 @@ interface TransactionListProps {
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
   onVerify?: (ids: string[]) => void;
-  onRefresh: () => void;
+  onRefresh: () => void | Promise<void>;
   period: 'all' | 'month' | 'year';
   setPeriod: (p: 'all' | 'month' | 'year') => void;
   year: number;
@@ -46,6 +54,18 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkSubcategory, setBulkSubcategory] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reviewFilter, setReviewFilter] = useState<'all' | 'none' | 'resolved' | 'open'>('all');
+  const [reviewTarget, setReviewTarget] = useState<Transaction | null>(null);
+  const [reviewRequests, setReviewRequests] = useState<ReviewRequest[]>([]);
+  const [reviewLoading, setReviewLoading] = useState(false);
+  const [reviewType, setReviewType] = useState<'question' | 'change_request'>('question');
+  const [reviewTitle, setReviewTitle] = useState('');
+  const [reviewBody, setReviewBody] = useState('');
+
+  const refreshReviewState = async (target: Transaction) => {
+    await loadReviewRequests(target);
+    await onRefresh();
+  };
 
   const setCurrentPage = (value: number | ((prev: number) => number)) => {
     setPageByScope((pages) => {
@@ -86,6 +106,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
   };
 
   const filteredTransactions = transactions.filter(tx => {
+    if (reviewFilter !== 'all' && (tx.reviewStatus || 'none') !== reviewFilter) return false;
+
     if (filterType === 'date') {
       if (!startDate && !endDate) return true;
       const txDate = tx.date;
@@ -118,6 +140,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const filteredExpense = filteredTransactions
     .filter(t => t.type === 'expense')
     .reduce((sum, t) => sum + t.amount, 0);
+
+  const reviewCounts = transactions.reduce((acc, tx) => {
+    const status = tx.reviewStatus || 'none';
+    acc[status] = (acc[status] || 0) + 1;
+    return acc;
+  }, { none: 0, resolved: 0, open: 0 } as Record<'none' | 'resolved' | 'open', number>);
 
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
 
@@ -188,6 +216,57 @@ const TransactionList: React.FC<TransactionListProps> = ({
     onRefresh();
   };
 
+  const getReviewTargetType = (tx: Transaction): 'transaction' | 'importRow' => (
+    tx.reviewTargetType || (tx.isVerified === false ? 'importRow' : 'transaction')
+  );
+
+  const loadReviewRequests = async (tx: Transaction) => {
+    if (!tx.id) return;
+    setReviewLoading(true);
+    try {
+      const res = await getReviewRequests({
+        targetType: getReviewTargetType(tx),
+        targetId: tx.id,
+      });
+      setReviewRequests(res.data);
+    } finally {
+      setReviewLoading(false);
+    }
+  };
+
+  const openReviewPanel = async (tx: Transaction) => {
+    setReviewTarget(tx);
+    setReviewType('question');
+    setReviewTitle(`${tx.vendor} 확인요청`);
+    setReviewBody('');
+    await loadReviewRequests(tx);
+  };
+
+  const handleCreateReview = async () => {
+    if (!reviewTarget?.id || !reviewTitle.trim() || !reviewBody.trim()) return;
+    await createReviewRequest({
+      targetType: getReviewTargetType(reviewTarget),
+      targetId: reviewTarget.id,
+      type: reviewType,
+      title: reviewTitle.trim(),
+      body: reviewBody.trim(),
+    });
+    setReviewBody('');
+    await refreshReviewState(reviewTarget);
+  };
+
+  const handleToggleReviewStatus = async (request: ReviewRequest) => {
+    if (!reviewTarget) return;
+    await updateReviewRequestStatus(request.id, request.status === 'open' ? 'done' : 'open');
+    await refreshReviewState(reviewTarget);
+  };
+
+  const handleDeleteReview = async (request: ReviewRequest) => {
+    if (!reviewTarget || !window.confirm('이 확인요청을 삭제하시겠습니까?')) return;
+    await deleteReviewRequest(request.id);
+    await refreshReviewState(reviewTarget);
+  };
+
   const renderPagination = () => {
     const pages: (number | string)[] = [];
     const delta = 2;
@@ -228,6 +307,12 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
   const months = Array.from({ length: 12 }, (_, i) => i + 1);
+
+  const getReviewColor = (tx: Transaction) => {
+    if ((tx.openReviewCount || 0) > 0) return '#dc2626';
+    if ((tx.reviewCount || 0) > 0) return '#2563eb';
+    return '#94a3b8';
+  };
 
   return (
     <div className="transaction-list">
@@ -280,6 +365,15 @@ const TransactionList: React.FC<TransactionListProps> = ({
           >
             미지정
           </button>
+        </div>
+
+        <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+
+        <div className="flex gap-1 items-center">
+          <span style={{ fontSize: '0.75rem', color: '#475569', marginRight: '2px' }}>요청</span>
+          <button className={`btn ${reviewFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setReviewFilter('all'); setCurrentPage(1); }} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>전체</button>
+          <button className={`btn ${reviewFilter === 'resolved' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setReviewFilter('resolved'); setCurrentPage(1); }} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>처리됨 ({reviewCounts.resolved})</button>
+          <button className={`btn ${reviewFilter === 'open' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setReviewFilter('open'); setCurrentPage(1); }} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>미확인 ({reviewCounts.open})</button>
         </div>
       </div>
 
@@ -422,6 +516,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
                             <ThumbsUp size={16} color="green" />
                           </button>
                         )}
+                        <button onClick={() => openReviewPanel(tx)} className="btn-icon" title="확인요청" style={{ position: 'relative' }}>
+                          <MessageCircle size={16} color={getReviewColor(tx)} />
+                          {(tx.reviewCount || 0) > 0 && (
+                            <span style={{
+                              position: 'absolute',
+                              top: '-6px',
+                              right: '-6px',
+                              minWidth: '14px',
+                              height: '14px',
+                              padding: '0 3px',
+                              borderRadius: '999px',
+                              background: (tx.openReviewCount || 0) > 0 ? '#dc2626' : '#2563eb',
+                              color: '#fff',
+                              fontSize: '10px',
+                              lineHeight: '14px',
+                              textAlign: 'center',
+                            }}>
+                              {(tx.openReviewCount || 0) > 0 ? tx.openReviewCount : tx.reviewCount}
+                            </span>
+                          )}
+                        </button>
                         <button onClick={() => startEdit(tx)} className="btn-icon" title="수정"><Edit2 size={16} /></button>
                         <button
                           onClick={() => {
@@ -436,7 +551,27 @@ const TransactionList: React.FC<TransactionListProps> = ({
                         </button>
                       </div>
                     ) : (
-                      <span style={{ color: '#94a3b8' }}>-</span>
+                      <button onClick={() => openReviewPanel(tx)} className="btn-icon" title="확인요청" style={{ position: 'relative' }}>
+                        <MessageCircle size={16} color={getReviewColor(tx)} />
+                        {(tx.reviewCount || 0) > 0 && (
+                          <span style={{
+                            position: 'absolute',
+                            top: '-6px',
+                            right: '-6px',
+                            minWidth: '14px',
+                            height: '14px',
+                            padding: '0 3px',
+                            borderRadius: '999px',
+                            background: (tx.openReviewCount || 0) > 0 ? '#dc2626' : '#2563eb',
+                            color: '#fff',
+                            fontSize: '10px',
+                            lineHeight: '14px',
+                            textAlign: 'center',
+                          }}>
+                            {(tx.openReviewCount || 0) > 0 ? tx.openReviewCount : tx.reviewCount}
+                          </span>
+                        )}
+                      </button>
                     )}
                   </td>
                 </>
@@ -450,6 +585,75 @@ const TransactionList: React.FC<TransactionListProps> = ({
         {renderPagination()}
         <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>다음</button>
       </div>
+
+      {reviewTarget && (
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          background: 'rgba(15, 23, 42, 0.35)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '20px',
+        }}>
+          <div style={{ width: 'min(680px, 100%)', maxHeight: '85vh', overflow: 'auto', background: '#fff', borderRadius: '8px', padding: '18px', boxShadow: '0 18px 45px rgba(15, 23, 42, 0.25)' }}>
+            <div className="flex justify-between items-start mb-3">
+              <div>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>확인요청</h3>
+                <p style={{ fontSize: '0.85rem', color: '#64748b', margin: '4px 0 0' }}>
+                  {reviewTarget.date} {reviewTarget.vendor} {reviewTarget.amount.toLocaleString()}원
+                </p>
+              </div>
+              <button className="btn-icon" onClick={() => setReviewTarget(null)} title="닫기"><X size={18} /></button>
+            </div>
+
+            <div style={{ display: 'grid', gap: '8px', padding: '10px', background: '#f8fafc', borderRadius: '6px', marginBottom: '12px' }}>
+              <div className="flex gap-2">
+                <select value={reviewType} onChange={(e) => setReviewType(e.target.value as any)} className="edit-input" style={{ width: '120px' }}>
+                  <option value="question">확인요청</option>
+                  <option value="change_request">수정요청</option>
+                </select>
+                <input value={reviewTitle} onChange={(e) => setReviewTitle(e.target.value)} className="edit-input" placeholder="제목" style={{ flex: 1 }} />
+              </div>
+              <textarea value={reviewBody} onChange={(e) => setReviewBody(e.target.value)} className="edit-input" placeholder="내용을 입력하세요" rows={3} style={{ width: '100%', resize: 'vertical' }} />
+              <div className="flex justify-end">
+                <button className="btn btn-primary" onClick={handleCreateReview} disabled={!reviewTitle.trim() || !reviewBody.trim()}>등록</button>
+              </div>
+            </div>
+
+            {reviewLoading ? (
+              <div style={{ color: '#64748b', fontSize: '0.9rem' }}>불러오는 중...</div>
+            ) : reviewRequests.length === 0 ? (
+              <div style={{ color: '#94a3b8', fontSize: '0.9rem', padding: '14px 0' }}>아직 확인요청이 없습니다.</div>
+            ) : (
+              <div style={{ display: 'grid', gap: '8px' }}>
+                {reviewRequests.map((request) => (
+                  <div key={request.id} style={{ border: '1px solid #e2e8f0', borderRadius: '6px', padding: '10px', background: request.status === 'open' ? '#fff7ed' : '#f8fafc' }}>
+                    <div className="flex justify-between gap-2">
+                      <div>
+                        <div style={{ fontWeight: 700 }}>{request.title}</div>
+                        <div style={{ fontSize: '0.78rem', color: '#64748b' }}>
+                          {request.type === 'change_request' ? '수정요청' : '확인요청'} · {request.status === 'open' ? '미확인' : '완료'} · {new Date(request.createdAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <div className="flex gap-1">
+                        <button className="btn btn-secondary" style={{ fontSize: '0.75rem', padding: '2px 8px' }} onClick={() => handleToggleReviewStatus(request)}>
+                          {request.status === 'open' ? '완료' : '다시 열기'}
+                        </button>
+                        {isAdmin && (
+                          <button className="btn btn-danger" style={{ fontSize: '0.75rem', padding: '2px 8px' }} onClick={() => handleDeleteReview(request)}>삭제</button>
+                        )}
+                      </div>
+                    </div>
+                    <div style={{ whiteSpace: 'pre-wrap', marginTop: '8px', fontSize: '0.9rem' }}>{request.body}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -9,6 +9,7 @@ import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
 import AssetManager from './components/AssetManager';
 import AuditLogView from './components/AuditLogView';
+import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
@@ -250,6 +251,8 @@ function App() {
           </button>
         </nav>
         <div style={{ display: 'flex', gap: '10px', justifyContent: 'flex-end' }}>
+          <NoticeCenter isAdmin={userRole === 'admin'} />
+
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
             <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>

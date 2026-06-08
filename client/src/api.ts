@@ -65,6 +65,35 @@ export interface Transaction {
   rowNumber?: number;
   batchId?: string;
   member?: string;
+  reviewTargetType?: 'transaction' | 'importRow';
+  reviewCount?: number;
+  openReviewCount?: number;
+  reviewStatus?: 'none' | 'resolved' | 'open';
+}
+
+export interface ReviewRequest {
+  id: string;
+  targetType: 'general' | 'transaction' | 'importRow' | 'asset';
+  targetId?: string | null;
+  type: 'question' | 'change_request';
+  title: string;
+  body: string;
+  status: 'open' | 'done';
+  authorRole?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Notice {
+  id: string;
+  title: string;
+  body: string;
+  isActive: boolean;
+  readByAdmin: boolean;
+  readByViewer: boolean;
+  authorRole?: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface CategoryRule {
@@ -137,6 +166,23 @@ export const deleteTransaction = (id: string) => instance.delete(`/transactions/
 export const bulkDeleteTransactions = (ids: string[]) => instance.delete('/transactions/bulk', { data: { ids } });
 export const verifyTransactions = (ids: string[]) => instance.post('/transactions/verify', { ids });
 export const cleanupTransactions = () => instance.post('/transactions/cleanup');
+
+// Review Requests
+export const getReviewRequests = (params?: { targetType?: string; targetId?: string; status?: string }) =>
+  instance.get<ReviewRequest[]>('/review-requests', { params });
+export const createReviewRequest = (request: Partial<ReviewRequest>) =>
+  instance.post<ReviewRequest>('/review-requests', request);
+export const updateReviewRequestStatus = (id: string, status: 'open' | 'done') =>
+  instance.patch<ReviewRequest>(`/review-requests/${id}/status`, { status });
+export const deleteReviewRequest = (id: string) => instance.delete(`/review-requests/${id}`);
+
+// Notices
+export const getNotices = (params?: { unread?: boolean }) =>
+  instance.get<Notice[]>('/notices', { params });
+export const createNotice = (notice: { title: string; body: string }) =>
+  instance.post<Notice>('/notices', notice);
+export const markNoticeRead = (id: string) => instance.patch<Notice>(`/notices/${id}/read`);
+export const deleteNotice = (id: string) => instance.delete(`/notices/${id}`);
 
 export const importFile = (file: File) => {
   const formData = new FormData();

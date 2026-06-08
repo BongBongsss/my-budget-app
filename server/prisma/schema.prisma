@@ -166,3 +166,35 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
 }
+
+model ReviewRequest {
+  id         String   @id @default(uuid())
+  targetType String
+  targetId   String?
+  type       String   @default("question")
+  title      String
+  body       String
+  status     String   @default("open")
+  authorRole String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @default(now()) @updatedAt
+
+  @@index([targetType, targetId])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Notice {
+  id           String   @id @default(uuid())
+  title        String
+  body         String
+  isActive     Boolean  @default(true)
+  readByAdmin  Boolean  @default(false)
+  readByViewer Boolean  @default(false)
+  authorRole   String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @default(now()) @updatedAt
+
+  @@index([isActive])
+  @@index([createdAt])
+}

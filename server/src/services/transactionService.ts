@@ -4,6 +4,7 @@ import { randomUUID } from 'crypto';
 import { Transaction } from '@prisma/client';
 import { AuditActor, buildAuditLogData } from './auditLogService';
 import { ParsedImportRow } from './importService';
+import { getReviewSummaries } from './reviewRequestService';
 
 type DuplicateComparable = Pick<Transaction, 'date' | 'time' | 'type' | 'vendor' | 'amount' | 'source'>;
 
@@ -69,10 +70,25 @@ export const getAllTransactions = async (): Promise<any[]> => {
     }),
   ]);
 
-  return [
-    ...transactions,
-    ...importRows.map(mapImportRowToTransaction),
+  const mappedImportRows = importRows.map(mapImportRowToTransaction);
+  const rows = [
+    ...transactions.map((transaction) => ({ ...transaction, reviewTargetType: 'transaction' })),
+    ...mappedImportRows.map((row) => ({ ...row, reviewTargetType: 'importRow' })),
   ];
+  const reviewSummaries = await getReviewSummaries(
+    rows
+      .filter((row) => row.id)
+      .map((row) => ({ targetType: row.reviewTargetType, targetId: row.id }))
+  );
+
+  return rows.map((row) => {
+    const summary = reviewSummaries.get(`${row.reviewTargetType}:${row.id}`) || {
+      reviewCount: 0,
+      openReviewCount: 0,
+      reviewStatus: 'none',
+    };
+    return { ...row, ...summary };
+  });
 };
 
 export const stageImportRows = async (rows: ParsedImportRow[], filename?: string, actor?: AuditActor) => {

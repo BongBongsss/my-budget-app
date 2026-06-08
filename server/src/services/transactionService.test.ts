@@ -25,6 +25,9 @@ vi.mock('../db', () => ({
       importBatch: {
         create: vi.fn(),
       },
+      reviewRequest: {
+        findMany: vi.fn(),
+      },
     })),
     transaction: {
       findMany: vi.fn(),
@@ -47,6 +50,9 @@ vi.mock('../db', () => ({
     importBatch: {
       create: vi.fn(),
     },
+    reviewRequest: {
+      findMany: vi.fn(),
+    },
     categoryRule: {
       findMany: vi.fn(),
     },
@@ -61,6 +67,7 @@ describe('TransactionService (Soft Delete Test)', () => {
     vi.clearAllMocks();
     (prisma.categoryRule.findMany as any).mockResolvedValue([]);
     (prisma.importRow.findMany as any).mockResolvedValue([]);
+    (prisma.reviewRequest.findMany as any).mockResolvedValue([]);
   });
 
   it('getAllTransactions는 isDeleted가 false인 데이터만 가져와야 한다', async () => {
