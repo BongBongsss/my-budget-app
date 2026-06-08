@@ -22,12 +22,13 @@ interface TransactionListProps {
   setMemberFilter: (m: 'all' | '효' | '굥' | '미지정') => void;
   isAdmin?: boolean;
   pageScope?: string;
+  externalFilterActive?: boolean;
 }
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
-  memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default'
+  memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default', externalFilterActive = false
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -324,7 +325,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
           </div>
 
-          {(searchQuery || startDate || endDate || search) && (
+          {(externalFilterActive || searchQuery || startDate || endDate || search) && (
             <div className="flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
               <span style={{ color: '#2563eb', marginRight: '15px' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
               <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>

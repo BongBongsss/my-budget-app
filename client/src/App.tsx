@@ -399,6 +399,7 @@ function App() {
             setMemberFilter={setMemberFilter}
             isAdmin={userRole === 'admin'}
             pageScope={activeTab}
+            externalFilterActive={!!chartFilter}
           />
         </div>
       ) : currentView === 'assets' ? (
