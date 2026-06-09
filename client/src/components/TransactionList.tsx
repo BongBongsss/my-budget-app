@@ -461,7 +461,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <th style={{ width: '25px' }}>{isAdmin && <input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? paginatedTransactions.map(t => t.id!) : [])} />}</th>
             <th style={{ width: '75px', cursor: 'pointer' }} onClick={() => requestSort('date')}>날짜</th>
             <th style={{ width: '40px', cursor: 'pointer' }} onClick={() => requestSort('time')}>시간</th>
-            <th style={{ width: '35px', cursor: 'pointer' }} onClick={() => requestSort('member')}>효/굥</th>
+            <th style={{ width: '50px', cursor: 'pointer', whiteSpace: 'nowrap' }} onClick={() => requestSort('member')}>효/굥</th>
             <th style={{ width: '45px', cursor: 'pointer' }} onClick={() => requestSort('type')}>타입</th>
             <th style={{ width: '70px', cursor: 'pointer' }} onClick={() => requestSort('group')}>상위 그룹</th>
             <th style={{ width: '80px', cursor: 'pointer' }} onClick={() => requestSort('category')}>대분류</th>
