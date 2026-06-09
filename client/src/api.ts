@@ -166,6 +166,8 @@ export const deleteTransaction = (id: string) => instance.delete(`/transactions/
 export const bulkDeleteTransactions = (ids: string[]) => instance.delete('/transactions/bulk', { data: { ids } });
 export const verifyTransactions = (ids: string[]) => instance.post('/transactions/verify', { ids });
 export const cleanupTransactions = () => instance.post('/transactions/cleanup');
+export const exportTransactionsBackup = () =>
+  instance.get<Blob>('/transactions/export', { responseType: 'blob' });
 
 // Review Requests
 export const getReviewRequests = (params?: { targetType?: string; targetId?: string; status?: string }) =>

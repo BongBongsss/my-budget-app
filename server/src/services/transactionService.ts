@@ -91,6 +91,21 @@ export const getAllTransactions = async (): Promise<any[]> => {
   });
 };
 
+export const exportTransactionsBackup = async () => {
+  const transactions = await prisma.transaction.findMany({
+    orderBy: [{ date: 'desc' }, { time: 'desc' }, { id: 'asc' }],
+  });
+
+  return {
+    version: 1,
+    type: 'transactions',
+    exportedAt: new Date().toISOString(),
+    includesDeleted: true,
+    count: transactions.length,
+    transactions,
+  };
+};
+
 export const stageImportRows = async (rows: ParsedImportRow[], filename?: string, actor?: AuditActor) => {
   const uniqueVendors = Array.from(new Set(
     rows

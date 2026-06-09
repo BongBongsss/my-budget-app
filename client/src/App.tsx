@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions } from './api';
+import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
@@ -13,7 +13,7 @@ import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, LogOut, BarChart3, Wallet, History } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -171,6 +171,26 @@ function App() {
     }
   };
 
+  const handleExportBackup = async () => {
+    if (userRole !== 'admin') return;
+    try {
+      const res = await exportTransactionsBackup();
+      const disposition = res.headers['content-disposition'] || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      const filename = match?.[1] || `transactions-backup-${new Date().toISOString().slice(0, 10)}.json`;
+      const url = window.URL.createObjectURL(res.data);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      alert('Export failed');
+    }
+  };
+
   const handleVerify = async (ids: string[]) => {
     if (userRole !== 'admin') return;
     try {
@@ -257,6 +277,11 @@ function App() {
           {userRole === 'admin' && (
             <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
                 <Upload size={18} style={{ marginRight: '5px' }} /> Import
+            </button>
+          )}
+          {userRole === 'admin' && (
+            <button className="btn btn-secondary" onClick={handleExportBackup}>
+                <Download size={18} style={{ marginRight: '5px' }} /> Export
             </button>
           )}
           <input type="file" ref={fileInputRef} onChange={handleFileImport} style={{ display: 'none' }} accept=".csv,.xlsx,.xls" />

@@ -11,11 +11,12 @@ import {
   applyAutoRulesToExisting,
   verifyTransactions,
   cleanupTransactions,
-  bulkDeleteTransactions
+  bulkDeleteTransactions,
+  exportTransactionsBackup
 } from '../services/transactionService';
 import { parseCSVForImport, parseExcelForImport } from '../services/importService';
 import { asyncHandler } from '../utils/asyncHandler';
-import { BadRequestError } from '../utils/errors';
+import { BadRequestError, UnauthorizedError } from '../utils/errors';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -24,6 +25,12 @@ const getAuditActor = (req: Request) => ({
   role: req.session?.role,
   ipAddress: req.ip,
 });
+
+const requireAdmin = (req: Request) => {
+  if (req.session?.role !== 'admin') {
+    throw new UnauthorizedError('Admin role required');
+  }
+};
 
 router.post('/cleanup', asyncHandler(async (req: Request, res: Response) => {
   const result = await cleanupTransactions();
@@ -47,6 +54,17 @@ router.post('/apply-rules', asyncHandler(async (req: Request, res: Response) => 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const transactions = await getAllTransactions();
   res.json(transactions);
+}));
+
+router.get('/export', asyncHandler(async (req: Request, res: Response) => {
+  requireAdmin(req);
+  const backup = await exportTransactionsBackup();
+  const date = new Date().toISOString().slice(0, 10);
+  const filename = `transactions-backup-${date}.json`;
+
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+  res.json(backup);
 }));
 
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
