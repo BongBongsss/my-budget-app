@@ -64,8 +64,8 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin }) => {
 
   return (
     <>
-      <button className="btn btn-secondary" onClick={() => setIsListOpen(true)} style={{ position: 'relative' }}>
-        <Bell size={18} />
+      <button className="btn btn-secondary header-action-btn" onClick={() => setIsListOpen(true)} style={{ position: 'relative' }}>
+        <Bell size={16} />
         공지
         {unreadCount > 0 && (
           <span className="notice-badge">{unreadCount}</span>

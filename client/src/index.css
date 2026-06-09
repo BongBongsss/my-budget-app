@@ -49,9 +49,10 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   flex: 1 1 320px;
   min-width: 0;
   display: flex;
+  align-items: center;
   justify-content: flex-end;
-  gap: 10px;
-  flex-wrap: wrap;
+  gap: 6px;
+  flex-wrap: nowrap;
 }
 
 .grid { 
@@ -363,6 +364,15 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   display: inline-flex;
   align-items: center;
   font-weight: 500;
+}
+
+.header-action-btn {
+  min-height: 30px;
+  padding: 2px 8px;
+  gap: 4px;
+  font-size: 0.8rem;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .btn-primary { background: #3b82f6; color: white; }

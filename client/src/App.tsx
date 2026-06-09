@@ -275,25 +275,25 @@ function App() {
 
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary" onClick={() => fileInputRef.current?.click()}>
-                <Upload size={18} style={{ marginRight: '5px' }} /> Import
+            <button className="btn btn-secondary header-action-btn" onClick={() => fileInputRef.current?.click()}>
+                <Upload size={16} /> Import
             </button>
           )}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary" onClick={handleExportBackup}>
-                <Download size={18} style={{ marginRight: '5px' }} /> Export
+            <button className="btn btn-secondary header-action-btn" onClick={handleExportBackup}>
+                <Download size={16} /> Export
             </button>
           )}
           <input type="file" ref={fileInputRef} onChange={handleFileImport} style={{ display: 'none' }} accept=".csv,.xlsx,.xls" />
           
           {/* Admin 전용 버튼: Settings */}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary" onClick={() => setIsSettingsModalOpen(true)}>
-                <Settings size={18} /> Settings
+            <button className="btn btn-secondary header-action-btn" onClick={() => setIsSettingsModalOpen(true)}>
+                <Settings size={16} /> Settings
             </button>
           )}
           
-          <button className="btn btn-danger" onClick={handleLogout} style={{ fontSize: '0.8rem', padding: '5px 10px' }}>
+          <button className="btn btn-danger header-action-btn" onClick={handleLogout}>
             LogOut
           </button>
         </div>
