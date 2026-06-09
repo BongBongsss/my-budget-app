@@ -8,7 +8,7 @@ import {
   getReviewRequests,
   updateReviewRequestStatus,
 } from '../api';
-import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp, MessageCircle } from 'lucide-react';
+import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp, MessageCircle, Download } from 'lucide-react';
 import { getGroupName } from '../utils/categoryUtils';
 
 interface TransactionListProps {
@@ -186,6 +186,49 @@ const TransactionList: React.FC<TransactionListProps> = ({
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   );
+
+  const toCsvCell = (value: unknown) => {
+    const text = value === null || value === undefined ? '' : String(value);
+    return `"${text.replace(/"/g, '""')}"`;
+  };
+
+  const getTypeLabel = (type: Transaction['type']) => {
+    if (type === 'income') return '수입';
+    if (type === 'expense') return '지출';
+    if (type === 'exclude') return '미반영';
+    return type;
+  };
+
+  const handleExportCsv = () => {
+    const headers = ['날짜', '시간', '효/굥', '타입', '상위 그룹', '대분류', '소분류', '내용', '금액', '결제수단', '메모'];
+    const rows = sortedTransactions.map((tx) => [
+      tx.date,
+      tx.time || '',
+      tx.member || '',
+      getTypeLabel(tx.type),
+      getGroupName(tx.category, categories),
+      tx.category || '',
+      tx.subcategory || '',
+      tx.vendor || '',
+      tx.amount ?? '',
+      tx.source || '',
+      tx.memo || '',
+    ]);
+    const csv = [
+      headers.map(toCsvCell).join(','),
+      ...rows.map((row) => row.map(toCsvCell).join(',')),
+    ].join('\r\n');
+    const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    const scope = pageScope === 'all' ? 'all' : pageScope;
+    link.href = url;
+    link.download = `transactions-${scope}-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(url);
+  };
 
   const toggleSelect = (id: string) => {
     if (!isAdmin) return;
@@ -426,11 +469,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
             </div>
           )}
 
-          <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
-            <option value={10}>10</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-          </select>
+          <div className="flex gap-1 items-center">
+            <button
+              className="btn btn-secondary"
+              onClick={handleExportCsv}
+              disabled={sortedTransactions.length === 0}
+              style={{ fontSize: '0.8rem', padding: '2px 8px' }}
+              title="현재 필터 결과 CSV export"
+            >
+              <Download size={16} style={{ marginRight: '4px' }} /> CSV
+            </button>
+            <select value={itemsPerPage} onChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+              <option value={10}>10</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+          </div>
         </div>
       </div>
 
