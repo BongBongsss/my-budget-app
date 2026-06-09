@@ -34,6 +34,26 @@ const buildDuplicateKey = (tx: Partial<DuplicateComparable>) => {
 
 const activeImportStatuses = ['new', 'duplicate', 'invalid'];
 
+const pickTransactionUpdateData = (updates: Partial<Transaction>) => {
+  const allowedUpdates = {
+    date: updates.date,
+    time: updates.time,
+    type: updates.type,
+    category: updates.category,
+    subcategory: updates.subcategory,
+    vendor: updates.vendor,
+    amount: updates.amount,
+    currency: updates.currency,
+    source: updates.source,
+    memo: updates.memo,
+    member: updates.member,
+  };
+
+  return Object.fromEntries(
+    Object.entries(allowedUpdates).filter(([, value]) => value !== undefined)
+  );
+};
+
 const mapImportRowToTransaction = (row: any) => ({
   id: row.id,
   date: row.date,
@@ -425,22 +445,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
         throw new Error('Transaction not found');
       }
 
-      const allowedUpdates = {
-        date: updates.date,
-        time: updates.time,
-        type: updates.type,
-        category: updates.category,
-        subcategory: updates.subcategory,
-        vendor: updates.vendor,
-        amount: updates.amount,
-        currency: updates.currency,
-        source: updates.source,
-        memo: updates.memo,
-        member: updates.member,
-      };
-      const data = Object.fromEntries(
-        Object.entries(allowedUpdates).filter(([, value]) => value !== undefined)
-      );
+      const data = pickTransactionUpdateData(updates);
 
       const updatedImportRow = await tx.importRow.update({
         where: { id },
@@ -463,7 +468,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 
     const updated = await tx.transaction.update({
       where: { id },
-      data: updates,
+      data: pickTransactionUpdateData(updates),
     });
 
     await tx.auditLog.create({
@@ -485,22 +490,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
   return await prisma.$transaction(async (tx) => {
     let count = 0;
 
-    const allowedImportUpdates = {
-      date: updates.date,
-      time: updates.time,
-      type: updates.type,
-      category: updates.category,
-      subcategory: updates.subcategory,
-      vendor: updates.vendor,
-      amount: updates.amount,
-      currency: updates.currency,
-      source: updates.source,
-      memo: updates.memo,
-      member: updates.member,
-    };
-    const importData = Object.fromEntries(
-      Object.entries(allowedImportUpdates).filter(([, value]) => value !== undefined)
-    );
+    const data = pickTransactionUpdateData(updates);
 
     for (const id of ids) {
       const before = await tx.transaction.findUnique({ where: { id } });
@@ -508,7 +498,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
       if (before) {
         const updated = await tx.transaction.update({
           where: { id },
-          data: updates,
+          data,
         });
 
         await tx.auditLog.create({
@@ -530,7 +520,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
 
       const updatedImportRow = await tx.importRow.update({
         where: { id },
-        data: importData,
+        data,
       });
 
       await tx.auditLog.create({
