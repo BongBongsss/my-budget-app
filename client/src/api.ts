@@ -161,7 +161,8 @@ export const getTransactions = () => instance.get<Transaction[]>('/transactions'
 export const applyAutoRules = () => instance.post<{ success: boolean, count: number }>('/transactions/apply-rules');
 export const addTransaction = (tx: Partial<Transaction>) => instance.post<Transaction>('/transactions', tx);
 export const updateTransaction = (id: string, tx: Partial<Transaction>) => instance.put(`/transactions/${id}`, tx);
-export const bulkUpdateTransactions = (ids: string[], updates: Partial<Transaction>) => instance.post('/transactions/bulk-update', { ids, updates });
+export const bulkUpdateTransactions = (ids: string[], updates: Partial<Transaction>) =>
+  instance.post<{ success: boolean; count: number }>('/transactions/bulk-update', { ids, updates });
 export const deleteTransaction = (id: string) => instance.delete(`/transactions/${id}`);
 export const bulkDeleteTransactions = (ids: string[]) => instance.delete('/transactions/bulk', { data: { ids } });
 export const verifyTransactions = (ids: string[]) => instance.post('/transactions/verify', { ids });

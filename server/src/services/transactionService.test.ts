@@ -60,7 +60,7 @@ vi.mock('../db', () => ({
 }));
 
 import prisma from '../db';
-import { getAllTransactions, deleteTransaction, bulkAddTransactions } from './transactionService';
+import { getAllTransactions, deleteTransaction, bulkAddTransactions, bulkUpdateTransactions } from './transactionService';
 
 describe('TransactionService (Soft Delete Test)', () => {
   beforeEach(() => {
@@ -186,5 +186,50 @@ describe('TransactionService (Soft Delete Test)', () => {
 
     expect(result[0].isDuplicate).toBe(true);
     expect(result[1].isDuplicate).toBe(false);
+  });
+
+  it('bulkUpdateTransactions updates staged import rows by ID', async () => {
+    const targetId = 'import-row-id';
+    const importBefore = {
+      id: targetId,
+      status: 'new',
+      date: '2026-06-29',
+      type: 'expense',
+      category: '기타',
+      vendor: 'Test Store',
+      amount: 1000,
+      source: 'file_import',
+      member: '미지정',
+    };
+    const importAfter = { ...importBefore, member: '굥' };
+    const tx = {
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(null),
+      },
+      importRow: {
+        findUnique: vi.fn().mockResolvedValue(importBefore),
+        update: vi.fn().mockResolvedValue(importAfter),
+      },
+      auditLog: {
+        create: vi.fn(),
+      },
+    };
+
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    const result = await bulkUpdateTransactions([targetId], { member: '굥' } as any);
+
+    expect(tx.importRow.update).toHaveBeenCalledWith({
+      where: { id: targetId },
+      data: { member: '굥' },
+    });
+    expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.objectContaining({
+        entityType: 'importRow',
+        entityId: targetId,
+        action: 'update',
+      }),
+    }));
+    expect(result.count).toBe(1);
   });
 });

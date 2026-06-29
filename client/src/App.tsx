@@ -123,12 +123,18 @@ function App() {
 
   const handleBulkUpdateMember = async (ids: string[], member: string) => {
     if (userRole !== 'admin') return;
+    if (ids.length === 0) return;
     try {
-      await bulkUpdateTransactions(ids, { member });
+      const res = await bulkUpdateTransactions(ids, { member });
+      if (res.data.count !== ids.length) {
+        alert(`멤버 변경이 일부만 적용되었습니다. 요청 ${ids.length}건 중 ${res.data.count}건 처리됨`);
+      }
       setTransactions(prev => prev.map(t => ids.includes(t.id!) ? { ...t, member } : t));
       await fetchData();
     } catch (err) {
-      fetchData();
+      console.error('Bulk member update failed:', err);
+      alert('멤버 일괄 변경 중 오류가 발생했습니다.');
+      await fetchData();
     }
   };
 
