@@ -143,6 +143,11 @@ export const initDb = async () => {
     `);
 
     await prisma.$executeRawUnsafe(`
+      ALTER TABLE "ImportRow"
+      ADD COLUMN IF NOT EXISTS "member" text NOT NULL DEFAULT '미지정';
+    `);
+
+    await prisma.$executeRawUnsafe(`
       DO $$
       BEGIN
         IF NOT EXISTS (
