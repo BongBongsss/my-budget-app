@@ -114,6 +114,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
     const nextValue = (value || '').trim();
     if (!nextValue) return;
 
+    if (filterType === type && searchQuery === nextValue && exactFilter) {
+      setSearch('');
+      setSearchQuery('');
+      setExactFilter(false);
+      setCurrentPage(1);
+      return;
+    }
+
     setFilterType(type);
     setSearch(nextValue);
     setSearchQuery(nextValue);
