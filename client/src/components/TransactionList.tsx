@@ -33,6 +33,8 @@ interface TransactionListProps {
   externalFilterActive?: boolean;
 }
 
+type CellFilterType = 'date' | 'time' | 'member' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'amount' | 'source' | 'memo';
+
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
@@ -47,6 +49,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [exactFilter, setExactFilter] = useState(false);
+  const [cellFilters, setCellFilters] = useState<Partial<Record<CellFilterType, string>>>({});
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState<'date' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'source' | 'memo'>('group');
@@ -110,11 +113,22 @@ const TransactionList: React.FC<TransactionListProps> = ({
     setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkVendor(''); setBulkSource(''); setBulkMemo(''); setSelectedIds([]);
   };
 
-  const applyCellFilter = (type: 'subcategory' | 'vendor' | 'source', value?: string) => {
+  const applyCellFilter = (type: CellFilterType, value?: string) => {
     const nextValue = (value || '').trim();
     if (!nextValue) return;
+    const isRemoving = cellFilters[type] === nextValue;
 
-    if (filterType === type && searchQuery === nextValue && exactFilter) {
+    setCellFilters((prev) => {
+      const next = { ...prev };
+      if (next[type] === nextValue) {
+        delete next[type];
+      } else {
+        next[type] = nextValue;
+      }
+      return next;
+    });
+
+    if (isRemoving) {
       setSearch('');
       setSearchQuery('');
       setExactFilter(false);
@@ -122,9 +136,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
       return;
     }
 
-    setFilterType(type);
+    if (type !== 'amount' && type !== 'time' && type !== 'member') {
+      setFilterType(type);
+    }
     setSearch(nextValue);
-    setSearchQuery(nextValue);
+    setSearchQuery('');
     setStartDate('');
     setEndDate('');
     setExactFilter(true);
@@ -135,29 +151,40 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (reviewFilter !== 'all' && (tx.reviewStatus || 'none') !== reviewFilter) return false;
 
     if (filterType === 'date') {
-      if (!startDate && !endDate) return true;
-      const txDate = tx.date;
-      if (startDate && txDate < startDate) return false;
-      if (endDate && txDate > endDate) return false;
-      return true;
+      if (startDate || endDate) {
+        const txDate = tx.date;
+        if (startDate && txDate < startDate) return false;
+        if (endDate && txDate > endDate) return false;
+      }
+    } else if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+
+      if (filterType === 'vendor' && !(exactFilter ? tx.vendor === searchQuery : tx.vendor.toLowerCase().includes(q))) return false;
+      if (filterType === 'memo' && !(tx.memo || '').toLowerCase().includes(q)) return false;
+
+      if (filterType === 'type') {
+        const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
+        if (typeLabel !== searchQuery) return false;
+      }
+      if (filterType === 'category' && tx.category !== searchQuery) return false;
+      if (filterType === 'group' && getGroupName(tx.category, categories) !== searchQuery) return false;
+      if (filterType === 'subcategory' && (tx.subcategory || '') !== searchQuery) return false;
+      if (filterType === 'source' && (tx.source || '') !== searchQuery) return false;
     }
 
-    if (!searchQuery) return true;
-    const q = searchQuery.toLowerCase();
-    
-    if (filterType === 'vendor') return exactFilter ? tx.vendor === searchQuery : tx.vendor.toLowerCase().includes(q);
-    if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
-    
-    if (filterType === 'type') {
-        const typeLabel = tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영';
-        return typeLabel === searchQuery;
-    }
-    if (filterType === 'category') return tx.category === searchQuery;
-    if (filterType === 'group') return getGroupName(tx.category, categories) === searchQuery;
-    if (filterType === 'subcategory') return (tx.subcategory || '') === searchQuery;
-    if (filterType === 'source') return (tx.source || '') === searchQuery;
-    
-    return false;
+    if (cellFilters.category && tx.category !== cellFilters.category) return false;
+    if (cellFilters.subcategory && (tx.subcategory || '') !== cellFilters.subcategory) return false;
+    if (cellFilters.vendor && tx.vendor !== cellFilters.vendor) return false;
+    if (cellFilters.source && (tx.source || '') !== cellFilters.source) return false;
+    if (cellFilters.type && (tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영') !== cellFilters.type) return false;
+    if (cellFilters.group && getGroupName(tx.category, categories) !== cellFilters.group) return false;
+    if (cellFilters.amount && tx.amount !== Number(cellFilters.amount)) return false;
+    if (cellFilters.date && tx.date !== cellFilters.date) return false;
+    if (cellFilters.time && (tx.time || '') !== cellFilters.time) return false;
+    if (cellFilters.member && (tx.member || '') !== cellFilters.member) return false;
+    if (cellFilters.memo && (tx.memo || '') !== cellFilters.memo) return false;
+
+    return true;
   });
 
   const filteredIncome = filteredTransactions
@@ -449,7 +476,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
       <div className="list-actions mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">
-            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); setExactFilter(false); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
+            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); setCellFilters({}); setExactFilter(false); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
               <option value="type">타입</option>
               <option value="group">상위 그룹</option>
@@ -462,14 +489,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
             
             {filterType === 'date' ? (
               <div className="flex gap-1 items-center">
-                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCellFilters({}), setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
                 <span>~</span>
-                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
+                <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setCellFilters({}), setSearchQuery('range'), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }} />
               </div>
             ) : ['type', 'group', 'category', 'subcategory', 'source'].includes(filterType) ? (
               <select 
                 value={search} 
-                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setExactFilter(false); setCurrentPage(1); }}
+                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCellFilters({}); setExactFilter(false); setCurrentPage(1); }}
                 className="edit-input" 
                 style={{ fontSize: '0.8rem', padding: '2px 5px', width: 'auto' }}
               >
@@ -481,14 +508,14 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 {filterType === 'source' && uniqueValues.sources.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             ) : (
-              <input type="text" placeholder="검색어..." value={search} onChange={e => { setSearch(e.target.value); setExactFilter(false); }} onKeyDown={(e) => e.key === 'Enter' && (setExactFilter(false), setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+              <input type="text" placeholder="검색어..." value={search} onChange={e => { setSearch(e.target.value); setCellFilters({}); setExactFilter(false); }} onKeyDown={(e) => e.key === 'Enter' && (setCellFilters({}), setExactFilter(false), setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setExactFilter(false); setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setExactFilter(false); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setCellFilters({}); setExactFilter(false); setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCellFilters({}); setExactFilter(false); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
           </div>
 
-          {(externalFilterActive || searchQuery || startDate || endDate || search) && (
+          {(externalFilterActive || searchQuery || startDate || endDate || search || Object.keys(cellFilters).length > 0) && (
             <div className="flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
               <span style={{ color: '#2563eb', marginRight: '15px' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
               <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>
@@ -579,17 +606,17 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 </>
               ) : (
                 <>
-                  <td title={tx.date}>{tx.date}</td>
-                  <td title={tx.time}>{tx.time}</td>
-                  <td>{tx.member}</td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
-                  <td title={getGroupName(tx.category, categories)}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
-                  <td title={tx.category}><div style={cellEllipsisStyle}>{tx.category}</div></td>
+                  <td title={tx.date} onDoubleClick={() => applyCellFilter('date', tx.date)} style={{ cursor: 'pointer' }}>{tx.date}</td>
+                  <td title={tx.time} onDoubleClick={() => applyCellFilter('time', tx.time)} style={{ cursor: 'pointer' }}>{tx.time}</td>
+                  <td onDoubleClick={() => applyCellFilter('member', tx.member)} style={{ cursor: 'pointer' }}>{tx.member}</td>
+                  <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onDoubleClick={() => applyCellFilter('type', tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영')}>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
+                  <td title={getGroupName(tx.category, categories)} onDoubleClick={() => applyCellFilter('group', getGroupName(tx.category, categories))} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
+                  <td title={tx.category} onDoubleClick={() => applyCellFilter('category', tx.category)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.category}</div></td>
                   <td title={tx.subcategory} onDoubleClick={() => applyCellFilter('subcategory', tx.subcategory)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
                   <td title={tx.vendor} onDoubleClick={() => applyCellFilter('vendor', tx.vendor)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
-                  <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
+                  <td style={{ textAlign: 'right', cursor: 'pointer' }} onDoubleClick={() => applyCellFilter('amount', String(tx.amount))}>{tx.amount.toLocaleString()}</td>
                   <td title={tx.source} onDoubleClick={() => applyCellFilter('source', tx.source)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.source}</div></td>
-                  <td title={tx.memo}><div style={cellEllipsisStyle}>{tx.memo}</div></td>
+                  <td title={tx.memo} onDoubleClick={() => applyCellFilter('memo', tx.memo)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.memo}</div></td>
                   <td style={{ textAlign: 'center' }}>
                     {isAdmin ? (
                       <div className="flex gap-1 justify-center">
