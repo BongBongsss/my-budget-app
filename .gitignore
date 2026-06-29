@@ -9,3 +9,7 @@ server/dist/
 .DS_Store
 *.log
 budget.db
+.vscode/
+backup/auditlog-before-delete-*/
+backup/neon-before-migration-*/
+backup/neon-current-before-restore/
