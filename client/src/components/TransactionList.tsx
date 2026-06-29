@@ -53,6 +53,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [bulkCategory, setBulkCategory] = useState('');
   const [bulkType, setBulkType] = useState<'expense' | 'income' | 'exclude' | ''>('');
   const [bulkSubcategory, setBulkSubcategory] = useState('');
+  const [bulkVendor, setBulkVendor] = useState('');
+  const [bulkSource, setBulkSource] = useState('');
   const [bulkMemo, setBulkMemo] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [reviewFilter, setReviewFilter] = useState<'all' | 'none' | 'resolved' | 'open'>('all');
@@ -96,6 +98,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (bulkCategory) updates.category = bulkCategory;
     if (bulkType) updates.type = bulkType;
     if (bulkSubcategory !== undefined && bulkSubcategory !== '') updates.subcategory = bulkSubcategory;
+    if (bulkVendor !== undefined && bulkVendor !== '') updates.vendor = bulkVendor;
+    if (bulkSource !== undefined && bulkSource !== '') updates.source = bulkSource;
     if (bulkMemo !== undefined && bulkMemo !== '') updates.memo = bulkMemo;
 
     if (Object.keys(updates).length === 0) {
@@ -103,10 +107,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
       return;
     }
     for (const id of selectedIds) { await onUpdate(id, updates); }
-    setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkMemo(''); setSelectedIds([]);
+    setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkVendor(''); setBulkSource(''); setBulkMemo(''); setSelectedIds([]);
   };
 
-  const applyCellFilter = (type: 'vendor' | 'source', value?: string) => {
+  const applyCellFilter = (type: 'subcategory' | 'vendor' | 'source', value?: string) => {
     const nextValue = (value || '').trim();
     if (!nextValue) return;
 
@@ -517,6 +521,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 {categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}
             </select>
             <input type="text" placeholder="소분류 입력" value={bulkSubcategory} onChange={(e) => setBulkSubcategory(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '100px' }} />
+            <input type="text" placeholder="내용 일괄 입력" value={bulkVendor} onChange={(e) => setBulkVendor(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '130px' }} />
+            <input type="text" placeholder="결제수단 일괄 입력" value={bulkSource} onChange={(e) => setBulkSource(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '140px' }} />
             <input type="text" placeholder="메모 일괄 입력" value={bulkMemo} onChange={(e) => setBulkMemo(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} />
             <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes"><ListChecks size={16} className="mr-1" /> 일괄 적용</button>
             <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
@@ -568,10 +574,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={tx.date}>{tx.date}</td>
                   <td title={tx.time}>{tx.time}</td>
                   <td>{tx.member}</td>
-                  <td>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
                   <td title={getGroupName(tx.category, categories)}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
                   <td title={tx.category}><div style={cellEllipsisStyle}>{tx.category}</div></td>
-                  <td title={tx.subcategory}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
+                  <td title={tx.subcategory} onDoubleClick={() => applyCellFilter('subcategory', tx.subcategory)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
                   <td title={tx.vendor} onDoubleClick={() => applyCellFilter('vendor', tx.vendor)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
                   <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
                   <td title={tx.source} onDoubleClick={() => applyCellFilter('source', tx.source)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.source}</div></td>
