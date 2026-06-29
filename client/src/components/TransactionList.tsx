@@ -46,6 +46,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [search, setSearch] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [exactFilter, setExactFilter] = useState(false);
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [filterType, setFilterType] = useState<'date' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'source' | 'memo'>('group');
@@ -105,6 +106,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
     setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkMemo(''); setSelectedIds([]);
   };
 
+  const applyCellFilter = (type: 'vendor' | 'source', value?: string) => {
+    const nextValue = (value || '').trim();
+    if (!nextValue) return;
+
+    setFilterType(type);
+    setSearch(nextValue);
+    setSearchQuery(nextValue);
+    setStartDate('');
+    setEndDate('');
+    setExactFilter(true);
+    setCurrentPage(1);
+  };
+
   const filteredTransactions = transactions.filter(tx => {
     if (reviewFilter !== 'all' && (tx.reviewStatus || 'none') !== reviewFilter) return false;
 
@@ -119,7 +133,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (!searchQuery) return true;
     const q = searchQuery.toLowerCase();
     
-    if (filterType === 'vendor') return tx.vendor.toLowerCase().includes(q);
+    if (filterType === 'vendor') return exactFilter ? tx.vendor === searchQuery : tx.vendor.toLowerCase().includes(q);
     if (filterType === 'memo') return (tx.memo || '').toLowerCase().includes(q);
     
     if (filterType === 'type') {
@@ -423,7 +437,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
       <div className="list-actions mb-4">
         <div className="flex justify-between items-center mb-2">
           <div className="flex gap-1 items-center">
-            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
+            <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); setExactFilter(false); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
               <option value="type">타입</option>
               <option value="group">상위 그룹</option>
@@ -443,7 +457,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             ) : ['type', 'group', 'category', 'subcategory', 'source'].includes(filterType) ? (
               <select 
                 value={search} 
-                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setCurrentPage(1); }} 
+                onChange={e => { setSearch(e.target.value); setSearchQuery(e.target.value); setExactFilter(false); setCurrentPage(1); }}
                 className="edit-input" 
                 style={{ fontSize: '0.8rem', padding: '2px 5px', width: 'auto' }}
               >
@@ -455,11 +469,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 {filterType === 'source' && uniqueValues.sources.map(v => <option key={v} value={v}>{v}</option>)}
               </select>
             ) : (
-              <input type="text" placeholder="검색어..." value={search} onChange={e => setSearch(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && (setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
+              <input type="text" placeholder="검색어..." value={search} onChange={e => { setSearch(e.target.value); setExactFilter(false); }} onKeyDown={(e) => e.key === 'Enter' && (setExactFilter(false), setSearchQuery(search), setCurrentPage(1))} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '120px' }} />
             )}
             
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
-            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setExactFilter(false); setSearchQuery(search); setCurrentPage(1); }}><Search size={16} /></button>
+            <button className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '2px 5px' }} onClick={() => { setSearch(''); setSearchQuery(''); setStartDate(''); setEndDate(''); setExactFilter(false); setCurrentPage(1); onRefresh(); }} title="검색 초기화"><RefreshCw size={16} /></button>
           </div>
 
           {(externalFilterActive || searchQuery || startDate || endDate || search) && (
@@ -558,9 +572,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td title={getGroupName(tx.category, categories)}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
                   <td title={tx.category}><div style={cellEllipsisStyle}>{tx.category}</div></td>
                   <td title={tx.subcategory}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
-                  <td title={tx.vendor}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
+                  <td title={tx.vendor} onDoubleClick={() => applyCellFilter('vendor', tx.vendor)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
                   <td style={{ textAlign: 'right' }}>{tx.amount.toLocaleString()}</td>
-                  <td title={tx.source}><div style={cellEllipsisStyle}>{tx.source}</div></td>
+                  <td title={tx.source} onDoubleClick={() => applyCellFilter('source', tx.source)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.source}</div></td>
                   <td title={tx.memo}><div style={cellEllipsisStyle}>{tx.memo}</div></td>
                   <td style={{ textAlign: 'center' }}>
                     {isAdmin ? (
