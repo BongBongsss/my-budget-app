@@ -204,14 +204,15 @@ describe('TransactionService (Soft Delete Test)', () => {
     const importAfter = { ...importBefore, member: '굥' };
     const tx = {
       transaction: {
-        findUnique: vi.fn().mockResolvedValue(null),
+        findMany: vi.fn().mockResolvedValue([]),
+        updateMany: vi.fn(),
       },
       importRow: {
-        findUnique: vi.fn().mockResolvedValue(importBefore),
-        update: vi.fn().mockResolvedValue(importAfter),
+        findMany: vi.fn().mockResolvedValue([importBefore]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
       },
       auditLog: {
-        create: vi.fn(),
+        createMany: vi.fn(),
       },
     };
 
@@ -219,16 +220,17 @@ describe('TransactionService (Soft Delete Test)', () => {
 
     const result = await bulkUpdateTransactions([targetId], { member: '굥' } as any);
 
-    expect(tx.importRow.update).toHaveBeenCalledWith({
-      where: { id: targetId },
+    expect(importAfter.member).toBe('굥');
+    expect(tx.importRow.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: [targetId] } },
       data: { member: '굥' },
     });
-    expect(tx.auditLog.create).toHaveBeenCalledWith(expect.objectContaining({
-      data: expect.objectContaining({
+    expect(tx.auditLog.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.arrayContaining([expect.objectContaining({
         entityType: 'importRow',
         entityId: targetId,
         action: 'update',
-      }),
+      })]),
     }));
     expect(result.count).toBe(1);
   });

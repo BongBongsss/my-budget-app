@@ -488,55 +488,58 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 
 export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Transaction>, actor?: AuditActor) => {
   return await prisma.$transaction(async (tx) => {
-    let count = 0;
-
     const data = pickTransactionUpdateData(updates);
-
-    for (const id of ids) {
-      const before = await tx.transaction.findUnique({ where: { id } });
-
-      if (before) {
-        const updated = await tx.transaction.update({
-          where: { id },
-          data,
-        });
-
-        await tx.auditLog.create({
-          data: buildAuditLogData({
-            entityType: 'transaction',
-            entityId: id,
-            action: 'update',
-            beforeData: before,
-            afterData: updated,
-            actor,
-          }),
-        });
-        count++;
-        continue;
-      }
-
-      const importBefore = await tx.importRow.findUnique({ where: { id } });
-      if (!importBefore) continue;
-
-      const updatedImportRow = await tx.importRow.update({
-        where: { id },
-        data,
-      });
-
-      await tx.auditLog.create({
-        data: buildAuditLogData({
-          entityType: 'importRow',
-          entityId: id,
-          action: 'update',
-          beforeData: importBefore,
-          afterData: updatedImportRow,
-          actor,
-        }),
-      });
-      count++;
+    if (Object.keys(data).length === 0 || ids.length === 0) {
+      return { count: 0 };
     }
 
-    return { count };
+    const beforeTransactions = await tx.transaction.findMany({
+      where: { id: { in: ids } },
+    });
+    const transactionIds = beforeTransactions.map((row) => row.id);
+    const importRowIds = ids.filter((id) => !transactionIds.includes(id));
+    const beforeImportRows = importRowIds.length > 0
+      ? await tx.importRow.findMany({ where: { id: { in: importRowIds } } })
+      : [];
+
+    if (transactionIds.length > 0) {
+      await tx.transaction.updateMany({
+        where: { id: { in: transactionIds } },
+        data,
+      });
+    }
+
+    if (beforeImportRows.length > 0) {
+      await tx.importRow.updateMany({
+        where: { id: { in: beforeImportRows.map((row) => row.id) } },
+        data,
+      });
+    }
+
+    const auditLogs = [
+      ...beforeTransactions.map((before) => buildAuditLogData({
+        entityType: 'transaction',
+        entityId: before.id,
+        action: 'update',
+        beforeData: before,
+        afterData: { ...before, ...data },
+        actor,
+      })),
+      ...beforeImportRows.map((before) => buildAuditLogData({
+        entityType: 'importRow',
+        entityId: before.id,
+        action: 'update',
+        beforeData: before,
+        afterData: { ...before, ...data },
+        actor,
+      })),
+    ];
+
+    if (auditLogs.length > 0) {
+      await tx.auditLog.createMany({ data: auditLogs });
+    }
+
+    return { count: transactionIds.length + beforeImportRows.length };
   });
 };
 
