@@ -236,7 +236,7 @@ export const getCategories = () => instance.get<CategoryItem[]>('/categories');
 export const autoCategorizeVendor = (vendor: string) => instance.get<{ category: string }>('/categories/auto', { params: { vendor } });
 export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => instance.post('/categories/batch-group', { categoryIds, groupName });
 export const addCategory = (cat: Partial<CategoryItem>) => instance.post<CategoryItem>('/categories', cat);
-export const deleteCategory = (id: string) => instance.delete(`/categories/${id}`);
+export const deleteCategory = (id: string) => instance.delete('/categories', { data: { id } });
 
 // Recurring
 export const getRecurring = () => instance.get<RecurringTransaction[]>('/recurring');

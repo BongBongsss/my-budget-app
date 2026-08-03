@@ -26,6 +26,14 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(category);
 }));
 
+router.delete('/', asyncHandler(async (req: Request, res: Response) => {
+  const { id } = req.body;
+  if (!id || typeof id !== 'string') throw new BadRequestError('Category ID is required');
+
+  await categoryService.deleteCategory(id);
+  res.json({ success: true });
+}));
+
 router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
   await categoryService.deleteCategory(req.params.id as string);
   res.json({ success: true });
