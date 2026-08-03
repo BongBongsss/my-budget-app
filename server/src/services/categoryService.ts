@@ -75,8 +75,8 @@ export const createCategory = async (name: string) => {
 };
 
 export const deleteCategory = async (id: string) => {
-  return await prisma.category.update({
-    where: { id },
+  return await prisma.category.updateMany({
+    where: { id, isDeleted: false },
     data: { isDeleted: true },
   });
 };

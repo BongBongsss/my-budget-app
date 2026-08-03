@@ -17,6 +17,7 @@ interface TransactionListProps {
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
+  onBulkUpdate: (ids: string[], updates: Partial<Transaction>) => Promise<void>;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
   onVerify?: (ids: string[]) => void;
   onRefresh: () => void | Promise<void>;
@@ -36,7 +37,7 @@ interface TransactionListProps {
 type CellFilterType = 'date' | 'time' | 'member' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'amount' | 'source' | 'memo';
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdateMember, onVerify, onRefresh,
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
   memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default', externalFilterActive = false
 }) => {
@@ -109,7 +110,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
       alert('필드를 하나 이상 선택해 주세요.');
       return;
     }
-    for (const id of selectedIds) { await onUpdate(id, updates); }
+    await onBulkUpdate(selectedIds, updates);
     setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkVendor(''); setBulkSource(''); setBulkMemo(''); setSelectedIds([]);
   };
 

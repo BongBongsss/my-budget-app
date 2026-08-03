@@ -97,17 +97,25 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     }
   };
 
+  const clearHighlight = () => {
+    setActiveHighlight(null);
+    onHighlight(null);
+  };
+
   const renderLegend = (type: 'income' | 'expense', processed: any) => (
     <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '-20px' }}>
       {processed.activeGroups.map((group: string) => (
-        <div 
+        <button
+          type="button"
           key={group} 
           onClick={() => handleGroupClick(type, group)} 
+          aria-pressed={activeHighlight?.type === type && activeHighlight?.group === group}
+          title={`${group} 항목만 보기`}
           style={{ 
-            display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '2px 6px', borderRadius: '4px', 
+            display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '4px 7px', borderRadius: '4px',
             backgroundColor: (activeHighlight?.type === type && activeHighlight?.group === group) ? '#f1f5f9' : 'transparent', 
             border: (activeHighlight?.type === type && activeHighlight?.group === group) ? '1px solid #3b82f6' : '1px solid transparent',
-            transition: 'all 0.2s' 
+            transition: 'all 0.2s', color: '#64748b'
           }}
         >
           <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: processed.groupColorMap[group] }} />
@@ -115,7 +123,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           {activeHighlight?.type === type && activeHighlight?.group === group && (
             <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: '#3b82f6' }}>({processed.categoryData[group].toLocaleString()}원)</span>
           )}
-        </div>
+        </button>
       ))}
     </div>
   );
@@ -160,7 +168,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 layout: { padding: 45 },
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('income', incomeData.activeGroups[elements[0].index]);
-                    else setActiveHighlight(null);
+                    else clearHighlight();
                 },
                 plugins: {
                   legend: { display: false },
@@ -186,7 +194,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 maintainAspectRatio: false,
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('income', incomeData.activeGroups[elements[0].datasetIndex]);
-                    else setActiveHighlight(null);
+                    else clearHighlight();
                 },
                 scales: { 
                   x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
@@ -241,7 +249,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 layout: { padding: 45 },
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('expense', expenseData.activeGroups[elements[0].index]);
-                    else setActiveHighlight(null);
+                    else clearHighlight();
                 },
                 plugins: {
                   legend: { display: false },
@@ -267,7 +275,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 maintainAspectRatio: false,
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('expense', expenseData.activeGroups[elements[0].datasetIndex]);
-                    else setActiveHighlight(null);
+                    else clearHighlight();
                 },
                 scales: { 
                   x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 

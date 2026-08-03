@@ -13,7 +13,7 @@ import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2 } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -28,6 +28,34 @@ type ImportSummary = {
   };
 };
 
+type UndoableTransactionField = 'date' | 'time' | 'type' | 'category' | 'subcategory' | 'vendor' | 'amount' | 'currency' | 'source' | 'memo' | 'member';
+
+type UndoAction =
+  | { kind: 'restore-deleted'; label: string; transactions: Transaction[] }
+  | { kind: 'restore-updates'; label: string; rollbackGroups: Array<{ ids: string[]; updates: Partial<Transaction> }> };
+
+const undoableTransactionFields: UndoableTransactionField[] = [
+  'date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member',
+];
+
+const buildRollbackGroups = (transactions: Transaction[], updates: Partial<Transaction>) => {
+  const changedFields = undoableTransactionFields.filter((field) => updates[field] !== undefined);
+  const groups = new Map<string, { ids: string[]; updates: Partial<Transaction> }>();
+
+  transactions.forEach((transaction) => {
+    if (!transaction.id) return;
+    const rollbackUpdates = Object.fromEntries(
+      changedFields.map((field) => [field, transaction[field]])
+    ) as Partial<Transaction>;
+    const key = JSON.stringify(rollbackUpdates);
+    const group = groups.get(key);
+    if (group) group.ids.push(transaction.id);
+    else groups.set(key, { ids: [transaction.id], updates: rollbackUpdates });
+  });
+
+  return Array.from(groups.values());
+};
+
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
@@ -40,9 +68,8 @@ function App() {
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
 
   
-  const [lastDeleted, setLastDeleted] = useState<Transaction[] | null>(null);
+  const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
-  const undoTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -97,7 +124,11 @@ function App() {
     const itemToDelete = transactions.find(t => t.id === id);
     if (!itemToDelete) return;
     await deleteTransaction(id);
-    showUndoMessage([itemToDelete]);
+    showUndoMessage({
+      kind: 'restore-deleted',
+      label: '거래 1건을 삭제했습니다.',
+      transactions: [itemToDelete],
+    });
     fetchData();
   };
 
@@ -107,29 +138,73 @@ function App() {
     if (itemsToDelete.length === 0) return;
     if (!window.confirm(`${ids.length}개의 항목을 삭제하시겠습니까?`)) return;
     await bulkDeleteTransactions(ids);
-    showUndoMessage(itemsToDelete);
+    showUndoMessage({
+      kind: 'restore-deleted',
+      label: `거래 ${itemsToDelete.length}건을 삭제했습니다.`,
+      transactions: itemsToDelete,
+    });
     fetchData();
   };
 
   const handleUpdate = async (id: string, updates: Partial<Transaction>) => {
     if (userRole !== 'admin') return;
+    const before = transactions.find((transaction) => transaction.id === id);
+    if (!before) return;
     try {
       await updateTransaction(id, updates);
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+      showUndoMessage({
+        kind: 'restore-updates',
+        label: '거래를 수정했습니다.',
+        rollbackGroups: buildRollbackGroups([before], updates),
+      });
     } catch (err) {
       fetchData();
+    }
+  };
+
+  const handleBulkUpdate = async (ids: string[], updates: Partial<Transaction>) => {
+    if (userRole !== 'admin' || ids.length === 0) return;
+    const before = transactions.filter((transaction) => transaction.id && ids.includes(transaction.id));
+    if (before.length === 0) return;
+
+    try {
+      const result = await bulkUpdateTransactions(ids, updates);
+      if (result.data.count !== ids.length) {
+        alert(`일괄 수정이 일부만 적용되었습니다. 요청 ${ids.length}건 중 ${result.data.count}건 처리됨.`);
+      }
+      setTransactions((current) => current.map((transaction) => (
+        transaction.id && ids.includes(transaction.id) ? { ...transaction, ...updates } : transaction
+      )));
+      showUndoMessage({
+        kind: 'restore-updates',
+        label: `거래 ${before.length}건을 수정했습니다.`,
+        rollbackGroups: buildRollbackGroups(before, updates),
+      });
+      await fetchData();
+    } catch (err) {
+      console.error('Bulk update failed:', err);
+      alert('일괄 수정 중 오류가 발생했습니다.');
+      await fetchData();
     }
   };
 
   const handleBulkUpdateMember = async (ids: string[], member: string) => {
     if (userRole !== 'admin') return;
     if (ids.length === 0) return;
+    const before = transactions.filter((transaction) => transaction.id && ids.includes(transaction.id));
+    if (before.length === 0) return;
     try {
       const res = await bulkUpdateTransactions(ids, { member });
       if (res.data.count !== ids.length) {
         alert(`멤버 변경이 일부만 적용되었습니다. 요청 ${ids.length}건 중 ${res.data.count}건 처리됨`);
       }
       setTransactions(prev => prev.map(t => ids.includes(t.id!) ? { ...t, member } : t));
+      showUndoMessage({
+        kind: 'restore-updates',
+        label: `거래 ${before.length}건을 수정했습니다.`,
+        rollbackGroups: buildRollbackGroups(before, { member }),
+      });
       await fetchData();
     } catch (err) {
       console.error('Bulk member update failed:', err);
@@ -139,25 +214,26 @@ function App() {
   };
 
   const handleUndo = async () => {
-    if (userRole !== 'admin' || !lastDeleted) return;
+    if (userRole !== 'admin' || !lastUndoAction) return;
     try {
-      await bulkAddTransactions(lastDeleted);
+      if (lastUndoAction.kind === 'restore-deleted') {
+        await bulkAddTransactions(lastUndoAction.transactions);
+      } else {
+        await Promise.all(lastUndoAction.rollbackGroups.map((group) => (
+          bulkUpdateTransactions(group.ids, group.updates)
+        )));
+      }
       setShowUndo(false);
-      setLastDeleted(null);
-      fetchData();
+      setLastUndoAction(null);
+      await fetchData();
     } catch (err) {
       alert('복구에 실패했습니다.');
     }
   };
 
-  const showUndoMessage = (deletedItems: Transaction[]) => {
-    setLastDeleted(deletedItems);
+  const showUndoMessage = (action: UndoAction) => {
+    setLastUndoAction(action);
     setShowUndo(true);
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => {
-      setShowUndo(false);
-      setLastDeleted(null);
-    }, 5000);
   };
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -420,6 +496,7 @@ function App() {
             onDelete={handleDelete} 
             onBulkDelete={handleBulkDelete}
             onUpdate={handleUpdate}
+            onBulkUpdate={handleBulkUpdate}
             onBulkUpdateMember={handleBulkUpdateMember}
             onVerify={handleVerify}
             onRefresh={fetchData}
@@ -499,10 +576,10 @@ function App() {
         onRefresh={fetchData}
       />
 
-      {showUndo && userRole === 'admin' && lastDeleted && (
+      {showUndo && userRole === 'admin' && lastUndoAction && (
         <div className="undo-toast">
-          <span>{lastDeleted.length}개의 항목이 삭제되었습니다.</span>
-          <button onClick={handleUndo} className="undo-btn">삭제 취소</button>
+          <span>{lastUndoAction.label}</span>
+          <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 되돌리기</button>
         </div>
       )}
     </div>

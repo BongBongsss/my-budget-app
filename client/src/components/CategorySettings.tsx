@@ -27,8 +27,9 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
       try {
         await deleteCategory(id);
         onRefresh();
-      } catch (err) {
-        alert('Error deleting category');
+      } catch (err: any) {
+        console.error('Category deletion failed:', err);
+        alert(`카테고리를 삭제하지 못했습니다.\n${err?.message || '서버 오류가 발생했습니다.'}`);
       }
     }
   };
