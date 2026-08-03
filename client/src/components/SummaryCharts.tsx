@@ -87,14 +87,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const handleGroupClick = (type: 'income' | 'expense', group: string) => {
-    if (activeHighlight?.type === type && activeHighlight?.group === group) {
-      setActiveHighlight(null);
-      onHighlight(null);
-    } else {
-      const newHighlight = { type, group };
-      setActiveHighlight(newHighlight);
-      onHighlight(newHighlight);
-    }
+    const newHighlight = { type, group };
+    setActiveHighlight(newHighlight);
+    onHighlight(newHighlight);
   };
 
   const clearHighlight = () => {
@@ -112,14 +107,14 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           aria-pressed={activeHighlight?.type === type && activeHighlight?.group === group}
           title={`${group} 항목만 보기`}
           style={{ 
-            display: 'flex', alignItems: 'center', gap: '4px', cursor: 'pointer', padding: '4px 7px', borderRadius: '4px',
+            display: 'flex', alignItems: 'center', gap: '5px', cursor: 'pointer', minHeight: '32px', padding: '6px 10px', borderRadius: '6px',
             backgroundColor: (activeHighlight?.type === type && activeHighlight?.group === group) ? '#f1f5f9' : 'transparent', 
             border: (activeHighlight?.type === type && activeHighlight?.group === group) ? '1px solid #3b82f6' : '1px solid transparent',
             transition: 'all 0.2s', color: '#64748b'
           }}
         >
           <div style={{ width: '8px', height: '8px', borderRadius: '2px', backgroundColor: processed.groupColorMap[group] }} />
-          <span style={{ fontSize: '0.65rem', color: '#64748b' }}>{group}</span>
+          <span style={{ fontSize: '0.78rem', color: '#64748b' }}>{group}</span>
           {activeHighlight?.type === type && activeHighlight?.group === group && (
             <span style={{ fontSize: '0.65rem', fontWeight: 'bold', color: '#3b82f6' }}>({processed.categoryData[group].toLocaleString()}원)</span>
           )}
