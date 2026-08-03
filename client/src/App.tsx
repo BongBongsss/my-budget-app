@@ -284,6 +284,11 @@ function App() {
     }
   };
 
+  const handleChartHighlight = (filter: { type: 'income' | 'expense'; group: string } | null) => {
+    setChartFilter(filter);
+    if (filter) setActiveTab('all');
+  };
+
   const filteredByPeriod = transactions.filter(t => {
     if (period === 'all') return true;
     if (period === 'month') return t.date.startsWith(`${year}-${String(month).padStart(2, '0')}`);
@@ -391,7 +396,7 @@ function App() {
             memberFilter={memberFilter} setMemberFilter={setMemberFilter}
           />
           <SuggestionNotification onRuleApproved={fetchData} />
-          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={setChartFilter} />
+          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={handleChartHighlight} />
           
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
