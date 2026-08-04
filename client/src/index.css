@@ -521,6 +521,22 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   background: #2563eb;
 }
 
+.undo-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+}
+
+.undo-close:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
 @keyframes slideUp {
   from { bottom: -50px; opacity: 0; }
   to { bottom: 2rem; opacity: 1; }

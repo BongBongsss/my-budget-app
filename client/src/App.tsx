@@ -13,7 +13,7 @@ import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2 } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -70,6 +70,7 @@ function App() {
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -225,6 +226,7 @@ function App() {
       }
       setShowUndo(false);
       setLastUndoAction(null);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
       await fetchData();
     } catch (err) {
       alert('복구에 실패했습니다.');
@@ -234,7 +236,22 @@ function App() {
   const showUndoMessage = (action: UndoAction) => {
     setLastUndoAction(action);
     setShowUndo(true);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => {
+      setShowUndo(false);
+      setLastUndoAction(null);
+    }, 30000);
   };
+
+  const dismissUndo = () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    setShowUndo(false);
+    setLastUndoAction(null);
+  };
+
+  useEffect(() => () => {
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, []);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (userRole !== 'admin') return;
@@ -585,6 +602,7 @@ function App() {
         <div className="undo-toast">
           <span>{lastUndoAction.label}</span>
           <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 되돌리기</button>
+          <button onClick={dismissUndo} className="undo-close" aria-label="되돌리기 알림 닫기" title="닫기"><X size={16} /></button>
         </div>
       )}
     </div>
