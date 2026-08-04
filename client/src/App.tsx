@@ -601,7 +601,7 @@ function App() {
       {showUndo && userRole === 'admin' && lastUndoAction && (
         <div className="undo-toast">
           <span>{lastUndoAction.label}</span>
-          <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 되돌리기</button>
+          <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 직전 작업 일괄 되돌리기</button>
           <button onClick={dismissUndo} className="undo-close" aria-label="되돌리기 알림 닫기" title="닫기"><X size={16} /></button>
         </div>
       )}

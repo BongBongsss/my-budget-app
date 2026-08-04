@@ -100,7 +100,10 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
 
   const handleRestore = async (log: AuditLog) => {
     if (!isAdmin) return;
-    if (!window.confirm('삭제된 항목을 복구할까요?')) return;
+    const message = log.action === 'update'
+      ? '이 수정 시점의 이전 값으로 되돌릴까요? 이후 변경된 값도 영향을 받을 수 있습니다.'
+      : '삭제된 항목을 복구할까요?';
+    if (!window.confirm(message)) return;
 
     setRestoringId(log.id);
     try {
@@ -175,7 +178,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         <tbody>
           {logs.map((log) => {
             const colors = actionColors[log.action] || { bg: '#e2e8f0', color: '#475569' };
-            const canRestore = isAdmin && log.action === 'delete' && log.isRestorable;
+            const canRestore = isAdmin && log.isRestorable;
 
             return (
               <tr key={log.id}>
@@ -202,7 +205,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
                       style={{ padding: '5px 10px' }}
                     >
                       <RotateCcw size={15} style={{ marginRight: '5px' }} />
-                      복구
+                      {log.action === 'update' ? '되돌리기' : '복구'}
                     </button>
                   ) : (
                     <span style={{ color: '#94a3b8' }}>-</span>

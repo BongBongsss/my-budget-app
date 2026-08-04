@@ -88,7 +88,7 @@ export const getAuditLogs = async (filters: {
   const logsWithRestoreState = logs.map((log) => ({
     ...log,
     isRestorable: restorableEntityTypes.includes(log.entityType)
-      && log.action === 'delete'
+      && (log.action === 'delete' || log.action === 'update')
       && !restoreLogs.some((restoreLog) => (
         restoreLog.entityType === log.entityType
         && restoreLog.entityId === log.entityId
@@ -105,15 +105,57 @@ export const getAuditLogs = async (filters: {
   };
 };
 
+const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member'];
+const assetUpdateFields = ['name', 'type', 'balance', 'memo'];
+
+const changedFields = (beforeData: Record<string, any>, afterData: Record<string, any>, fields: string[]) => (
+  fields.filter((field) => beforeData[field] !== afterData[field])
+);
+
+const restoreUpdateFromAuditLog = async (tx: Prisma.TransactionClient, auditLog: any, actor: AuditActor) => {
+  const beforeData = auditLog.beforeData as Record<string, any> | null;
+  const afterData = auditLog.afterData as Record<string, any> | null;
+  if (!beforeData || !afterData) throw new BadRequestError('Update log does not contain restorable data.');
+
+  const fields = auditLog.entityType === 'asset' ? assetUpdateFields : transactionUpdateFields;
+  const fieldsToRestore = changedFields(beforeData, afterData, fields);
+  if (fieldsToRestore.length === 0) throw new BadRequestError('Update log has no changed fields to restore.');
+  const restoreData = Object.fromEntries(fieldsToRestore.map((field) => [field, beforeData[field]]));
+
+  if (auditLog.entityType === 'asset') {
+    const current = await tx.asset.findUnique({ where: { id: auditLog.entityId } });
+    if (!current) throw new NotFoundError('Asset to restore was not found.');
+    const restored = await tx.asset.update({ where: { id: auditLog.entityId }, data: restoreData });
+    await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'asset', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
+    return restored;
+  }
+
+  if (auditLog.entityType === 'importRow') {
+    const current = await tx.importRow.findUnique({ where: { id: auditLog.entityId } });
+    if (!current) throw new NotFoundError('Import row to restore was not found.');
+    const restored = await tx.importRow.update({ where: { id: auditLog.entityId }, data: restoreData });
+    await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'importRow', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
+    return restored;
+  }
+
+  const current = await tx.transaction.findUnique({ where: { id: auditLog.entityId } });
+  if (!current) throw new NotFoundError('Transaction to restore was not found.');
+  const restored = await tx.transaction.update({ where: { id: auditLog.entityId }, data: restoreData });
+  await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'transaction', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
+  return restored;
+};
+
 export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: AuditActor) => {
   return prisma.$transaction(async (tx) => {
     const auditLog = await tx.auditLog.findUnique({
       where: { id: auditLogId },
     });
 
-    if (!auditLog || auditLog.action !== 'delete' || !['transaction', 'importRow', 'asset'].includes(auditLog.entityType)) {
-      throw new NotFoundError('Restorable delete log not found.');
+    if (!auditLog || !['delete', 'update'].includes(auditLog.action) || !['transaction', 'importRow', 'asset'].includes(auditLog.entityType)) {
+      throw new NotFoundError('Restorable audit log not found.');
     }
+
+    if (auditLog.action === 'update') return restoreUpdateFromAuditLog(tx, auditLog, actor);
 
     if (auditLog.entityType === 'asset') {
       const beforeData = auditLog.beforeData as Partial<Asset> | null;
