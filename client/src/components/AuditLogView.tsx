@@ -48,18 +48,46 @@ const getTransactionSummary = (log: AuditLog) => {
   return `${vendor}${amount ? ` / ${amount}` : ''}${category}`;
 };
 
-const getChangeSummary = (log: AuditLog) => {
-  if (log.action !== 'update' || !log.beforeData || !log.afterData) {
-    return '';
+const transactionFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'memo', 'member'];
+const assetFields = ['name', 'type', 'balance', 'memo'];
+
+const fieldLabels: Record<string, string> = {
+  date: '날짜',
+  time: '시간',
+  type: '유형',
+  category: '카테고리',
+  subcategory: '소분류',
+  vendor: '거래처',
+  amount: '금액',
+  memo: '메모',
+  member: '구성원',
+  name: '이름',
+  balance: '잔액',
+};
+
+const formatAuditValue = (field: string, value: unknown) => {
+  if (value === null || value === undefined || value === '') return '(없음)';
+  if (field === 'amount' || field === 'balance') return formatAmount(Number(value));
+  if (field === 'type') {
+    if (value === 'income') return '수입';
+    if (value === 'expense') return '지출';
   }
+  return String(value);
+};
 
-  const fields = log.entityType === 'asset'
-    ? ['name', 'type', 'balance', 'memo']
-    : ['date', 'type', 'category', 'vendor', 'amount', 'memo', 'member'];
-  const changed = fields.filter((field) => log.beforeData[field] !== log.afterData[field]);
+const getChangedFields = (log: AuditLog) => {
+  if (!log.beforeData || !log.afterData) return [];
+  const fields = log.entityType === 'asset' ? assetFields : transactionFields;
+  return fields.filter((field) => log.beforeData[field] !== log.afterData[field]);
+};
 
-  if (changed.length === 0) return '변경된 필드 없음';
-  return `변경: ${changed.join(', ')}`;
+const getDeletedDetails = (log: AuditLog) => {
+  if (log.action !== 'delete' || !log.beforeData) return '';
+  const fields = log.entityType === 'asset' ? assetFields : transactionFields;
+  return fields
+    .filter((field) => log.beforeData[field] !== null && log.beforeData[field] !== undefined && log.beforeData[field] !== '')
+    .map((field) => `${fieldLabels[field]}: ${formatAuditValue(field, log.beforeData[field])}`)
+    .join(' · ');
 };
 
 function AuditLogView({ isAdmin, onRestored }: Props) {
@@ -195,6 +223,8 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
           {logs.map((log) => {
             const colors = actionColors[log.action] || { bg: '#e2e8f0', color: '#475569' };
             const canRestore = isAdmin && log.isRestorable;
+            const changedFields = getChangedFields(log);
+            const deletedDetails = getDeletedDetails(log);
 
             return (
               <tr key={log.id}>
@@ -207,8 +237,19 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
                 <td>{entityLabels[log.entityType] || log.entityType}</td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{getTransactionSummary(log)}</div>
-                  {getChangeSummary(log) && (
-                    <div style={{ color: '#64748b', fontSize: '0.8rem' }}>{getChangeSummary(log)}</div>
+                  {log.action === 'update' && (
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '3px' }}>
+                      {changedFields.length > 0 ? changedFields.map((field) => (
+                        <div key={field}>
+                          {fieldLabels[field]}: {formatAuditValue(field, log.beforeData[field])} → {formatAuditValue(field, log.afterData[field])}
+                        </div>
+                      )) : '변경된 항목 없음'}
+                    </div>
+                  )}
+                  {log.action === 'delete' && deletedDetails && (
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '3px' }}>
+                      삭제된 항목: {deletedDetails}
+                    </div>
                   )}
                 </td>
                 <td>{log.actorRole || '-'}</td>
