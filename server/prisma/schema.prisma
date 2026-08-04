@@ -159,12 +159,14 @@ model AuditLog {
   afterData  Json?
   actorRole  String?
   ipAddress  String?
+  batchId    String?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([entityType, entityId])
   @@index([action])
   @@index([createdAt])
+  @@index([batchId])
 }
 
 model ReviewRequest {

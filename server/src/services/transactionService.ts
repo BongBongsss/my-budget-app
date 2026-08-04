@@ -488,6 +488,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 
 export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Transaction>, actor?: AuditActor) => {
   return await prisma.$transaction(async (tx) => {
+    const batchId = randomUUID();
     const data = pickTransactionUpdateData(updates);
     if (Object.keys(data).length === 0 || ids.length === 0) {
       return { count: 0 };
@@ -524,6 +525,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
         beforeData: before,
         afterData: { ...before, ...data },
         actor,
+        batchId,
       })),
       ...beforeImportRows.map((before) => buildAuditLogData({
         entityType: 'importRow',
@@ -532,6 +534,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
         beforeData: before,
         afterData: { ...before, ...data },
         actor,
+        batchId,
       })),
     ];
 
@@ -596,6 +599,7 @@ export const deleteTransaction = async (id: string, actor?: AuditActor) => {
 
 export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) => {
   return await prisma.$transaction(async (tx) => {
+    const batchId = randomUUID();
     const beforeItems = await tx.transaction.findMany({
       where: { id: { in: ids } },
     });
@@ -626,6 +630,7 @@ export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) 
           beforeData: before,
           afterData: { ...before, isDeleted: true },
           actor,
+          batchId,
         })),
         ...beforeImportRows.map((before) => buildAuditLogData({
           entityType: 'importRow',
@@ -634,6 +639,7 @@ export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) 
           beforeData: before,
           afterData: { ...before, status: 'ignored' },
           actor,
+          batchId,
         })),
       ],
     });

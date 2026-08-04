@@ -15,6 +15,7 @@ type AuditInput = {
   beforeData?: unknown;
   afterData?: unknown;
   actor?: AuditActor;
+  batchId?: string;
 };
 
 const toJsonValue = (value: unknown): Prisma.InputJsonValue => {
@@ -32,6 +33,7 @@ export const buildAuditLogData = ({
   beforeData,
   afterData,
   actor,
+  batchId,
 }: AuditInput) => ({
   id: randomUUID(),
   entityType,
@@ -41,6 +43,7 @@ export const buildAuditLogData = ({
   afterData: toJsonValue(afterData),
   actorRole: actor?.role || null,
   ipAddress: actor?.ipAddress || null,
+  batchId: batchId || null,
 });
 
 export const getAuditLogs = async (filters: {
@@ -103,6 +106,17 @@ export const getAuditLogs = async (filters: {
     limit,
     totalPages: Math.max(Math.ceil(total / limit), 1),
   };
+};
+
+export const getLatestRestorableBatch = async () => {
+  const latest = await prisma.auditLog.findFirst({
+    where: { batchId: { not: null }, action: { in: ['update', 'delete'] } },
+    orderBy: { createdAt: 'desc' },
+    select: { batchId: true, createdAt: true },
+  });
+  if (!latest?.batchId) return null;
+  const count = await prisma.auditLog.count({ where: { batchId: latest.batchId, action: { in: ['update', 'delete'] } } });
+  return { batchId: latest.batchId, count, createdAt: latest.createdAt };
 };
 
 const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member'];
@@ -290,4 +304,15 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
 
     return restored;
   });
+};
+
+export const restoreLatestAuditBatch = async (actor: AuditActor) => {
+  const latest = await getLatestRestorableBatch();
+  if (!latest) throw new NotFoundError('No restorable batch found.');
+  const logs = await prisma.auditLog.findMany({
+    where: { batchId: latest.batchId, action: { in: ['update', 'delete'] } },
+    orderBy: { createdAt: 'desc' },
+  });
+  for (const log of logs) await restoreTransactionFromAuditLog(log.id, actor);
+  return { count: logs.length };
 };

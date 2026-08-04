@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Filter, RefreshCw, RotateCcw } from 'lucide-react';
-import { AuditLog, getAuditLogs, restoreAuditLog } from '../api';
+import { AuditLog, getAuditLogs, getLatestAuditBatch, restoreAuditLog, restoreLatestAuditBatch } from '../api';
 
 type Props = {
   isAdmin: boolean;
@@ -72,6 +72,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
+  const [latestBatch, setLatestBatch] = useState<{ count: number } | null>(null);
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -85,6 +86,8 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
       setLogs(res.data.logs);
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
+      const batch = await getLatestAuditBatch();
+      setLatestBatch(batch.data);
     } finally {
       setLoading(false);
     }
@@ -113,6 +116,14 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
     } finally {
       setRestoringId(null);
     }
+  };
+
+  const handleRestoreLatestBatch = async () => {
+    if (!latestBatch || !isAdmin) return;
+    if (!window.confirm(`직전 일괄 작업 ${latestBatch.count}건을 모두 되돌릴까요?`)) return;
+    await restoreLatestAuditBatch();
+    await fetchLogs();
+    onRestored();
   };
 
   return (
@@ -152,6 +163,11 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             <RefreshCw size={16} style={{ marginRight: '6px' }} />
             새로고침
           </button>
+          {isAdmin && latestBatch && (
+            <button className="btn btn-primary" onClick={handleRestoreLatestBatch} disabled={loading}>
+              <RotateCcw size={16} style={{ marginRight: '6px' }} /> 직전 작업 일괄 되돌리기 ({latestBatch.count})
+            </button>
+          )}
           <select
             value={itemsPerPage}
             onChange={(e) => setItemsPerPage(Number(e.target.value))}

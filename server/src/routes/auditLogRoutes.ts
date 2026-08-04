@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { getAuditLogs, restoreTransactionFromAuditLog } from '../services/auditLogService';
+import { getAuditLogs, getLatestRestorableBatch, restoreLatestAuditBatch, restoreTransactionFromAuditLog } from '../services/auditLogService';
 import { saveAssetHistory } from '../services/assetService';
 import { asyncHandler } from '../utils/asyncHandler';
 
@@ -21,6 +21,14 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
   });
 
   res.json(result);
+}));
+
+router.get('/latest-batch', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getLatestRestorableBatch());
+}));
+
+router.post('/latest-batch/restore', asyncHandler(async (req: Request, res: Response) => {
+  res.json({ success: true, ...(await restoreLatestAuditBatch(getAuditActor(req))) });
 }));
 
 router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => {

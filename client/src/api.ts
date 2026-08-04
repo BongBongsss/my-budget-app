@@ -218,6 +218,8 @@ export const getAuditLogs = (params?: { entityType?: string; action?: string; pa
   instance.get<AuditLogPage>('/audit-logs', { params })
 );
 export const restoreAuditLog = (id: string) => instance.post(`/audit-logs/${id}/restore`);
+export const getLatestAuditBatch = () => instance.get<{ batchId: string; count: number; createdAt: string } | null>('/audit-logs/latest-batch');
+export const restoreLatestAuditBatch = () => instance.post<{ success: boolean; count: number }>('/audit-logs/latest-batch/restore');
 
 // Rules
 export const getRules = () => instance.get<CategoryRule[]>('/rules');

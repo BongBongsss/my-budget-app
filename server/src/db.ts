@@ -84,6 +84,8 @@ export const initDb = async () => {
     await prisma.$executeRawUnsafe(`
       ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
     `);
+    await prisma.$executeRawUnsafe(`ALTER TABLE "AuditLog" ADD COLUMN IF NOT EXISTS "batchId" text;`);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "AuditLog_batchId_idx" ON "AuditLog" ("batchId");`);
 
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS "AuditLog_entityType_entityId_idx" ON "AuditLog" ("entityType", "entityId");
