@@ -565,6 +565,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </div>
       )}
 
+      <div className="desktop-transaction-table">
       <table style={{ tableLayout: 'fixed', width: '100%', minWidth: '1000px' }}>
         <thead>
           <tr>
@@ -690,6 +691,60 @@ const TransactionList: React.FC<TransactionListProps> = ({
           ))}
         </tbody>
       </table>
+      </div>
+      <div className="mobile-transaction-cards">
+        {paginatedTransactions.map((tx) => {
+          const isEditing = editingId === tx.id;
+          return (
+            <article className="mobile-transaction-card" key={`mobile-${tx.id}`}>
+              {isEditing ? (
+                <div className="mobile-edit-form">
+                  <div className="mobile-edit-grid">
+                    <label>날짜<input type="date" value={editValues.date || ''} disabled /></label>
+                    <label>시간<input type="time" value={editValues.time || ''} disabled /></label>
+                    <label>구성원<select value={editValues.member || '미반영'} onChange={e => setEditValues({ ...editValues, member: e.target.value })}><option value="효">효</option><option value="콩">콩</option><option value="미반영">미반영</option></select></label>
+                    <label>유형<select value={editValues.type || 'expense'} onChange={e => setEditValues({ ...editValues, type: e.target.value as Transaction['type'] })}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></label>
+                    <label>대분류<select value={editValues.category || ''} onChange={e => setEditValues({ ...editValues, category: e.target.value })}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></label>
+                    <label>소분류<input value={editValues.subcategory || ''} onChange={e => setEditValues({ ...editValues, subcategory: e.target.value })} /></label>
+                    <label className="mobile-edit-wide">내용<input value={editValues.vendor || ''} onChange={e => setEditValues({ ...editValues, vendor: e.target.value })} /></label>
+                    <label>금액<input type="number" value={editValues.amount || 0} disabled /></label>
+                    <label>결제수단<input value={editValues.source || ''} onChange={e => setEditValues({ ...editValues, source: e.target.value })} /></label>
+                    <label className="mobile-edit-wide">메모<input value={editValues.memo || ''} onChange={e => setEditValues({ ...editValues, memo: e.target.value })} /></label>
+                  </div>
+                  <div className="mobile-card-actions">
+                    <button className="btn btn-primary" onClick={() => saveEdit(tx.id!)}><Check size={16} /> 저장</button>
+                    <button className="btn btn-secondary" onClick={() => setEditingId(null)}><X size={16} /> 취소</button>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="mobile-card-topline">
+                    {isAdmin && <input type="checkbox" aria-label={`${tx.vendor} 선택`} checked={selectedIds.includes(tx.id!)} onChange={() => toggleSelect(tx.id!)} />}
+                    <span>{tx.date} {tx.time}</span>
+                    <span className={tx.type === 'income' ? 'income' : 'expense'}>{getTypeLabel(tx.type)}</span>
+                    <strong>{tx.amount.toLocaleString()}원</strong>
+                  </div>
+                  <div className="mobile-card-vendor">{tx.vendor || '(내용 없음)'}</div>
+                  <div className="mobile-card-meta">{tx.category || '미분류'}{tx.subcategory ? ` · ${tx.subcategory}` : ''} · {tx.member || '미지정'}</div>
+                  {(tx.source || tx.memo) && <div className="mobile-card-note">{tx.source}{tx.source && tx.memo ? ' · ' : ''}{tx.memo}</div>}
+                  <div className="mobile-card-actions">
+                    {!isAdmin ? (
+                      <button className="btn btn-secondary" onClick={() => openReviewPanel(tx)}><MessageCircle size={16} /> 확인 요청</button>
+                    ) : (
+                      <>
+                        {!tx.isVerified && !tx.isInvalid && <button className="btn-icon" onClick={() => handleSingleVerify(tx.id!)} title="확인"><ThumbsUp size={18} color="green" /></button>}
+                        <button className="btn-icon" onClick={() => openReviewPanel(tx)} title="확인 요청"><MessageCircle size={18} color={getReviewColor(tx)} /></button>
+                        <button className="btn btn-secondary" onClick={() => startEdit(tx)}><Edit2 size={16} /> 수정</button>
+                        <button className="btn btn-danger" onClick={() => { if (window.confirm(`${tx.vendor} 거래를 삭제하시겠습니까?`)) onDelete(tx.id!); }}><Trash2 size={16} /> 삭제</button>
+                      </>
+                    )}
+                  </div>
+                </>
+              )}
+            </article>
+          );
+        })}
+      </div>
       <div className="pagination mt-2 flex justify-center gap-2">
         <button className="btn btn-secondary" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}>이전</button>
         {renderPagination()}
