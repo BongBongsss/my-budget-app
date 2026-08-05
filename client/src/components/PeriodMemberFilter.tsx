@@ -1,7 +1,8 @@
 import React from 'react';
 
 export type PeriodFilterValue = 'all' | 'month' | 'year';
-export type MemberFilterValue = 'all' | '효' | '굥' | '미지정';
+export const MEMBER_OPTIONS = ['효', '굥', '미지정'] as const;
+export type MemberFilterValue = 'all' | (typeof MEMBER_OPTIONS)[number];
 
 interface PeriodMemberFilterProps {
   period: PeriodFilterValue;
@@ -69,7 +70,7 @@ const PeriodMemberFilter: React.FC<PeriodMemberFilterProps> = ({
       <div className="filter-divider" aria-hidden="true" />
 
       <div className="member-filter" aria-label="구성원 필터">
-        {(['all', '효', '굥', '미지정'] as const).map((value) => (
+        {(['all', ...MEMBER_OPTIONS] as const).map((value) => (
           <button
             key={value}
             type="button"

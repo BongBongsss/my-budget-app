@@ -10,7 +10,7 @@ import {
 } from '../api';
 import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp, MessageCircle, Download } from 'lucide-react';
 import { getGroupName } from '../utils/categoryUtils';
-import PeriodMemberFilter, { MemberFilterValue, PeriodFilterValue } from './PeriodMemberFilter';
+import PeriodMemberFilter, { MEMBER_OPTIONS, MemberFilterValue, PeriodFilterValue } from './PeriodMemberFilter';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -551,7 +551,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 <>
                   <td><input type="date" value={editValues.date || ''} onChange={e => setEditValues({...editValues, date: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
                   <td><input type="time" value={editValues.time || ''} onChange={e => setEditValues({...editValues, time: e.target.value})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
-                  <td><select value={editValues.member || '미지정'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}><option value="효">효</option><option value="굥">굥</option><option value="미지정">미지정</option></select></td>
+                  <td><select value={editValues.member || '미지정'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}>{MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}</select></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td>{getGroupName(editValues.category || '', categories)}</td>
                   <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
@@ -661,7 +661,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <div className="mobile-edit-grid">
                     <label>날짜<input type="date" value={editValues.date || ''} disabled /></label>
                     <label>시간<input type="time" value={editValues.time || ''} disabled /></label>
-                    <label>구성원<select value={editValues.member || '미반영'} onChange={e => setEditValues({ ...editValues, member: e.target.value })}><option value="효">효</option><option value="콩">콩</option><option value="미반영">미반영</option></select></label>
+                    <label>구성원<select value={editValues.member || '미지정'} onChange={e => setEditValues({ ...editValues, member: e.target.value })}>{MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
                     <label>유형<select value={editValues.type || 'expense'} onChange={e => setEditValues({ ...editValues, type: e.target.value as Transaction['type'] })}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></label>
                     <label>대분류<select value={editValues.category || ''} onChange={e => setEditValues({ ...editValues, category: e.target.value })}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></label>
                     <label>소분류<input value={editValues.subcategory || ''} onChange={e => setEditValues({ ...editValues, subcategory: e.target.value })} /></label>

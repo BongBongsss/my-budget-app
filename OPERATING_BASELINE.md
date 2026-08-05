@@ -74,7 +74,7 @@ git diff --check
 Baseline verification completed on 2026-08-05:
 
 - Server unit tests: 6 files / 22 tests passed.
-- Client tests: 6 files / 11 tests passed.
+- Client tests: 6 files / 12 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
 - Browser E2E coverage validates the viewer login-to-dashboard flow, deletion
@@ -133,6 +133,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Unified the member values used by the desktop filter and both transaction editors.
+  - **Reason**: Prevent mobile edits from saving values that differ from the database and desktop UI (`효`, `굥`, `미지정`).
 
 - **2026-08-05**: Expanded critical-path browser regression coverage.
   - **Reason**: Protect the deletion/undo flow and Import-candidate approval

@@ -1,7 +1,7 @@
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import PeriodMemberFilter from './PeriodMemberFilter';
+import PeriodMemberFilter, { MEMBER_OPTIONS } from './PeriodMemberFilter';
 
 const renderFilter = () => {
   const props = {
@@ -20,6 +20,10 @@ const renderFilter = () => {
 };
 
 describe('PeriodMemberFilter', () => {
+  it('uses the shared member values for every editor and filter', () => {
+    expect(MEMBER_OPTIONS).toEqual(['효', '굥', '미지정']);
+  });
+
   it('reports period changes through the shared callback', async () => {
     const user = userEvent.setup();
     const props = renderFilter();
