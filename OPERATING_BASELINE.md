@@ -65,7 +65,7 @@ git diff --check
 Baseline verification completed on 2026-08-05:
 
 - Server unit tests: 6 files / 19 tests passed.
-- Client tests: 3 files / 7 tests passed.
+- Client tests: 4 files / 9 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
 
@@ -100,3 +100,5 @@ Before implementing a non-trivial change:
   - **Reason**: Establish a safe, documented starting point for reliability improvements without changing user data or visible behavior.
 - **2026-08-05**: Recorded the initial client automated-test baseline.
   - **Reason**: Make core client regressions reproducible before expanding to browser-level scenarios.
+- **2026-08-05**: Consolidated the shared period and member filter UI.
+  - **Reason**: Keep the dashboard and transaction-list filters behaviorally and visually aligned across responsive layouts.

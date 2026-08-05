@@ -10,6 +10,7 @@ import {
 } from '../api';
 import { Trash2, Check, X, Edit2, Search, RefreshCw, ListChecks, ThumbsUp, MessageCircle, Download } from 'lucide-react';
 import { getGroupName } from '../utils/categoryUtils';
+import PeriodMemberFilter, { MemberFilterValue, PeriodFilterValue } from './PeriodMemberFilter';
 
 interface TransactionListProps {
   transactions: Transaction[];
@@ -21,14 +22,14 @@ interface TransactionListProps {
   onBulkUpdateMember?: (ids: string[], member: string) => void;
   onVerify?: (ids: string[]) => void;
   onRefresh: () => void | Promise<void>;
-  period: 'all' | 'month' | 'year';
-  setPeriod: (p: 'all' | 'month' | 'year') => void;
+  period: PeriodFilterValue;
+  setPeriod: (p: PeriodFilterValue) => void;
   year: number;
   setYear: (y: number) => void;
   month: number;
   setMonth: (m: number) => void;
-  memberFilter: 'all' | '효' | '굥' | '미지정';
-  setMemberFilter: (m: 'all' | '효' | '굥' | '미지정') => void;
+  memberFilter: MemberFilterValue;
+  setMemberFilter: (m: MemberFilterValue) => void;
   isAdmin?: boolean;
   pageScope?: string;
   externalFilterActive?: boolean;
@@ -402,9 +403,6 @@ const TransactionList: React.FC<TransactionListProps> = ({
     width: '100%'
   };
 
-  const years = Array.from({ length: 5 }, (_, i) => new Date().getFullYear() - i);
-  const months = Array.from({ length: 12 }, (_, i) => i + 1);
-
   const getReviewColor = (tx: Transaction) => {
     if ((tx.openReviewCount || 0) > 0) return '#dc2626';
     if ((tx.reviewCount || 0) > 0) return '#2563eb';
@@ -414,57 +412,16 @@ const TransactionList: React.FC<TransactionListProps> = ({
   return (
     <div className="transaction-list">
       <div className="transaction-filter-bar flex justify-start items-center gap-2 mb-4">
-        <div className="period-filter">
-          <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
-            <option value="all">전체</option>
-            <option value="month">월별</option>
-            <option value="year">연별</option>
-          </select>
-
-          {(period === 'month' || period === 'year') && (
-            <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-              {years.map(y => <option key={y} value={y}>{y}</option>)}
-            </select>
-          )}
-          {period === 'month' && (
-            <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-              {months.map(m => <option key={m} value={m}>{m}월</option>)}
-            </select>
-          )}
-        </div>
-
-        <div className="filter-divider" style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
-        
-        <div className="member-filter flex gap-1">
-          <button 
-            className={`btn ${memberFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setMemberFilter('all')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            전체
-          </button>
-          <button 
-            className={`btn ${memberFilter === '효' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setMemberFilter('효')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            효
-          </button>
-          <button 
-            className={`btn ${memberFilter === '굥' ? 'btn-primary' : 'btn-secondary'}`} 
-            onClick={() => setMemberFilter('굥')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            굥
-          </button>
-          <button
-            className={`btn ${memberFilter === '미지정' ? 'btn-primary' : 'btn-secondary'}`}
-            onClick={() => setMemberFilter('미지정')}
-            style={{ fontSize: '0.75rem', padding: '2px 8px' }}
-          >
-            미지정
-          </button>
-        </div>
+        <PeriodMemberFilter
+          period={period}
+          setPeriod={setPeriod}
+          year={year}
+          setYear={setYear}
+          month={month}
+          setMonth={setMonth}
+          memberFilter={memberFilter}
+          setMemberFilter={setMemberFilter}
+        />
 
         <div className="filter-divider" style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
 
