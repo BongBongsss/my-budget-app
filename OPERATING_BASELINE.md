@@ -38,11 +38,14 @@ must not be used to modify, delete, or overwrite production data.
 ## Current Automated Coverage
 
 Server unit coverage currently includes selected transaction, import, asset,
-audit-log, authentication, and global error-handler behaviors.
+audit-log, authentication, and global error-handler behaviors. Client coverage
+now includes category-group fallback behavior, the category deletion API
+contract, and login success/failure behavior.
 
 The following important coverage is not yet established as a repeatable suite:
 
-- Client component and user-flow tests.
+- Additional client component and user-flow tests, especially transaction
+  creation, editing, filtering, and restore feedback.
 - Browser-level PC/mobile regression checks.
 - Full API integration tests for role enforcement and import-to-confirmation flows.
 - A single pre-deployment command that runs every required verification.
@@ -54,13 +57,15 @@ Before a reliability change is deployed, run the smallest relevant set from:
 ```powershell
 npx tsc --noEmit -p client/tsconfig.json
 npm run build --prefix client
+npm test --workspace=client
 npm test --prefix server -- --run
 git diff --check
 ```
 
 Baseline verification completed on 2026-08-05:
 
-- Server unit tests: 6 files / 18 tests passed.
+- Server unit tests: 6 files / 19 tests passed.
+- Client tests: 3 files / 7 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
 
@@ -84,7 +89,7 @@ Before implementing a non-trivial change:
 
 1. Audit transaction/batch restore atomicity and document any gaps.
 2. Add focused regression tests for undo, audit restore, and bulk restore.
-3. Establish client test tooling and a small critical-path browser test suite.
+3. Add a small critical-path browser test suite.
 4. Add structured request/error logging without exposing sensitive data.
 
 ---
@@ -93,3 +98,5 @@ Before implementing a non-trivial change:
 
 - **2026-08-05**: Created the operating baseline.
   - **Reason**: Establish a safe, documented starting point for reliability improvements without changing user data or visible behavior.
+- **2026-08-05**: Recorded the initial client automated-test baseline.
+  - **Reason**: Make core client regressions reproducible before expanding to browser-level scenarios.

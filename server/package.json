@@ -1,30 +1,13 @@
 {
-  "name": "budget-automation",
+  "name": "server",
   "version": "1.0.0",
-  "main": "main.js",
-  "description": "Automated Budget Tracking Application",
   "private": true,
-  "workspaces": [
-    "client",
-    "server"
-  ],
   "scripts": {
+    "dev": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/index.ts",
+    "dev:system-node": "ts-node src/index.ts",
     "test": "vitest",
-    "server": "npm run dev --workspace=server",
-    "client": "npm run dev --workspace=client",
-    "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
-    "electron": "electron .",
-    "build": "electron-builder"
+    "prisma:generate": "prisma generate"
   },
-  "build": {
-    "appId": "com.budget.app",
-    "win": {
-      "target": "nsis"
-    }
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@prisma/client": "6.0.0",
     "bcryptjs": "^3.0.3",
@@ -36,7 +19,9 @@
     "multer": "^2.1.1",
     "node-cron": "^4.2.1",
     "papaparse": "^5.5.3",
-    "xlsx": "^0.18.5",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
     "@types/connect-pg-simple": "^7.0.3",
     "@types/cors": "^2.8.19",
@@ -44,13 +29,9 @@
     "@types/express-session": "^1.19.0",
     "@types/multer": "^2.1.0",
     "@types/papaparse": "^5.5.2",
-    "@types/xlsx": "^0.0.35"
-  },
-  "devDependencies": {
+    "@types/xlsx": "^0.0.35",
     "@types/node": "^25.7.0",
     "@types/node-cron": "^3.0.11",
-    "electron": "^41.3.0",
-    "electron-builder": "^26.8.1",
     "prisma": "6.0.0",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.3",
