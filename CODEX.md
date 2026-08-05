@@ -32,6 +32,30 @@ Before making non-trivial changes, check the relevant project documents:
 - Preserve user changes. Do not revert dirty worktree changes unless the user explicitly asks.
 - Do not expose secrets from `.env` files. Mention only whether a value exists or which variable name is relevant.
 
+## Senior-Level Code Review
+
+For every requested code review, assess the implementation as a senior engineer
+reviewing an operating service. Verify current behavior, then specifically assess:
+
+- outage and data-integrity risks;
+- maintenance cost and unclear ownership or duplication;
+- scaling and future-extension constraints;
+- performance bottlenecks;
+- concurrency and race conditions;
+- security risks; and
+- missing or insufficient tests.
+
+Do not provide a generic list of improvements. Classify findings clearly as:
+
+1. **Must fix now**: realistic risks that could cause data loss, security
+   exposure, an outage, or an unacceptable operating burden.
+2. **Acceptable for now**: improvements that are worthwhile but proportionate
+   to defer for this personal, free-tier application, with the reason and a
+   trigger for revisiting them.
+
+Challenge unsafe assumptions or incorrect conclusions directly, with concrete
+evidence and alternatives. Do not agree merely to be accommodating.
+
 ## Environment Notes
 
 - The local development environment is Windows.
@@ -105,6 +129,8 @@ Prefer English for technical body content. Korean is acceptable for revision his
 
 ## 개정 이력 (Revision History)
 
+- **2026-08-05**: Added senior-level code-review criteria and finding classification.
+  - **Reason**: Ensure reviews distinguish production-critical risks from reasonable free-tier tradeoffs and explicitly challenge unsafe assumptions.
 - **2026-08-05**: Added a mandatory diagnose → summarize → confirm workflow for UI and behavior fixes.
   - **Reason**: Prevent repeated speculative adjustments and ensure the user can review the exact proposed change before implementation.
 - **2026-06-02**: Added pending local package-change note.
