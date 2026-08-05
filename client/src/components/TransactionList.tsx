@@ -414,22 +414,24 @@ const TransactionList: React.FC<TransactionListProps> = ({
   return (
     <div className="transaction-list">
       <div className="transaction-filter-bar flex justify-start items-center gap-2 mb-4">
-        <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
-          <option value="all">전체</option>
-          <option value="month">월별</option>
-          <option value="year">연별</option>
-        </select>
+        <div className="period-filter">
+          <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
+            <option value="all">전체</option>
+            <option value="month">월별</option>
+            <option value="year">연별</option>
+          </select>
 
-        {(period === 'month' || period === 'year') && (
-          <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-            {years.map(y => <option key={y} value={y}>{y}년</option>)}
-          </select>
-        )}
-        {period === 'month' && (
-          <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-            {months.map(m => <option key={m} value={m}>{m}월</option>)}
-          </select>
-        )}
+          {(period === 'month' || period === 'year') && (
+            <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+              {years.map(y => <option key={y} value={y}>{y}년</option>)}
+            </select>
+          )}
+          {period === 'month' && (
+            <select value={month} onChange={(e) => setMonth(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
+              {months.map(m => <option key={m} value={m}>{m}월</option>)}
+            </select>
+          )}
+        </div>
 
         <div className="filter-divider" style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
         
