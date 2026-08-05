@@ -308,7 +308,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
       <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">내 자산 목록</h3>
         <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
+          <table className="asset-list-table w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>

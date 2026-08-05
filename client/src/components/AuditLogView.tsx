@@ -156,7 +156,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
 
   return (
     <div className="transaction-list animate-fadeIn">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+      <div className="audit-log-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
         <div>
           <h3 style={{ margin: 0 }}>활동 로그</h3>
           <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px' }}>
@@ -164,7 +164,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="audit-log-toolbar" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           <Filter size={18} color="#64748b" />
           <select
             value={entityType}
@@ -208,7 +208,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         </div>
       </div>
 
-      <table>
+      <table className="audit-log-table">
         <thead>
           <tr>
             <th>시간</th>
