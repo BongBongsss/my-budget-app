@@ -808,7 +808,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     background: #f8fafc;
   }
   .transaction-filter-bar .filter-divider { display: none; }
-  .period-filter { display: flex; flex-wrap: wrap; gap: 0.55rem; }
+  .period-filter { display: flex; width: 100%; flex-wrap: wrap; justify-content: flex-start; gap: 0.55rem; }
   .period-filter .edit-input { width: auto !important; min-width: 86px; }
   .member-filter { min-width: 0; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .member-filter .btn { justify-content: center; padding: 0.4rem 0.15rem !important; }
@@ -845,6 +845,10 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-edit-grid label { display: flex; flex-direction: column; gap: 0.2rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
   .mobile-edit-grid input, .mobile-edit-grid select { width: 100%; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
   .mobile-edit-wide { grid-column: 1 / -1; }
+
+  .summary-chart-card { min-height: 0 !important; }
+  .summary-chart-card.is-pie .summary-chart-area { height: 330px !important; flex: none !important; }
+  .summary-chart-card.is-bar .summary-chart-area { height: 420px !important; flex: none !important; }
 
   .undo-toast { width: calc(100vw - 1.5rem); bottom: 1rem; padding: 0.75rem; gap: 0.6rem; }
   .undo-toast span { flex: 1; font-size: 0.85rem; }

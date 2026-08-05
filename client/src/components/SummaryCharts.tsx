@@ -131,7 +131,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   return (
     <div className="grid grid-cols-2 gap-6" style={{ marginBottom: '32px' }}>
       {/* 좌측: 수입 섹션 */}
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>Income {incomeView === 'pie' ? 'Breakdown' : 'Trend'}</h3>
             <div style={{ display: 'flex', gap: '5px' }}>
@@ -152,7 +152,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             </div>
         </div>
 
-        <div style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
+        <div className="summary-chart-area" style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
           {incomeView === 'pie' ? (
             <Pie 
               data={{
@@ -212,7 +212,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       </div>
 
       {/* 우측: 지출 섹션 */}
-      <div className="card-form" style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>Expense {expenseView === 'pie' ? 'Breakdown' : 'Trend'}</h3>
             <div style={{ display: 'flex', gap: '5px' }}>
@@ -233,7 +233,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             </div>
         </div>
 
-        <div style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
+        <div className="summary-chart-area" style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
           {expenseView === 'pie' ? (
             <Pie 
               data={{
