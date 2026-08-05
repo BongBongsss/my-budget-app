@@ -77,8 +77,9 @@ Baseline verification completed on 2026-08-05:
 - Client tests: 6 files / 11 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
-- Browser E2E coverage validates the viewer login-to-dashboard flow with mocked
-  API responses and does not access production data.
+- Browser E2E coverage validates the viewer login-to-dashboard flow, deletion
+  followed by immediate undo, and Import-candidate approval with mocked API
+  responses. It does not access production data.
 
 For data-affecting work, also verify the relevant scenarios in
 `VERIFICATION_SCENARIOS_2026-06-05.md`. The hard-coded record counts in that
@@ -99,9 +100,8 @@ Before implementing a non-trivial change:
 ## Next Reliability Work
 
 1. Audit transaction/batch restore atomicity and document any gaps.
-2. Add focused regression tests for undo, audit restore, and bulk restore.
-3. Add a small critical-path browser test suite.
-4. Add structured request/error logging without exposing sensitive data.
+2. Add regression coverage for multi-item bulk restore.
+3. Add structured request/error logging without exposing sensitive data.
 
 ## Local Full Backup
 
@@ -133,6 +133,11 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Expanded critical-path browser regression coverage.
+  - **Reason**: Protect the deletion/undo flow and Import-candidate approval
+    flow that can otherwise affect transaction data, without using production
+    data during tests.
 
 - **2026-08-05**: Strengthened scheduled API and client health monitoring.
   - **Reason**: Treat HTTP failures and prolonged outages as actionable failed checks rather than successful keep-alive requests.
