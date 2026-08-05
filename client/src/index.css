@@ -774,6 +774,17 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .mobile-transaction-cards { display: none; }
 
+.transaction-tabs {
+  background: #fff;
+  padding: 0.9rem 1.5rem 0;
+  border-radius: 12px 12px 0 0;
+}
+
+.transaction-tabs + .transaction-list {
+  margin-top: 0;
+  border-radius: 0 0 12px 12px;
+}
+
 /* Mobile-only layout: the desktop table remains unchanged above this breakpoint. */
 @media (max-width: 768px) {
   body { overflow-x: hidden; }
@@ -781,6 +792,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .card-form, .transaction-list { padding: 1rem; }
 
   .grid-form { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.65rem !important; }
+  .card-form .form-group input, .card-form .form-group select { width: 100%; min-width: 0; }
   .form-actions { grid-column: 1 / -1; justify-content: stretch; }
   .form-actions .btn { width: 100%; justify-content: center; }
 
@@ -793,6 +805,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
   .tabs { flex-wrap: wrap; gap: 6px; }
   .tabs button { margin-right: 0 !important; flex: 1 1 calc(50% - 6px); justify-content: center; }
+  .transaction-tabs { padding: 0.75rem 1rem 0; }
   .list-actions > .flex, .transaction-list > .flex { flex-wrap: wrap; align-items: center; }
   .list-actions .flex { gap: 6px; }
 

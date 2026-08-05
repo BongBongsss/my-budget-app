@@ -417,7 +417,7 @@ function App() {
           
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
-          <div className="tabs" style={{ marginBottom: '20px', display: 'flex', alignItems: 'center' }}>
+          <div className="tabs transaction-tabs" style={{ marginBottom: 0, display: 'flex', alignItems: 'center' }}>
             {/* Force cache refresh: v2 */}
             <button 
               className={activeTab === 'all' ? 'btn btn-primary' : 'btn btn-secondary'} 
