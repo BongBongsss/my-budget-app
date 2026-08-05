@@ -20,6 +20,12 @@ Before making non-trivial changes, check the relevant project documents:
 ## Working Principles
 
 - Keep changes surgical. Touch only files needed for the user's request.
+- For UI defects, regressions, and unexpected behavior, diagnose before editing:
+  1. inspect the actual component structure, active CSS/logic, and the relevant desktop/mobile breakpoint or runtime path;
+  2. identify the concrete cause with evidence rather than guessing;
+  3. summarize the cause, proposed changes, affected screens, and data/behavior impact for the user;
+  4. obtain the user's confirmation before implementing, unless the user has already explicitly authorized the identified change.
+- Do not make repeated speculative UI tweaks. If a prior adjustment did not resolve the issue, stop and re-check the active rule, selector specificity, layout constraints, and deployed output before changing code again.
 - Do not refactor adjacent code unless it is required to complete the task safely.
 - Match existing project patterns before introducing new abstractions.
 - Explain assumptions and tradeoffs when they affect behavior, deployment, or data.
@@ -99,6 +105,8 @@ Prefer English for technical body content. Korean is acceptable for revision his
 
 ## 개정 이력 (Revision History)
 
+- **2026-08-05**: Added a mandatory diagnose → summarize → confirm workflow for UI and behavior fixes.
+  - **Reason**: Prevent repeated speculative adjustments and ensure the user can review the exact proposed change before implementation.
 - **2026-06-02**: Added pending local package-change note.
   - **사유**: `client/package.json`, `server/package.json`, `package-lock.json` 변경이 로그 기능과 별개로 남아 있어, Codex가 다음 작업에서 실수로 함께 커밋하지 않도록 기록함.
 - **2026-06-02**: Created Codex-specific guidance based on `GEMINI.md`.

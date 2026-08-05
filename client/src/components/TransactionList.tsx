@@ -423,7 +423,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
           {(period === 'month' || period === 'year') && (
             <select value={year} onChange={(e) => setYear(parseInt(e.target.value))} className="edit-input" style={{ fontSize: '0.75rem', padding: '0px 2px', width: 'auto' }}>
-              {years.map(y => <option key={y} value={y}>{y}년</option>)}
+              {years.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
           )}
           {period === 'month' && (
