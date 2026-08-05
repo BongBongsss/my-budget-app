@@ -796,6 +796,39 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .list-actions > .flex, .transaction-list > .flex { flex-wrap: wrap; align-items: center; }
   .list-actions .flex { gap: 6px; }
 
+  .transaction-filter-bar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.6rem;
+    padding: 0.7rem;
+    margin-bottom: 0.9rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    background: #f8fafc;
+  }
+  .transaction-filter-bar .filter-divider { display: none; }
+  .transaction-filter-bar > .edit-input { width: 72px !important; min-width: 0; }
+  .member-filter { min-width: 0; display: grid !important; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .member-filter .btn { justify-content: center; padding: 0.4rem 0.15rem !important; }
+  .review-filter {
+    grid-column: 1 / -1;
+    display: grid !important;
+    grid-template-columns: auto repeat(3, minmax(0, 1fr));
+    padding-top: 0.6rem;
+    border-top: 1px solid #e2e8f0;
+  }
+  .review-filter .btn { justify-content: center; padding: 0.4rem 0.2rem !important; }
+
+  .transaction-search-bar {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.5rem;
+    align-items: end !important;
+  }
+  .search-controls { min-width: 0; flex-wrap: wrap; }
+  .search-controls .edit-input { flex: 1 1 120px; min-width: 0; }
+  .list-export-controls { justify-content: flex-end; }
+
   .desktop-transaction-table { display: none; }
   .mobile-transaction-cards { display: grid; gap: 0.75rem; }
   .mobile-transaction-card { border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.75rem; background: #fff; }

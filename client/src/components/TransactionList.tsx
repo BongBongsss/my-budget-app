@@ -413,7 +413,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
-      <div className="flex justify-start items-center gap-2 mb-4">
+      <div className="transaction-filter-bar flex justify-start items-center gap-2 mb-4">
         <select value={period} onChange={(e) => setPeriod(e.target.value as any)} className="edit-input" style={{ fontSize: '0.8rem', padding: '1px 3px', width: 'auto' }}>
           <option value="all">전체</option>
           <option value="month">월별</option>
@@ -431,9 +431,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </select>
         )}
 
-        <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+        <div className="filter-divider" style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
         
-        <div className="flex gap-1">
+        <div className="member-filter flex gap-1">
           <button 
             className={`btn ${memberFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} 
             onClick={() => setMemberFilter('all')}
@@ -464,9 +464,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </button>
         </div>
 
-        <div style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
+        <div className="filter-divider" style={{ borderLeft: '1px solid #ddd', height: '20px', margin: '0 10px' }}></div>
 
-        <div className="flex gap-1 items-center">
+        <div className="review-filter flex gap-1 items-center">
           <span style={{ fontSize: '0.75rem', color: '#475569', marginRight: '2px' }}>요청</span>
           <button className={`btn ${reviewFilter === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setReviewFilter('all'); setCurrentPage(1); }} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>전체</button>
           <button className={`btn ${reviewFilter === 'resolved' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => { setReviewFilter('resolved'); setCurrentPage(1); }} style={{ fontSize: '0.75rem', padding: '2px 8px' }}>처리됨 ({reviewCounts.resolved})</button>
@@ -475,8 +475,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
       </div>
 
       <div className="list-actions mb-4">
-        <div className="flex justify-between items-center mb-2">
-          <div className="flex gap-1 items-center">
+        <div className="transaction-search-bar flex justify-between items-center mb-2">
+          <div className="search-controls flex gap-1 items-center">
             <select value={filterType} onChange={e => { setFilterType(e.target.value as any); setSearch(''); setSearchQuery(''); setCellFilters({}); setExactFilter(false); }} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px' }}>
               <option value="date">날짜</option>
               <option value="type">타입</option>
@@ -523,7 +523,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             </div>
           )}
 
-          <div className="flex gap-1 items-center">
+          <div className="list-export-controls flex gap-1 items-center">
             <button
               className="btn btn-secondary"
               onClick={handleExportCsv}
