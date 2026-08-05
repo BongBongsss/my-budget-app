@@ -51,6 +51,15 @@ The following important coverage is not yet established as a repeatable suite:
 - Full API integration tests for role enforcement and import-to-confirmation flows.
 - A single pre-deployment command that runs every required verification.
 
+## Dependency Security Baseline
+
+- Production dependency patches are locked through the root `package-lock.json`.
+- The latest reviewed patch updates Axios, Multer, Express transitive parsing
+  dependencies, and form-data without changing application source code.
+- `xlsx` remains a known high-severity exception because no upstream automatic
+  security fix is available. Replacing it requires an Import compatibility
+  comparison for CSV, XLSX, and legacy XLS files before deployment.
+
 ## Verification Baseline
 
 Before a reliability change is deployed, run the smallest relevant set from:
@@ -96,6 +105,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Applied available production dependency security patches.
+  - **Reason**: Remove the remediable Axios, Multer, body-parser, form-data, and qs advisories while isolating the unresolved xlsx replacement as a separately verified Import change.
 
 - **2026-08-05**: Added the GitHub Actions CI verification workflow and refreshed the server test count.
   - **Reason**: Run type checks, schema validation, tests, and the production client build automatically for every pull request and push to `main`.
