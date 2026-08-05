@@ -452,7 +452,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
         data,
       });
 
-      await tx.auditLog.create({
+      const auditLog = await tx.auditLog.create({
         data: buildAuditLogData({
           entityType: 'importRow',
           entityId: id,
@@ -463,7 +463,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
         }),
       });
 
-      return mapImportRowToTransaction(updatedImportRow);
+      return { transaction: mapImportRowToTransaction(updatedImportRow), auditLogIds: [auditLog.id] };
     }
 
     const updated = await tx.transaction.update({
@@ -471,7 +471,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
       data: pickTransactionUpdateData(updates),
     });
 
-    await tx.auditLog.create({
+    const auditLog = await tx.auditLog.create({
       data: buildAuditLogData({
         entityType: 'transaction',
         entityId: id,
@@ -482,7 +482,7 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
       }),
     });
 
-    return updated;
+    return { transaction: updated, auditLogIds: [auditLog.id] };
   });
 };
 
@@ -491,7 +491,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
     const batchId = randomUUID();
     const data = pickTransactionUpdateData(updates);
     if (Object.keys(data).length === 0 || ids.length === 0) {
-      return { count: 0 };
+      return { count: 0, auditLogIds: [] };
     }
 
     const beforeTransactions = await tx.transaction.findMany({
@@ -542,7 +542,7 @@ export const bulkUpdateTransactions = async (ids: string[], updates: Partial<Tra
       await tx.auditLog.createMany({ data: auditLogs });
     }
 
-    return { count: transactionIds.length + beforeImportRows.length };
+    return { count: transactionIds.length + beforeImportRows.length, auditLogIds: auditLogs.map((log) => log.id) };
   });
 };
 
@@ -563,7 +563,7 @@ export const deleteTransaction = async (id: string, actor?: AuditActor) => {
         data: { status: 'ignored' },
       });
 
-      await tx.auditLog.create({
+      const auditLog = await tx.auditLog.create({
         data: buildAuditLogData({
           entityType: 'importRow',
           entityId: id,
@@ -574,7 +574,7 @@ export const deleteTransaction = async (id: string, actor?: AuditActor) => {
         }),
       });
 
-      return ignored;
+      return { transaction: mapImportRowToTransaction(ignored), auditLogIds: [auditLog.id] };
     }
 
     const deleted = await tx.transaction.update({
@@ -582,7 +582,7 @@ export const deleteTransaction = async (id: string, actor?: AuditActor) => {
       data: { isDeleted: true },
     });
 
-    await tx.auditLog.create({
+    const auditLog = await tx.auditLog.create({
       data: buildAuditLogData({
         entityType: 'transaction',
         entityId: id,
@@ -593,7 +593,7 @@ export const deleteTransaction = async (id: string, actor?: AuditActor) => {
       }),
     });
 
-    return deleted;
+    return { transaction: deleted, auditLogIds: [auditLog.id] };
   });
 };
 
@@ -621,8 +621,7 @@ export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) 
       });
     }
 
-    await tx.auditLog.createMany({
-      data: [
+    const auditLogs = [
         ...beforeItems.map((before) => buildAuditLogData({
           entityType: 'transaction',
           entityId: before.id,
@@ -641,10 +640,13 @@ export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) 
           actor,
           batchId,
         })),
-      ],
-    });
+      ];
 
-    return { count: result.count + beforeImportRows.length };
+    if (auditLogs.length > 0) {
+      await tx.auditLog.createMany({ data: auditLogs });
+    }
+
+    return { count: result.count + beforeImportRows.length, auditLogIds: auditLogs.map((log) => log.id) };
   });
 };
 

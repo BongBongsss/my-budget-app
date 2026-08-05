@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, bulkAddTransactions, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions } from './api';
+import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
@@ -28,33 +28,7 @@ type ImportSummary = {
   };
 };
 
-type UndoableTransactionField = 'date' | 'time' | 'type' | 'category' | 'subcategory' | 'vendor' | 'amount' | 'currency' | 'source' | 'memo' | 'member';
-
-type UndoAction =
-  | { kind: 'restore-deleted'; label: string; transactions: Transaction[] }
-  | { kind: 'restore-updates'; label: string; rollbackGroups: Array<{ ids: string[]; updates: Partial<Transaction> }> };
-
-const undoableTransactionFields: UndoableTransactionField[] = [
-  'date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member',
-];
-
-const buildRollbackGroups = (transactions: Transaction[], updates: Partial<Transaction>) => {
-  const changedFields = undoableTransactionFields.filter((field) => updates[field] !== undefined);
-  const groups = new Map<string, { ids: string[]; updates: Partial<Transaction> }>();
-
-  transactions.forEach((transaction) => {
-    if (!transaction.id) return;
-    const rollbackUpdates = Object.fromEntries(
-      changedFields.map((field) => [field, transaction[field]])
-    ) as Partial<Transaction>;
-    const key = JSON.stringify(rollbackUpdates);
-    const group = groups.get(key);
-    if (group) group.ids.push(transaction.id);
-    else groups.set(key, { ids: [transaction.id], updates: rollbackUpdates });
-  });
-
-  return Array.from(groups.values());
-};
+type UndoAction = { label: string; auditLogIds: string[] };
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -122,13 +96,10 @@ function App() {
 
   const handleDelete = async (id: string) => {
     if (userRole !== 'admin') return;
-    const itemToDelete = transactions.find(t => t.id === id);
-    if (!itemToDelete) return;
-    await deleteTransaction(id);
+    const result = await deleteTransaction(id);
     showUndoMessage({
-      kind: 'restore-deleted',
       label: '거래 1건을 삭제했습니다.',
-      transactions: [itemToDelete],
+      auditLogIds: result.data.auditLogIds,
     });
     fetchData();
   };
@@ -138,26 +109,22 @@ function App() {
     const itemsToDelete = transactions.filter(t => ids.includes(t.id!));
     if (itemsToDelete.length === 0) return;
     if (!window.confirm(`${ids.length}개의 항목을 삭제하시겠습니까?`)) return;
-    await bulkDeleteTransactions(ids);
+    const result = await bulkDeleteTransactions(ids);
     showUndoMessage({
-      kind: 'restore-deleted',
       label: `거래 ${itemsToDelete.length}건을 삭제했습니다.`,
-      transactions: itemsToDelete,
+      auditLogIds: result.data.auditLogIds,
     });
     fetchData();
   };
 
   const handleUpdate = async (id: string, updates: Partial<Transaction>) => {
     if (userRole !== 'admin') return;
-    const before = transactions.find((transaction) => transaction.id === id);
-    if (!before) return;
     try {
-      await updateTransaction(id, updates);
+      const result = await updateTransaction(id, updates);
       setTransactions(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
       showUndoMessage({
-        kind: 'restore-updates',
         label: '거래를 수정했습니다.',
-        rollbackGroups: buildRollbackGroups([before], updates),
+        auditLogIds: result.data.auditLogIds,
       });
     } catch (err) {
       fetchData();
@@ -178,9 +145,8 @@ function App() {
         transaction.id && ids.includes(transaction.id) ? { ...transaction, ...updates } : transaction
       )));
       showUndoMessage({
-        kind: 'restore-updates',
         label: `거래 ${before.length}건을 수정했습니다.`,
-        rollbackGroups: buildRollbackGroups(before, updates),
+        auditLogIds: result.data.auditLogIds,
       });
       await fetchData();
     } catch (err) {
@@ -202,9 +168,8 @@ function App() {
       }
       setTransactions(prev => prev.map(t => ids.includes(t.id!) ? { ...t, member } : t));
       showUndoMessage({
-        kind: 'restore-updates',
         label: `거래 ${before.length}건을 수정했습니다.`,
-        rollbackGroups: buildRollbackGroups(before, { member }),
+        auditLogIds: res.data.auditLogIds,
       });
       await fetchData();
     } catch (err) {
@@ -217,13 +182,7 @@ function App() {
   const handleUndo = async () => {
     if (userRole !== 'admin' || !lastUndoAction) return;
     try {
-      if (lastUndoAction.kind === 'restore-deleted') {
-        await bulkAddTransactions(lastUndoAction.transactions);
-      } else {
-        await Promise.all(lastUndoAction.rollbackGroups.map((group) => (
-          bulkUpdateTransactions(group.ids, group.updates)
-        )));
-      }
+      await restoreAuditLogs(lastUndoAction.auditLogIds);
       setShowUndo(false);
       setLastUndoAction(null);
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);

@@ -160,11 +160,11 @@ export interface AuditLogPage {
 export const getTransactions = () => instance.get<Transaction[]>('/transactions');
 export const applyAutoRules = () => instance.post<{ success: boolean, count: number }>('/transactions/apply-rules');
 export const addTransaction = (tx: Partial<Transaction>) => instance.post<Transaction>('/transactions', tx);
-export const updateTransaction = (id: string, tx: Partial<Transaction>) => instance.put(`/transactions/${id}`, tx);
+export const updateTransaction = (id: string, tx: Partial<Transaction>) => instance.put<{ success: boolean; auditLogIds: string[] }>(`/transactions/${id}`, tx);
 export const bulkUpdateTransactions = (ids: string[], updates: Partial<Transaction>) =>
-  instance.post<{ success: boolean; count: number }>('/transactions/bulk-update', { ids, updates });
-export const deleteTransaction = (id: string) => instance.delete(`/transactions/${id}`);
-export const bulkDeleteTransactions = (ids: string[]) => instance.delete('/transactions/bulk', { data: { ids } });
+  instance.post<{ success: boolean; count: number; auditLogIds: string[] }>('/transactions/bulk-update', { ids, updates });
+export const deleteTransaction = (id: string) => instance.delete<{ success: boolean; auditLogIds: string[] }>(`/transactions/${id}`);
+export const bulkDeleteTransactions = (ids: string[]) => instance.delete<{ success: boolean; count: number; auditLogIds: string[] }>('/transactions/bulk', { data: { ids } });
 export const verifyTransactions = (ids: string[]) => instance.post('/transactions/verify', { ids });
 export const cleanupTransactions = () => instance.post('/transactions/cleanup');
 export const exportTransactionsBackup = () =>
@@ -218,6 +218,7 @@ export const getAuditLogs = (params?: { entityType?: string; action?: string; pa
   instance.get<AuditLogPage>('/audit-logs', { params })
 );
 export const restoreAuditLog = (id: string) => instance.post(`/audit-logs/${id}/restore`);
+export const restoreAuditLogs = (auditLogIds: string[]) => instance.post<{ success: boolean; count: number }>('/audit-logs/restore', { auditLogIds });
 export const getLatestAuditBatch = () => instance.get<{ batchId: string; count: number; createdAt: string } | null>('/audit-logs/latest-batch');
 export const restoreLatestAuditBatch = () => instance.post<{ success: boolean; count: number }>('/audit-logs/latest-batch/restore');
 

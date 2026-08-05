@@ -290,6 +290,27 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
   });
 };
 
+export const restoreAuditLogs = async (auditLogIds: string[], actor: AuditActor) => {
+  const uniqueIds = [...new Set(auditLogIds.filter(Boolean))];
+  if (uniqueIds.length === 0) throw new BadRequestError('At least one audit log ID is required.');
+
+  return prisma.$transaction(async (tx) => {
+    const auditLogs = await tx.auditLog.findMany({ where: { id: { in: uniqueIds } } });
+    if (auditLogs.length !== uniqueIds.length) throw new NotFoundError('One or more restorable audit logs were not found.');
+
+    const logsById = new Map(auditLogs.map((log) => [log.id, log]));
+    const restored = [];
+    for (const id of uniqueIds) {
+      restored.push(await restoreAuditLogInTransaction(tx, logsById.get(id), actor));
+    }
+
+    return {
+      count: restored.length,
+      restoredAsset: auditLogs.some((log) => log.entityType === 'asset'),
+    };
+  });
+};
+
 export const restoreLatestAuditBatch = async (actor: AuditActor) => {
   return prisma.$transaction(async (tx) => {
     const latest = await findLatestRestorableBatch(tx);

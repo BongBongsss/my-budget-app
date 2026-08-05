@@ -307,7 +307,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
 
       <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">내 자산 목록</h3>
-        <div className="overflow-x-auto">
+        <div className="desktop-asset-table overflow-x-auto">
           <table className="asset-list-table w-full border-collapse">
             <thead>
               <tr className="bg-gray-50">
@@ -364,6 +364,58 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
                 ))}
                 </tbody>
           </table>
+        </div>
+
+        <div className="mobile-asset-cards">
+          <div className="mobile-asset-sort">
+            <button type="button" className="btn btn-secondary" onClick={handleSort}>
+              유형 정렬 {sortOrder === 'asc' ? '↑' : sortOrder === 'desc' ? '↓' : '↕'}
+            </button>
+            <button type="button" className="btn btn-secondary" onClick={handleSortBalance}>
+              잔액 정렬 {balanceSortOrder === 'asc' ? '↑' : balanceSortOrder === 'desc' ? '↓' : '↕'}
+            </button>
+          </div>
+
+          {assets.length === 0 ? (
+            <div className="mobile-asset-empty">등록된 자산이 없습니다.</div>
+          ) : assets.map((asset) => (
+            <article className="mobile-asset-card" key={`mobile-${asset.id}`}>
+              {editingId === asset.id ? (
+                <>
+                  <div className="mobile-asset-edit-grid">
+                    <label>자산명<input value={editForm.name || ''} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
+                    <label>유형
+                      <select value={editForm.type} onChange={(event) => setEditForm({ ...editForm, type: event.target.value as Asset['type'] })}>
+                        <option value="bank">저축/예금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
+                      </select>
+                    </label>
+                    <label>잔액<input type="number" value={editForm.balance ?? 0} onChange={(event) => setEditForm({ ...editForm, balance: parseFloat(event.target.value) || 0 })} /></label>
+                    <label className="mobile-asset-edit-wide">메모<input value={editForm.memo || ''} onChange={(event) => setEditForm({ ...editForm, memo: event.target.value })} /></label>
+                  </div>
+                  <div className="mobile-asset-actions">
+                    <button className="btn btn-primary" onClick={() => handleUpdate(asset.id!)}><Check size={16} /> 저장</button>
+                    <button className="btn btn-secondary" onClick={() => setEditingId(null)}><X size={16} /> 취소</button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mobile-asset-topline">
+                    <span>{assetTypeMap[asset.type] || asset.type}</span>
+                    <strong>{asset.balance.toLocaleString()}원</strong>
+                  </div>
+                  <div className="mobile-asset-name">{asset.name}</div>
+                  {asset.memo && <div className="mobile-asset-note">{asset.memo}</div>}
+                  <div className="mobile-asset-meta">수정: {asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</div>
+                  {isAdmin && (
+                    <div className="mobile-asset-actions">
+                      <button className="btn btn-secondary" onClick={() => { setEditingId(asset.id!); setEditForm(asset); }}><Edit2 size={16} /> 수정</button>
+                      <button className="btn btn-danger" onClick={() => handleDelete(asset.id!)}><Trash2 size={16} /> 삭제</button>
+                    </div>
+                  )}
+                </>
+              )}
+            </article>
+          ))}
         </div>
       </div>
     </div>

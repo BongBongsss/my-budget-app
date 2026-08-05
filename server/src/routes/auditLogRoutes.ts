@@ -1,7 +1,8 @@
 import { Router, Request, Response } from 'express';
-import { getAuditLogs, getLatestRestorableBatch, restoreLatestAuditBatch, restoreTransactionFromAuditLog } from '../services/auditLogService';
+import { getAuditLogs, getLatestRestorableBatch, restoreAuditLogs, restoreLatestAuditBatch, restoreTransactionFromAuditLog } from '../services/auditLogService';
 import { saveAssetHistory } from '../services/assetService';
 import { asyncHandler } from '../utils/asyncHandler';
+import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
@@ -29,6 +30,17 @@ router.get('/latest-batch', asyncHandler(async (_req: Request, res: Response) =>
 
 router.post('/latest-batch/restore', asyncHandler(async (req: Request, res: Response) => {
   res.json({ success: true, ...(await restoreLatestAuditBatch(getAuditActor(req))) });
+}));
+
+router.post('/restore', asyncHandler(async (req: Request, res: Response) => {
+  const { auditLogIds } = req.body;
+  if (!Array.isArray(auditLogIds) || auditLogIds.some((id) => typeof id !== 'string')) {
+    throw new BadRequestError('Expected an array of audit log IDs.');
+  }
+
+  const result = await restoreAuditLogs(auditLogIds, getAuditActor(req));
+  if (result.restoredAsset) await saveAssetHistory();
+  res.json({ success: true, count: result.count });
 }));
 
 router.post('/:id/restore', asyncHandler(async (req: Request, res: Response) => {

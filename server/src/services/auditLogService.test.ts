@@ -11,7 +11,7 @@ vi.mock('../db', () => ({
 
 import prisma from '../db';
 import { BadRequestError, NotFoundError } from '../utils/errors';
-import { restoreLatestAuditBatch, restoreTransactionFromAuditLog } from './auditLogService';
+import { restoreAuditLogs, restoreLatestAuditBatch, restoreTransactionFromAuditLog } from './auditLogService';
 
 describe('AuditLogService', () => {
   beforeEach(() => {
@@ -206,6 +206,36 @@ describe('AuditLogService', () => {
     expect(tx.auditLog.update).toHaveBeenCalledWith(expect.objectContaining({
       where: { id: 'log-batch-1' },
       data: { restoredAt: expect.any(Date) },
+    }));
+  });
+
+  it('restores only the exact audit logs requested by immediate undo', async () => {
+    const beforeData = {
+      id: 'tx-undo-1', date: '2026-08-05', time: '10:00', type: 'expense', category: 'Food',
+      vendor: 'Store', amount: 1000, currency: 'KRW', source: 'manual', memo: null,
+      hash: 'hash-undo-1', isVerified: true, isDuplicate: false, isDeleted: true, member: 'admin',
+    };
+    const tx = {
+      auditLog: {
+        findMany: vi.fn().mockResolvedValue([{
+          id: 'log-undo-1', entityType: 'transaction', entityId: 'tx-undo-1',
+          action: 'delete', restoredAt: null, beforeData,
+        }]),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+      transaction: { upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }) },
+    };
+
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreAuditLogs(['log-undo-1'], { role: 'admin' }))
+      .resolves
+      .toEqual({ count: 1, restoredAsset: false });
+    expect(tx.auditLog.findMany).toHaveBeenCalledWith({ where: { id: { in: ['log-undo-1'] } } });
+    expect(tx.transaction.upsert).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'tx-undo-1' },
+      update: expect.objectContaining({ isDeleted: false }),
     }));
   });
 });

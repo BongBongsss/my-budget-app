@@ -113,12 +113,12 @@ router.post('/bulk-update', asyncHandler(async (req: Request, res: Response) => 
     throw new BadRequestError('Expected updates object');
   }
   const result = await bulkUpdateTransactions(ids, updates, getAuditActor(req));
-  res.json({ success: true, count: result.count });
+  res.json({ success: true, count: result.count, auditLogIds: result.auditLogIds });
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
-  await updateTransaction(req.params.id as string, req.body, getAuditActor(req));
-  res.json({ success: true });
+  const result = await updateTransaction(req.params.id as string, req.body, getAuditActor(req));
+  res.json({ success: true, auditLogIds: result.auditLogIds });
 }));
 
 router.delete('/bulk', asyncHandler(async (req: Request, res: Response) => {
@@ -126,13 +126,13 @@ router.delete('/bulk', asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(ids)) {
     throw new BadRequestError('Expected an array of IDs');
   }
-  await bulkDeleteTransactions(ids, getAuditActor(req));
-  res.json({ success: true, count: ids.length });
+  const result = await bulkDeleteTransactions(ids, getAuditActor(req));
+  res.json({ success: true, count: result.count, auditLogIds: result.auditLogIds });
 }));
 
 router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
-  await deleteTransaction(req.params.id as string, getAuditActor(req));
-  res.json({ success: true });
+  const result = await deleteTransaction(req.params.id as string, getAuditActor(req));
+  res.json({ success: true, auditLogIds: result.auditLogIds });
 }));
 
 export default router;

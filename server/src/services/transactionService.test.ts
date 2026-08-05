@@ -94,7 +94,7 @@ describe('TransactionService (Soft Delete Test)', () => {
         update: vi.fn().mockResolvedValue({ id: targetId, isDeleted: true }),
       },
       auditLog: {
-        create: vi.fn(),
+        create: vi.fn().mockResolvedValue({ id: 'audit-delete-1' }),
       },
     };
 
