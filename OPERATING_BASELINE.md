@@ -111,6 +111,20 @@ Before implementing a non-trivial change:
   database writes.
 - The wrapper permits remote DB access only for this explicit read-only backup
   command, then restores the local process environment.
+- The local PC schedules `SmartBudgetMonthlyLocalBackup` to check at 9:00 AM
+  while the user is logged in. It performs one backup after the second Monday
+  of each month; if Monday is missed, it retries at 9:00 AM on each later day
+  until one valid backup succeeds.
+
+## Health Monitoring
+
+- GitHub Actions runs the `Health Monitor` workflow every 13 minutes and can
+  also be started manually from the Actions tab.
+- It checks both the Render API health endpoint and the Vercel client URL.
+  HTTP errors, timeouts over 30 seconds, and repeated network failures mark
+  the workflow as failed after two retries.
+- Keep GitHub notifications enabled for workflow failures, or review the
+  `Health Monitor` run history after an incident.
 - Sessions are deliberately excluded because restoring browser sessions is not
   required for application recovery.
 - `server/backup/` is ignored by Git and must never be committed or shared in a
@@ -119,6 +133,12 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Strengthened scheduled API and client health monitoring.
+  - **Reason**: Treat HTTP failures and prolonged outages as actionable failed checks rather than successful keep-alive requests.
+
+- **2026-08-05**: Added a logged-in-user monthly local backup schedule with daily 9:00 AM retries after the second Monday.
+  - **Reason**: Match the month-end bookkeeping workflow without storing an account password in Windows Task Scheduler.
 
 - **2026-08-05**: Added a local full-data backup command and excluded backup files from Git tracking.
   - **Reason**: Keep a no-cost recovery copy of all application data without exposing personal financial data through the source repository.

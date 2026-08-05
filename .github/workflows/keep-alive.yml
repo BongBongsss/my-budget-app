@@ -1,13 +1,39 @@
-name: Keep Alive
+name: Health Monitor
 on:
   schedule:
     - cron: '*/13 * * * *'
   workflow_dispatch:
 
 jobs:
-  ping:
+  health-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Ping Budget App
+      - name: Check API health
         run: |
-          curl -I https://my-budget-app-nwm8.onrender.com/api/health
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            --output /dev/null \
+            --write-out 'API health: %{http_code}\n' \
+            https://my-budget-app-nwm8.onrender.com/api/health
+
+      - name: Check client availability
+        run: |
+          curl \
+            --fail \
+            --silent \
+            --show-error \
+            --location \
+            --max-time 30 \
+            --retry 2 \
+            --retry-delay 5 \
+            --retry-all-errors \
+            --output /dev/null \
+            --write-out 'Client availability: %{http_code}\n' \
+            https://my-budget-app-client.vercel.app/
