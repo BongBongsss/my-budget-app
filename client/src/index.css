@@ -836,15 +836,16 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   }
 
   .transaction-search-bar {
-    display: grid !important;
-    grid-template-columns: minmax(0, 1fr) auto;
+    display: flex !important;
+    flex-wrap: wrap;
     gap: 0.5rem;
     align-items: end !important;
   }
-  .search-controls { min-width: 0; flex-wrap: wrap; }
+  .search-controls { flex: 1 1 0; min-width: 0; flex-wrap: nowrap; }
   .search-controls select.edit-input { flex: 0 1 auto; width: auto !important; max-width: 48vw; min-width: 0; }
   .search-controls input.edit-input { flex: 1 1 120px; min-width: 0; }
-  .list-export-controls { justify-content: flex-end; }
+  .list-export-controls { flex: 0 0 auto; justify-content: flex-end; }
+  .filter-total-summary { flex: 0 0 100%; order: 3; flex-wrap: wrap; }
 
   .desktop-transaction-table { display: none; }
   .mobile-transaction-cards { display: grid; gap: 0.75rem; }

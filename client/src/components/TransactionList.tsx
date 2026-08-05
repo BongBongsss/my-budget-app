@@ -519,7 +519,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </div>
 
           {(externalFilterActive || searchQuery || startDate || endDate || search || Object.keys(cellFilters).length > 0) && (
-            <div className="flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
+            <div className="filter-total-summary flex gap-4" style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '5px' }}>
               <span style={{ color: '#2563eb', marginRight: '15px' }}>합계 수입: {filteredIncome.toLocaleString()}원</span>
               <span style={{ color: '#dc2626' }}>합계 지출: {filteredExpense.toLocaleString()}원</span>
             </div>
