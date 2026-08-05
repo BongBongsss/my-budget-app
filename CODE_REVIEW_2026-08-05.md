@@ -120,17 +120,13 @@ Render service warm and creates thousands of scheduled workflow runs per
 month. Since immediate notification is intentionally low priority, reduce it
 to a less frequent operational check if free-tier usage becomes constrained.
 
-## Test Gaps to Close With the Required Fixes
+## Deferred Test Work
 
-1. Origin/CSRF rejection and allowed Vercel mutation request.
-2. Login throttling and password-strength validation.
-3. Two simultaneous Import approvals for the same row; exactly one transaction
-   and one approval audit outcome must result.
-4. Stale audit restore must return a conflict and preserve newer changes.
-5. Cleanup and rule-application rollback/audit behavior.
-6. File and row limit rejection for CSV and XLSX.
-7. Route-level authorization and Import integration tests against a temporary
-   database.
+1. Add route-level authorization and Import integration tests against a
+   temporary database.
+2. Run a true parallel-request test against PostgreSQL: two approvals of the
+   same Import row must produce exactly one confirmed transaction.
+3. Add multi-item bulk-restore coverage before expanding bulk edit features.
 
 ## Remediation Status
 

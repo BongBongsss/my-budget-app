@@ -99,11 +99,24 @@ Before implementing a non-trivial change:
 
 ## Next Reliability Work
 
+These are deliberately deferred: they are not immediate risks for the current
+single-user, free-tier operation. Revisit them when their stated trigger occurs.
+
 1. Add temporary-database integration tests for authentication, Import approval,
-   and audit restore conflict handling.
-2. Add regression coverage for multi-item bulk restore.
-3. Introduce server-side pagination before transaction volume makes full-list
-   loading slow.
+   and audit restore conflict handling; add a true parallel-request test before
+   relying on this service from a second client or automation.
+2. Add regression coverage for multi-item bulk restore before expanding bulk
+   editing features.
+3. Introduce server-side pagination before transaction volume approaches
+   25,000 records, API responses reach a few MB, or the initial list becomes
+   noticeably slow.
+4. Split `TransactionList` and `AssetManager` into focused components before
+   the next substantial feature in either screen.
+5. Add a database recurrence key and single-worker strategy before running
+   multiple server instances or a separate scheduler.
+6. Encrypt local backups before using cloud sync or sharing the PC.
+7. Reduce the 13-minute health-monitor cadence if GitHub Actions or Render
+   free-tier usage becomes constrained; immediate alerts remain low priority.
 
 ## Production Safety Controls
 
@@ -150,6 +163,15 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Completed the reliability and security hardening cycle.
+  - **Scope**: Browser regression coverage, local backup/recovery procedure,
+    health monitoring, mobile member-value consistency, senior code review,
+    request security, Import safeguards, audit logging, and recovery conflict
+    protection.
+  - **Verification**: Server 29 tests, client 12 tests, browser E2E 3 tests,
+    TypeScript checks, Prisma validation, production build, and dependency
+    audit passed before deployment.
 
 - **2026-08-05**: Added production safety controls for request origin, login attempts, Import limits, approval concurrency, and audit restore conflicts.
   - **Reason**: Close the operational security and data-integrity risks identified by the senior code review without changing existing transaction data.
