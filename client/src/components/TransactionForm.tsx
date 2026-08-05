@@ -8,6 +8,7 @@ interface TransactionFormProps {
 }
 
 const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories }) => {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
     time: new Date().toLocaleTimeString('ko-KR', { hour12: false, hour: '2-digit', minute: '2-digit' }),
@@ -40,6 +41,9 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
+    setIsSubmitting(true);
     try {
       await addTransaction({
         ...formData,
@@ -49,6 +53,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
       onSuccess();
     } catch (err) {
       alert('Error adding transaction');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -69,7 +75,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
           <div className="form-group"><label>결제수단</label><input type="text" value={formData.source} onChange={(e) => setFormData({...formData, source: e.target.value})} /></div>
           <div className="form-group" style={{ gridColumn: 'span 2' }}><label>메모</label><input type="text" value={formData.memo} onChange={(e) => setFormData({...formData, memo: e.target.value})} /></div>
         </div>
-        <div className="form-actions"><button type="submit" className="btn btn-primary"><PlusCircle className="mr-2" size={18} /> Add</button></div>
+        <div className="form-actions"><button type="submit" className="btn btn-primary" disabled={isSubmitting}><PlusCircle className="mr-2" size={18} /> {isSubmitting ? 'Adding...' : 'Add'}</button></div>
       </form>
     </div>
   );

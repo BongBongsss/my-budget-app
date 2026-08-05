@@ -75,7 +75,7 @@ git diff --check
 Baseline verification completed on 2026-08-05:
 
 - Server unit tests: 6 files / 20 tests passed.
-- Client tests: 4 files / 9 tests passed.
+- Client tests: 5 files / 10 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
 
@@ -105,6 +105,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Added a pending-submit guard and regression test to manual transaction entry.
+  - **Reason**: Prevent duplicate transactions when a user clicks Add again before the first request finishes.
 
 - **2026-08-05**: Applied available production dependency security patches.
   - **Reason**: Remove the remediable Axios, Multer, body-parser, form-data, and qs advisories while isolating the unresolved xlsx replacement as a separately verified Import change.
