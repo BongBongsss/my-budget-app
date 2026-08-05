@@ -1,4 +1,5 @@
-import './env';
+import { sessionSecret } from './env';
+import { randomUUID } from 'crypto';
 import express from 'express';
 import cors from 'cors';
 import session from 'express-session';
@@ -25,16 +26,31 @@ import { asyncHandler } from './utils/asyncHandler';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const clientOrigins = (process.env.CLIENT_ORIGIN || 'https://my-budget-app-client.vercel.app')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+if (process.env.NODE_ENV !== 'production') {
+  clientOrigins.push('http://localhost:3000');
+}
 
 const PgSession = connectPgSimple(session);
 
 // Render의 프록시 설정을 신뢰하여 쿠키 전달
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+  const requestId = randomUUID();
+  (req as typeof req & { requestId?: string }).requestId = requestId;
+  res.setHeader('X-Request-Id', requestId);
+  next();
+});
+
 app.use(cors({
   origin: (origin: string | undefined, callback: (err: Error | null, allow?: boolean | string | string[]) => void) => {
-    if (!origin || origin.endsWith('.vercel.app') || origin === 'http://localhost:3000') {
-      callback(null, origin);
+    if (!origin || clientOrigins.includes(origin)) {
+      callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
@@ -52,7 +68,7 @@ app.use(session({
     conString: process.env.DATABASE_URL,
     tableName: 'session'
   }),
-  secret: process.env.SESSION_SECRET || 'secret',
+  secret: sessionSecret || 'development-only-session-secret',
   resave: false,
   saveUninitialized: false,
   proxy: true,

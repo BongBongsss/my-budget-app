@@ -269,20 +269,25 @@ export const initDb = async () => {
 
   // Initial password seeding
   try {
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    const viewerPassword = process.env.VIEWER_PASSWORD || 'viewer123';
-
-    if (adminPassword) {
-      const existingAdmin = await prisma.auth.findUnique({ where: { role: 'admin' } });
-      if (!existingAdmin) {
-        const hash = await bcrypt.hash(adminPassword, 10);
-        await prisma.auth.create({ data: { role: 'admin', passwordHash: hash } });
-        console.log("Initial Admin password seeded to DB.");
+    const existingAdmin = await prisma.auth.findUnique({ where: { role: 'admin' } });
+    if (!existingAdmin) {
+      const adminPassword = process.env.ADMIN_PASSWORD;
+      if (!adminPassword) {
+        throw new Error('ADMIN_PASSWORD is required to initialize the first admin account.');
       }
+
+      const hash = await bcrypt.hash(adminPassword, 10);
+      await prisma.auth.create({ data: { role: 'admin', passwordHash: hash } });
+      console.log("Initial Admin password seeded to DB.");
     }
 
     const existingViewer = await prisma.auth.findUnique({ where: { role: 'viewer' } });
     if (!existingViewer) {
+      const viewerPassword = process.env.VIEWER_PASSWORD;
+      if (!viewerPassword) {
+        throw new Error('VIEWER_PASSWORD is required to initialize the first viewer account.');
+      }
+
       const hash = await bcrypt.hash(viewerPassword, 10);
       await prisma.auth.create({ data: { role: 'viewer', passwordHash: hash } });
       console.log("Initial Viewer password seeded to DB.");

@@ -34,6 +34,7 @@ must not be used to modify, delete, or overwrite production data.
 - Server: Express routes call service-layer business logic backed by Prisma/PostgreSQL.
 - Deployment: Vercel hosts the client; Render hosts the API.
 - Recovery/auditing: audit log records include before/after snapshots and can link bulk work with a batch identifier.
+- Error operations: API errors include a request ID; production error logs omit request bodies, cookies, and unknown-error stacks.
 
 ## Current Automated Coverage
 
@@ -102,3 +103,5 @@ Before implementing a non-trivial change:
   - **Reason**: Make core client regressions reproducible before expanding to browser-level scenarios.
 - **2026-08-05**: Consolidated the shared period and member filter UI.
   - **Reason**: Keep the dashboard and transaction-list filters behaviorally and visually aligned across responsive layouts.
+- **2026-08-05**: Hardened production configuration and error tracing.
+  - **Reason**: Remove insecure production fallbacks, limit credentialed browser origins, and make production errors traceable without logging sensitive request data.

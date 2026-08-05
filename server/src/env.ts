@@ -20,6 +20,12 @@ if (!databaseUrl) {
   throw new Error('DATABASE_URL is required. Create server/.env.local for local development.');
 }
 
+export const sessionSecret = process.env.SESSION_SECRET;
+
+if (process.env.NODE_ENV === 'production' && !sessionSecret) {
+  throw new Error('SESSION_SECRET is required in production.');
+}
+
 let databaseHost = '';
 try {
   databaseHost = new URL(databaseUrl).hostname;
@@ -38,4 +44,3 @@ if (process.env.NODE_ENV !== 'production' && usesNeon && !allowRemoteDb) {
     ].join(' ')
   );
 }
-
