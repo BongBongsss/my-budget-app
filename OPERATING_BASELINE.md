@@ -65,7 +65,7 @@ git diff --check
 
 Baseline verification completed on 2026-08-05:
 
-- Server unit tests: 6 files / 19 tests passed.
+- Server unit tests: 6 files / 20 tests passed.
 - Client tests: 4 files / 9 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
@@ -96,6 +96,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Added the GitHub Actions CI verification workflow and refreshed the server test count.
+  - **Reason**: Run type checks, schema validation, tests, and the production client build automatically for every pull request and push to `main`.
 
 - **2026-08-05**: Created the operating baseline.
   - **Reason**: Establish a safe, documented starting point for reliability improvements without changing user data or visible behavior.
