@@ -14,7 +14,7 @@ import {
   bulkDeleteTransactions,
   exportTransactionsBackup
 } from '../services/transactionService';
-import { parseCSVForImport, parseExcelForImport } from '../services/importService';
+import { getImportFileFormat, parseCSVForImport, parseExcelForImport } from '../services/importService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError, UnauthorizedError } from '../utils/errors';
 
@@ -78,13 +78,15 @@ router.post('/import', upload.single('file'), asyncHandler(async (req: Request, 
   }
 
   const buffer = req.file.buffer;
-  const filename = req.file.originalname.toLowerCase();
+  const fileFormat = getImportFileFormat(req.file.originalname);
   let rows;
 
-  if (filename.endsWith('.csv')) {
+  if (fileFormat === 'csv') {
     rows = parseCSVForImport(buffer);
-  } else if (filename.endsWith('.xlsx') || filename.endsWith('.xls')) {
-    rows = parseExcelForImport(buffer);
+  } else if (fileFormat === 'xlsx') {
+    rows = await parseExcelForImport(buffer);
+  } else if (fileFormat === 'legacy-xls') {
+    throw new BadRequestError('Legacy .xls files are not supported. Save the file as .xlsx or CSV UTF-8 and try again.');
   } else {
     throw new BadRequestError('Unsupported file format');
   }

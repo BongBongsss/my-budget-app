@@ -49,7 +49,7 @@ const FileImport: React.FC<FileImportProps> = ({ onImportSuccess }) => {
           type="file"
           id="fileInput"
           onChange={handleFileChange}
-          accept=".csv,.xlsx,.xls"
+          accept=".csv,.xlsx"
           className="hidden"
           disabled={isSubmitting}
         />

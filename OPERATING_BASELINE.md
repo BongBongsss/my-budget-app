@@ -56,9 +56,8 @@ The following important coverage is not yet established as a repeatable suite:
 - Production dependency patches are locked through the root `package-lock.json`.
 - The latest reviewed patch updates Axios, Multer, Express transitive parsing
   dependencies, and form-data without changing application source code.
-- `xlsx` remains a known high-severity exception because no upstream automatic
-  security fix is available. Replacing it requires an Import compatibility
-  comparison for CSV, XLSX, and legacy XLS files before deployment.
+- Import parsing uses ExcelJS for CSV and XLSX workflows. Legacy XLS files are
+  deliberately rejected; users must save them as XLSX or CSV UTF-8 first.
 
 ## Verification Baseline
 
@@ -74,7 +73,7 @@ git diff --check
 
 Baseline verification completed on 2026-08-05:
 
-- Server unit tests: 6 files / 20 tests passed.
+- Server unit tests: 6 files / 22 tests passed.
 - Client tests: 6 files / 11 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
@@ -107,6 +106,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Replaced the vulnerable SheetJS parser with ExcelJS and ended legacy XLS Import support.
+  - **Reason**: Remove the unresolved high-severity xlsx dependency advisories while preserving CSV and XLSX Import behavior with regression coverage.
 
 - **2026-08-05**: Added Playwright browser testing and a mocked viewer login flow to CI.
   - **Reason**: Catch regressions in the real browser startup and authentication journey before deployment.

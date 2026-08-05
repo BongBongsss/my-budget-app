@@ -348,7 +348,7 @@ function App() {
                 <Download size={16} /> Export
             </button>
           )}
-          <input type="file" ref={fileInputRef} onChange={handleFileImport} style={{ display: 'none' }} accept=".csv,.xlsx,.xls" />
+          <input type="file" ref={fileInputRef} onChange={handleFileImport} style={{ display: 'none' }} accept=".csv,.xlsx" />
           
           {/* Admin 전용 버튼: Settings */}
           {userRole === 'admin' && (

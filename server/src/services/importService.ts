@@ -1,5 +1,5 @@
 import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
+import readXlsxFile from 'read-excel-file/node';
 
 export interface ParsedTransaction {
   date: string;
@@ -21,6 +21,16 @@ export interface ParsedImportRow {
   transaction: ParsedTransaction;
   invalidReasons: string[];
 }
+
+export type ImportFileFormat = 'csv' | 'xlsx' | 'legacy-xls' | null;
+
+export const getImportFileFormat = (filename: string): ImportFileFormat => {
+  const normalizedFilename = filename.toLowerCase();
+  if (normalizedFilename.endsWith('.csv')) return 'csv';
+  if (normalizedFilename.endsWith('.xlsx')) return 'xlsx';
+  if (normalizedFilename.endsWith('.xls')) return 'legacy-xls';
+  return null;
+};
 
 const K = {
   date: '\uB0A0\uC9DC',
@@ -55,6 +65,10 @@ const excelSerialTimeToText = (serial: number): string => {
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 };
+
+const excelDateToTimeText = (value: Date): string => (
+  `${String(value.getHours()).padStart(2, '0')}:${String(value.getMinutes()).padStart(2, '0')}`
+);
 
 const normalizeDate = (value: unknown): string => {
   if (value instanceof Date) {
@@ -105,7 +119,9 @@ const normalizeData = (row: Record<string, any>): ParsedTransaction => {
   }
 
   const time =
-    timeRaw !== undefined && !isNaN(Number(timeRaw)) && Number(timeRaw) < 1
+    timeRaw instanceof Date
+      ? excelDateToTimeText(timeRaw)
+      : timeRaw !== undefined && !isNaN(Number(timeRaw)) && Number(timeRaw) < 1
       ? excelSerialTimeToText(Number(timeRaw))
       : String(timeRaw || '');
 
@@ -160,18 +176,24 @@ export const parseCSVForImport = (buffer: Buffer): ParsedImportRow[] => {
   return parseRowsForImport(result.data as Record<string, any>[]);
 };
 
-export const parseExcel = (buffer: Buffer): ParsedTransaction[] => {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+const parseXlsxRows = async (buffer: Buffer): Promise<Record<string, any>[]> => {
+  const sheets = await readXlsxFile(buffer);
+  const [headerRow = [], ...dataRows] = sheets[0]?.data || [];
+  const headers = headerRow.map((value) => String(value || '').trim());
+
+  return dataRows
+    .map((row) => Object.fromEntries(headers
+      .map((header, index) => [header, row[index]])
+      .filter(([header]) => header)))
+    .filter((row) => Object.values(row).some((value) => value !== undefined && value !== null && value !== ''));
+};
+
+export const parseExcel = async (buffer: Buffer): Promise<ParsedTransaction[]> => {
+  const data = await parseXlsxRows(buffer);
   return data.filter(hasImportableData).map(normalizeData);
 };
 
-export const parseExcelForImport = (buffer: Buffer): ParsedImportRow[] => {
-  const workbook = XLSX.read(buffer, { type: 'buffer' });
-  const firstSheetName = workbook.SheetNames[0];
-  const worksheet = workbook.Sheets[firstSheetName];
-  const data = XLSX.utils.sheet_to_json(worksheet) as Record<string, any>[];
+export const parseExcelForImport = async (buffer: Buffer): Promise<ParsedImportRow[]> => {
+  const data = await parseXlsxRows(buffer);
   return parseRowsForImport(data);
 };
