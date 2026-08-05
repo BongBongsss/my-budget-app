@@ -15,3 +15,5 @@ budget.db
 backup/auditlog-before-delete-*/
 backup/neon-before-migration-*/
 backup/neon-current-before-restore/
+# Personal database exports and import samples must remain local only.
+server/backup/
