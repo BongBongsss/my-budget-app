@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/index.ts",
     "dev:system-node": "ts-node src/index.ts",
+    "backup:local": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/createLocalBackup.ts",
     "test": "vitest",
     "prisma:generate": "prisma generate"
   },

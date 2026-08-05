@@ -56,7 +56,7 @@ The following important coverage is not yet established as a repeatable suite:
 - Production dependency patches are locked through the root `package-lock.json`.
 - The latest reviewed patch updates Axios, Multer, Express transitive parsing
   dependencies, and form-data without changing application source code.
-- Import parsing uses ExcelJS for CSV and XLSX workflows. Legacy XLS files are
+- Import parsing uses read-excel-file for XLSX workflows and Papa Parse for CSV workflows. Legacy XLS files are
   deliberately rejected; users must save them as XLSX or CSV UTF-8 first.
 
 ## Verification Baseline
@@ -103,11 +103,27 @@ Before implementing a non-trivial change:
 3. Add a small critical-path browser test suite.
 4. Add structured request/error logging without exposing sensitive data.
 
+## Local Full Backup
+
+- Run `./server/scripts/create-local-backup.ps1` from the repository root.
+- The command reads every actual application table in the production database
+  and writes a timestamped JSON file to `server/backup/`. It does not issue
+  database writes.
+- The wrapper permits remote DB access only for this explicit read-only backup
+  command, then restores the local process environment.
+- Sessions are deliberately excluded because restoring browser sessions is not
+  required for application recovery.
+- `server/backup/` is ignored by Git and must never be committed or shared in a
+  public location.
+
 ---
 
 ## Revision History
 
-- **2026-08-05**: Replaced the vulnerable SheetJS parser with ExcelJS and ended legacy XLS Import support.
+- **2026-08-05**: Added a local full-data backup command and excluded backup files from Git tracking.
+  - **Reason**: Keep a no-cost recovery copy of all application data without exposing personal financial data through the source repository.
+
+- **2026-08-05**: Replaced the vulnerable SheetJS parser with read-excel-file and ended legacy XLS Import support.
   - **Reason**: Remove the unresolved high-severity xlsx dependency advisories while preserving CSV and XLSX Import behavior with regression coverage.
 
 - **2026-08-05**: Added Playwright browser testing and a mocked viewer login flow to CI.
