@@ -160,6 +160,7 @@ model AuditLog {
   actorRole  String?
   ipAddress  String?
   batchId    String?
+  restoredAt DateTime?
   createdAt  DateTime @default(now())
   updatedAt  DateTime @default(now()) @updatedAt
 
@@ -167,6 +168,7 @@ model AuditLog {
   @@index([action])
   @@index([createdAt])
   @@index([batchId])
+  @@index([restoredAt])
 }
 
 model ReviewRequest {

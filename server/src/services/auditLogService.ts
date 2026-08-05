@@ -70,33 +70,11 @@ export const getAuditLogs = async (filters: {
     prisma.auditLog.count({ where }),
   ]);
   const restorableEntityTypes = ['transaction', 'importRow', 'asset'];
-  const deleteLogs = logs.filter((log) => restorableEntityTypes.includes(log.entityType) && log.action === 'delete');
-  const restoreLogs = deleteLogs.length > 0
-    ? await prisma.auditLog.findMany({
-        where: {
-          action: 'restore',
-          OR: deleteLogs.map((log) => ({
-            entityType: log.entityType,
-            entityId: log.entityId,
-            createdAt: { gt: log.createdAt },
-          })),
-        },
-        select: {
-          entityType: true,
-          entityId: true,
-          createdAt: true,
-        },
-      })
-    : [];
   const logsWithRestoreState = logs.map((log) => ({
     ...log,
     isRestorable: restorableEntityTypes.includes(log.entityType)
       && (log.action === 'delete' || log.action === 'update')
-      && !restoreLogs.some((restoreLog) => (
-        restoreLog.entityType === log.entityType
-        && restoreLog.entityId === log.entityId
-        && restoreLog.createdAt.getTime() > log.createdAt.getTime()
-      )),
+      && !log.restoredAt,
   }));
 
   return {
@@ -108,16 +86,18 @@ export const getAuditLogs = async (filters: {
   };
 };
 
-export const getLatestRestorableBatch = async () => {
-  const latest = await prisma.auditLog.findFirst({
-    where: { batchId: { not: null }, action: { in: ['update', 'delete'] } },
+const findLatestRestorableBatch = async (client: any) => {
+  const latest = await client.auditLog.findFirst({
+    where: { batchId: { not: null }, action: { in: ['update', 'delete'] }, restoredAt: null },
     orderBy: { createdAt: 'desc' },
     select: { batchId: true, createdAt: true },
   });
   if (!latest?.batchId) return null;
-  const count = await prisma.auditLog.count({ where: { batchId: latest.batchId, action: { in: ['update', 'delete'] } } });
+  const count = await client.auditLog.count({ where: { batchId: latest.batchId, action: { in: ['update', 'delete'] }, restoredAt: null } });
   return { batchId: latest.batchId, count, createdAt: latest.createdAt };
 };
+
+export const getLatestRestorableBatch = async () => findLatestRestorableBatch(prisma);
 
 const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member'];
 const assetUpdateFields = ['name', 'type', 'balance', 'memo'];
@@ -159,17 +139,15 @@ const restoreUpdateFromAuditLog = async (tx: Prisma.TransactionClient, auditLog:
   return restored;
 };
 
-export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: AuditActor) => {
-  return prisma.$transaction(async (tx) => {
-    const auditLog = await tx.auditLog.findUnique({
-      where: { id: auditLogId },
-    });
+const restoreAuditLogInTransaction = async (tx: Prisma.TransactionClient, auditLog: any, actor: AuditActor) => {
+  if (!auditLog || !['delete', 'update'].includes(auditLog.action) || !['transaction', 'importRow', 'asset'].includes(auditLog.entityType)) {
+    throw new NotFoundError('Restorable audit log not found.');
+  }
+  if (auditLog.restoredAt) throw new BadRequestError('Audit log has already been restored.');
 
-    if (!auditLog || !['delete', 'update'].includes(auditLog.action) || !['transaction', 'importRow', 'asset'].includes(auditLog.entityType)) {
-      throw new NotFoundError('Restorable audit log not found.');
-    }
+  await tx.auditLog.update({ where: { id: auditLog.id }, data: { restoredAt: new Date() } });
 
-    if (auditLog.action === 'update') return restoreUpdateFromAuditLog(tx, auditLog, actor);
+  if (auditLog.action === 'update') return restoreUpdateFromAuditLog(tx, auditLog, actor);
 
     if (auditLog.entityType === 'asset') {
       const beforeData = auditLog.beforeData as Partial<Asset> | null;
@@ -303,16 +281,24 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
     });
 
     return restored;
+};
+
+export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: AuditActor) => {
+  return prisma.$transaction(async (tx) => {
+    const auditLog = await tx.auditLog.findUnique({ where: { id: auditLogId } });
+    return restoreAuditLogInTransaction(tx, auditLog, actor);
   });
 };
 
 export const restoreLatestAuditBatch = async (actor: AuditActor) => {
-  const latest = await getLatestRestorableBatch();
-  if (!latest) throw new NotFoundError('No restorable batch found.');
-  const logs = await prisma.auditLog.findMany({
-    where: { batchId: latest.batchId, action: { in: ['update', 'delete'] } },
-    orderBy: { createdAt: 'desc' },
+  return prisma.$transaction(async (tx) => {
+    const latest = await findLatestRestorableBatch(tx);
+    if (!latest) throw new NotFoundError('No restorable batch found.');
+    const logs = await tx.auditLog.findMany({
+      where: { batchId: latest.batchId, action: { in: ['update', 'delete'] }, restoredAt: null },
+      orderBy: { createdAt: 'desc' },
+    });
+    for (const log of logs) await restoreAuditLogInTransaction(tx, log, actor);
+    return { count: logs.length };
   });
-  for (const log of logs) await restoreTransactionFromAuditLog(log.id, actor);
-  return { count: logs.length };
 };

@@ -11,7 +11,7 @@ vi.mock('../db', () => ({
 
 import prisma from '../db';
 import { BadRequestError, NotFoundError } from '../utils/errors';
-import { restoreTransactionFromAuditLog } from './auditLogService';
+import { restoreLatestAuditBatch, restoreTransactionFromAuditLog } from './auditLogService';
 
 describe('AuditLogService', () => {
   beforeEach(() => {
@@ -41,6 +41,7 @@ describe('AuditLogService', () => {
           action: 'delete',
           beforeData: {},
         }),
+        update: vi.fn(),
       },
     };
 
@@ -83,6 +84,7 @@ describe('AuditLogService', () => {
           beforeData: deletedTransaction,
         }),
         create: vi.fn(),
+        update: vi.fn(),
       },
       transaction: {
         upsert: vi.fn().mockResolvedValue(restoredTransaction),
@@ -106,6 +108,10 @@ describe('AuditLogService', () => {
         action: 'restore',
         actorRole: 'admin',
       }),
+    }));
+    expect(tx.auditLog.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'log-1' },
+      data: { restoredAt: expect.any(Date) },
     }));
   });
 
@@ -142,6 +148,7 @@ describe('AuditLogService', () => {
           beforeData: deletedImportRow,
         }),
         create: vi.fn(),
+        update: vi.fn(),
       },
       importRow: {
         upsert: vi.fn().mockResolvedValue(deletedImportRow),
@@ -165,6 +172,40 @@ describe('AuditLogService', () => {
         action: 'restore',
         actorRole: 'admin',
       }),
+    }));
+    expect(tx.auditLog.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'log-2' },
+      data: { restoredAt: expect.any(Date) },
+    }));
+  });
+
+  it('restores an entire latest batch inside one database transaction', async () => {
+    const beforeData = {
+      id: 'tx-batch-1', date: '2026-08-05', time: '', type: 'expense', category: 'Food',
+      vendor: 'Store', amount: 1000, currency: 'KRW', source: 'manual', memo: null,
+      hash: 'hash-batch-1', isVerified: true, isDuplicate: false, isDeleted: true, member: 'admin',
+    };
+    const tx = {
+      auditLog: {
+        findFirst: vi.fn().mockResolvedValue({ batchId: 'batch-1', createdAt: new Date() }),
+        count: vi.fn().mockResolvedValue(1),
+        findMany: vi.fn().mockResolvedValue([{
+          id: 'log-batch-1', entityType: 'transaction', entityId: 'tx-batch-1',
+          action: 'delete', batchId: 'batch-1', restoredAt: null, beforeData,
+        }]),
+        update: vi.fn(),
+        create: vi.fn(),
+      },
+      transaction: { upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }) },
+    };
+
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreLatestAuditBatch({ role: 'admin' })).resolves.toEqual({ count: 1 });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(tx.auditLog.update).toHaveBeenCalledWith(expect.objectContaining({
+      where: { id: 'log-batch-1' },
+      data: { restoredAt: expect.any(Date) },
     }));
   });
 });
