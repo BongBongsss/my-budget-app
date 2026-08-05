@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import api from './api';
 import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
+import ErrorBoundary from './components/ErrorBoundary';
 import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
 import SummaryCharts from './components/SummaryCharts';
@@ -372,7 +373,9 @@ function App() {
             memberFilter={memberFilter} setMemberFilter={setMemberFilter}
           />
           <SuggestionNotification onRuleApproved={fetchData} />
-          <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={handleChartHighlight} />
+          <ErrorBoundary title="차트를 불러오지 못했습니다.">
+            <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={handleChartHighlight} />
+          </ErrorBoundary>
           
           {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
           
@@ -471,35 +474,41 @@ function App() {
             )}
           </div>
 
-          <TransactionList 
-            transactions={filteredTransactions} 
-            categories={categories}
-            onDelete={handleDelete} 
-            onBulkDelete={handleBulkDelete}
-            onUpdate={handleUpdate}
-            onBulkUpdate={handleBulkUpdate}
-            onBulkUpdateMember={handleBulkUpdateMember}
-            onVerify={handleVerify}
-            onRefresh={fetchData}
-            period={period}
-            setPeriod={setPeriod}
-            year={year}
-            setYear={setYear}
-            month={month}
-            setMonth={setMonth}
-            memberFilter={memberFilter}
-            setMemberFilter={setMemberFilter}
-            isAdmin={userRole === 'admin'}
-            pageScope={activeTab}
-            externalFilterActive={!!chartFilter}
-          />
+          <ErrorBoundary title="거래 목록을 불러오지 못했습니다.">
+            <TransactionList
+              transactions={filteredTransactions}
+              categories={categories}
+              onDelete={handleDelete}
+              onBulkDelete={handleBulkDelete}
+              onUpdate={handleUpdate}
+              onBulkUpdate={handleBulkUpdate}
+              onBulkUpdateMember={handleBulkUpdateMember}
+              onVerify={handleVerify}
+              onRefresh={fetchData}
+              period={period}
+              setPeriod={setPeriod}
+              year={year}
+              setYear={setYear}
+              month={month}
+              setMonth={setMonth}
+              memberFilter={memberFilter}
+              setMemberFilter={setMemberFilter}
+              isAdmin={userRole === 'admin'}
+              pageScope={activeTab}
+              externalFilterActive={!!chartFilter}
+            />
+          </ErrorBoundary>
         </div>
       ) : currentView === 'assets' ? (
         <div className="view-assets animate-fadeIn">
-          <AssetManager userRole={userRole} />
+          <ErrorBoundary title="자산 관리를 불러오지 못했습니다.">
+            <AssetManager userRole={userRole} />
+          </ErrorBoundary>
         </div>
       ) : (
-        <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
+          <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
+            <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
+          </ErrorBoundary>
       )}
 
       {importSummary && (

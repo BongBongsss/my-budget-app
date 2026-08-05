@@ -75,7 +75,7 @@ git diff --check
 Baseline verification completed on 2026-08-05:
 
 - Server unit tests: 6 files / 20 tests passed.
-- Client tests: 5 files / 10 tests passed.
+- Client tests: 6 files / 11 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
 
@@ -105,6 +105,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Added isolated client error boundaries for charts, transactions, assets, and activity logs.
+  - **Reason**: Keep the rest of the application usable when one high-risk UI section fails to render.
 
 - **2026-08-05**: Added a pending-submit guard and regression test to manual transaction entry.
   - **Reason**: Prevent duplicate transactions when a user clicks Add again before the first request finishes.
