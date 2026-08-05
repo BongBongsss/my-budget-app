@@ -1,7 +1,7 @@
 import prisma from '../db';
 import { autoCategorize, bulkAutoCategorize } from './categoryService';
 import { randomUUID } from 'crypto';
-import { Transaction } from '@prisma/client';
+import { Prisma, Transaction } from '@prisma/client';
 import { AuditActor, buildAuditLogData } from './auditLogService';
 import { ParsedImportRow } from './importService';
 import { getReviewSummaries } from './reviewRequestService';
@@ -337,16 +337,24 @@ export const bulkAddTransactions = async (transactions: Partial<Transaction>[], 
   }
 };
 
-export const verifyTransactions = async (ids: string[]) => {
+export const verifyTransactions = async (ids: string[], actor?: AuditActor) => {
   return await prisma.$transaction(async (tx) => {
-    const importRows = await tx.importRow.findMany({
+    const uniqueIds = [...new Set(ids.filter((id) => typeof id === 'string' && id))];
+    if (uniqueIds.length === 0) return { count: 0 };
+
+    await tx.importRow.updateMany({
       where: {
-        id: { in: ids },
+        id: { in: uniqueIds },
         status: { in: ['new', 'duplicate'] },
       },
+      data: { status: 'committing' },
+    });
+
+    const importRows = await tx.importRow.findMany({
+      where: { id: { in: uniqueIds }, status: 'committing' },
     });
     const importRowIds = importRows.map((row) => row.id);
-    const legacyIds = ids.filter((id) => !importRowIds.includes(id));
+    const legacyIds = uniqueIds.filter((id) => !importRowIds.includes(id));
 
     if (importRows.length > 0) {
       const transactionsToCreate = importRows.map((row) => ({
@@ -372,16 +380,40 @@ export const verifyTransactions = async (ids: string[]) => {
         data: transactionsToCreate,
       });
 
-      for (let i = 0; i < importRows.length; i++) {
-        await tx.importRow.update({
-          where: { id: importRows[i].id },
-          data: {
-            status: 'committed',
-            committedAt: new Date(),
-            transactionId: transactionsToCreate[i].id,
-          },
-        });
-      }
+      const committedAt = new Date();
+      await Promise.all(importRows.map((row, index) => tx.importRow.update({
+        where: { id: row.id },
+        data: {
+          status: 'committed',
+          committedAt,
+          transactionId: transactionsToCreate[index].id,
+        },
+      })));
+
+      await tx.auditLog.createMany({
+        data: [
+          ...transactionsToCreate.map((transaction) => buildAuditLogData({
+            entityType: 'transaction',
+            entityId: transaction.id,
+            action: 'create',
+            afterData: transaction,
+            actor,
+          })),
+          ...importRows.map((row, index) => buildAuditLogData({
+            entityType: 'importRow',
+            entityId: row.id,
+            action: 'approve',
+            beforeData: row,
+            afterData: {
+              ...row,
+              status: 'committed',
+              committedAt,
+              transactionId: transactionsToCreate[index].id,
+            },
+            actor,
+          })),
+        ],
+      });
     }
 
     const legacyResult = legacyIds.length > 0
@@ -392,7 +424,7 @@ export const verifyTransactions = async (ids: string[]) => {
       : { count: 0 };
 
     return { count: legacyResult.count + importRows.length };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
 export const addTransaction = async (transaction: Partial<Transaction>, actor?: AuditActor) => {
@@ -650,56 +682,49 @@ export const bulkDeleteTransactions = async (ids: string[], actor?: AuditActor) 
   });
 };
 
-export const cleanupTransactions = async () => {
-  const [verifiedTransactions, importRows] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { isVerified: true, isDeleted: false },
-      select: {
-        date: true,
-        time: true,
-        type: true,
-        vendor: true,
-        amount: true,
-        source: true,
-      },
-    }),
-    prisma.importRow.findMany({
-      where: { status: { in: ['new', 'duplicate'] } },
-      select: {
-        id: true,
-        date: true,
-        time: true,
-        type: true,
-        vendor: true,
-        amount: true,
-        source: true,
-        status: true,
-      },
-    }),
-  ]);
+export const cleanupTransactions = async (actor?: AuditActor) => {
+  return prisma.$transaction(async (tx) => {
+    const [verifiedTransactions, importRows] = await Promise.all([
+      tx.transaction.findMany({
+        where: { isVerified: true, isDeleted: false },
+        select: { date: true, time: true, type: true, vendor: true, amount: true, source: true },
+      }),
+      tx.importRow.findMany({ where: { status: { in: ['new', 'duplicate'] } } }),
+    ]);
 
-  const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
-  let updatedCount = 0;
+    const verifiedKeys = new Set(verifiedTransactions.map(buildDuplicateKey));
+    const changes = importRows
+      .map((row) => ({ ...row, nextStatus: verifiedKeys.has(buildDuplicateKey(row)) ? 'duplicate' : 'new' }))
+      .filter((row) => row.status !== row.nextStatus);
+    if (changes.length === 0) return { updatedCount: 0, deletedCount: 0, auditLogIds: [] };
 
-  for (const tx of importRows) {
-    const shouldBeDuplicate = verifiedKeys.has(buildDuplicateKey(tx));
-    const nextStatus = shouldBeDuplicate ? 'duplicate' : 'new';
-    if (tx.status !== nextStatus) {
-      await prisma.importRow.update({
-        where: { id: tx.id },
-        data: { status: nextStatus },
-      });
-      updatedCount++;
-    }
-  }
+    const batchId = randomUUID();
+    const nextDuplicateIds = changes.filter((row) => row.nextStatus === 'duplicate').map((row) => row.id);
+    const nextNewIds = changes.filter((row) => row.nextStatus === 'new').map((row) => row.id);
+    await Promise.all([
+      nextDuplicateIds.length > 0
+        ? tx.importRow.updateMany({ where: { id: { in: nextDuplicateIds } }, data: { status: 'duplicate' } })
+        : Promise.resolve(),
+      nextNewIds.length > 0
+        ? tx.importRow.updateMany({ where: { id: { in: nextNewIds } }, data: { status: 'new' } })
+        : Promise.resolve(),
+    ]);
+    const auditLogs = changes.map((row) => buildAuditLogData({
+      entityType: 'importRow',
+      entityId: row.id,
+      action: 'update',
+      beforeData: row,
+      afterData: { ...row, status: row.nextStatus },
+      actor,
+      batchId,
+    }));
+    await tx.auditLog.createMany({ data: auditLogs });
 
-  return {
-    updatedCount,
-    deletedCount: 0
-  };
+    return { updatedCount: changes.length, deletedCount: 0, auditLogIds: auditLogs.map((log) => log.id) };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
-export const applyAutoRulesToExisting = async () => {
+export const applyAutoRulesToExisting = async (actor?: AuditActor) => {
   const transactions = await prisma.transaction.findMany({
     where: {
       NOT: [{ category: '기타' }, { category: '' }],
@@ -708,16 +733,40 @@ export const applyAutoRulesToExisting = async () => {
     }
   });
 
-  let updatedCount = 0;
-  for (const tx of transactions) {
-    const newCategory = await autoCategorize(tx.vendor);
-    if (newCategory !== '기타' && newCategory !== tx.category) {
-      await prisma.transaction.update({
-        where: { id: tx.id },
-        data: { category: newCategory }
-      });
-      updatedCount++;
+  const categoryMap = await bulkAutoCategorize(transactions.map((transaction) => transaction.vendor));
+
+  return prisma.$transaction(async (tx) => {
+    const currentTransactions = await tx.transaction.findMany({
+      where: {
+        id: { in: transactions.map((transaction) => transaction.id) },
+        isVerified: true,
+        isDeleted: false,
+      },
+    });
+    const changes: Array<{ before: Transaction; category: string }> = [];
+    for (const current of currentTransactions) {
+      const newCategory = categoryMap[current.vendor] || '기타';
+      if (newCategory !== '기타' && newCategory !== current.category) {
+        changes.push({ before: current, category: newCategory });
+      }
     }
-  }
-  return updatedCount;
+    if (changes.length === 0) return { count: 0, auditLogIds: [] };
+
+    const batchId = randomUUID();
+    await Promise.all(changes.map((change) => tx.transaction.update({
+      where: { id: change.before.id },
+      data: { category: change.category },
+    })));
+    const auditLogs = changes.map((change) => buildAuditLogData({
+      entityType: 'transaction',
+      entityId: change.before.id,
+      action: 'update',
+      beforeData: change.before,
+      afterData: { ...change.before, category: change.category },
+      actor,
+      batchId,
+    }));
+    await tx.auditLog.createMany({ data: auditLogs });
+    return { count: changes.length, auditLogIds: auditLogs.map((log) => log.id) };
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };

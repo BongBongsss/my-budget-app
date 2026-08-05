@@ -20,7 +20,8 @@ interface TransactionListProps {
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
   onBulkUpdate: (ids: string[], updates: Partial<Transaction>) => Promise<void>;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
-  onVerify?: (ids: string[]) => void;
+  onVerify?: (ids: string[]) => Promise<void>;
+  isVerifying?: boolean;
   onRefresh: () => void | Promise<void>;
   period: PeriodFilterValue;
   setPeriod: (p: PeriodFilterValue) => void;
@@ -40,7 +41,7 @@ type CellFilterType = 'date' | 'time' | 'member' | 'type' | 'group' | 'category'
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
-  memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default', externalFilterActive = false
+  memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default', externalFilterActive = false, isVerifying = false
 }) => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -582,7 +583,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     {isAdmin ? (
                       <div className="flex gap-1 justify-center">
                         {!tx.isVerified && !tx.isInvalid && (
-                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인">
+                          <button onClick={() => handleSingleVerify(tx.id!)} className="btn-icon" title="승인" disabled={isVerifying}>
                             <ThumbsUp size={16} color="green" />
                           </button>
                         )}
@@ -691,7 +692,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                       <button className="btn btn-secondary" onClick={() => openReviewPanel(tx)}><MessageCircle size={16} /> 확인 요청</button>
                     ) : (
                       <>
-                        {!tx.isVerified && !tx.isInvalid && <button className="btn-icon" onClick={() => handleSingleVerify(tx.id!)} title="확인"><ThumbsUp size={18} color="green" /></button>}
+                        {!tx.isVerified && !tx.isInvalid && <button className="btn-icon" onClick={() => handleSingleVerify(tx.id!)} title="확인" disabled={isVerifying}><ThumbsUp size={18} color="green" /></button>}
                         <button className="btn-icon" onClick={() => openReviewPanel(tx)} title="확인 요청"><MessageCircle size={18} color={getReviewColor(tx)} /></button>
                         <button className="btn btn-secondary" onClick={() => startEdit(tx)}><Edit2 size={16} /> 수정</button>
                         <button className="btn btn-danger" onClick={() => { if (window.confirm(`${tx.vendor} 거래를 삭제하시겠습니까?`)) onDelete(tx.id!); }}><Trash2 size={16} /> 삭제</button>

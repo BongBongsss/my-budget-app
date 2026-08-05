@@ -60,7 +60,7 @@ vi.mock('../db', () => ({
 }));
 
 import prisma from '../db';
-import { getAllTransactions, deleteTransaction, bulkAddTransactions, bulkUpdateTransactions } from './transactionService';
+import { cleanupTransactions, getAllTransactions, deleteTransaction, bulkAddTransactions, bulkUpdateTransactions, verifyTransactions } from './transactionService';
 
 describe('TransactionService (Soft Delete Test)', () => {
   beforeEach(() => {
@@ -233,5 +233,79 @@ describe('TransactionService (Soft Delete Test)', () => {
       })]),
     }));
     expect(result.count).toBe(1);
+  });
+
+  it('claims each import row once before creating a confirmed transaction and audit record', async () => {
+    const importRow = {
+      id: 'import-row-1',
+      status: 'committing',
+      date: '2026-08-05',
+      time: '10:00',
+      type: 'expense',
+      category: 'Food',
+      subcategory: null,
+      vendor: 'Coffee shop',
+      amount: 5000,
+      currency: 'KRW',
+      source: 'card',
+      memo: null,
+      member: '효',
+    };
+    const tx = {
+      importRow: {
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+        findMany: vi.fn().mockResolvedValue([importRow]),
+        update: vi.fn().mockResolvedValue({ ...importRow, status: 'committed' }),
+      },
+      transaction: { createMany: vi.fn().mockResolvedValue({ count: 1 }), updateMany: vi.fn() },
+      auditLog: { createMany: vi.fn() },
+    };
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    const result = await verifyTransactions(['import-row-1', 'import-row-1'], { role: 'admin' });
+
+    expect(tx.importRow.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['import-row-1'] }, status: { in: ['new', 'duplicate'] } },
+      data: { status: 'committing' },
+    });
+    expect(tx.transaction.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: [expect.objectContaining({ vendor: 'Coffee shop', isVerified: true })],
+    }));
+    expect(tx.auditLog.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: expect.arrayContaining([
+        expect.objectContaining({ entityType: 'transaction', action: 'create', actorRole: 'admin' }),
+        expect.objectContaining({ entityType: 'importRow', action: 'approve', actorRole: 'admin' }),
+      ]),
+    }));
+    expect(result.count).toBe(1);
+  });
+
+  it('reclassifies staged rows atomically with a restorable audit batch', async () => {
+    const importRow = {
+      id: 'import-row-2', status: 'new', date: '2026-08-05', time: '10:00', type: 'expense',
+      category: 'Food', subcategory: null, vendor: 'Coffee shop', amount: 5000, source: 'card',
+    };
+    const tx = {
+      transaction: {
+        findMany: vi.fn().mockResolvedValue([{ ...importRow, isVerified: true, isDeleted: false }]),
+      },
+      importRow: {
+        findMany: vi.fn().mockResolvedValue([importRow]),
+        updateMany: vi.fn().mockResolvedValue({ count: 1 }),
+      },
+      auditLog: { createMany: vi.fn() },
+    };
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    const result = await cleanupTransactions({ role: 'admin' });
+
+    expect(tx.importRow.updateMany).toHaveBeenCalledWith({
+      where: { id: { in: ['import-row-2'] } },
+      data: { status: 'duplicate' },
+    });
+    expect(tx.auditLog.createMany).toHaveBeenCalledWith(expect.objectContaining({
+      data: [expect.objectContaining({ entityType: 'importRow', action: 'update', batchId: expect.any(String) })],
+    }));
+    expect(result.updatedCount).toBe(1);
   });
 });

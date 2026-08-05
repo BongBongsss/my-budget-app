@@ -1,5 +1,6 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
+import { buildAuditLogData } from './auditLogService';
 
 export const getAllRecurringTransactions = async () => {
   return await prisma.recurringTransaction.findMany();
@@ -32,17 +33,18 @@ export const processRecurringTransactions = async () => {
 
   for (const item of recurring) {
     if (item.day_of_month === day) {
-      const existing = await prisma.transaction.findFirst({
-        where: {
-          date: dateStr,
-          vendor: item.vendor,
-          source: 'recurring',
-          isDeleted: false
-        }
-      });
-      
-      if (!existing) {
-        await prisma.transaction.create({
+      await prisma.$transaction(async (tx) => {
+        const existing = await tx.transaction.findFirst({
+          where: {
+            date: dateStr,
+            vendor: item.vendor,
+            source: 'recurring',
+            isDeleted: false,
+          },
+        });
+
+        if (existing) return;
+        const created = await tx.transaction.create({
           data: {
             id: randomUUID(),
             date: dateStr,
@@ -53,9 +55,18 @@ export const processRecurringTransactions = async () => {
             source: 'recurring',
             isDeleted: false,
             isVerified: true
-          }
+          },
         });
-      }
+        await tx.auditLog.create({
+          data: buildAuditLogData({
+            entityType: 'transaction',
+            entityId: created.id,
+            action: 'create',
+            afterData: created,
+            actor: { role: 'system' },
+          }),
+        });
+      });
     }
   }
 };

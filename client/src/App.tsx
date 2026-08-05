@@ -41,11 +41,13 @@ function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
+  const [isVerifying, setIsVerifying] = useState(false);
 
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const verifyingRef = useRef(false);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -224,7 +226,7 @@ function App() {
       setActiveTab('new');
       setImportSummary(res.data.summary);
     } catch (err: any) {
-      alert('Error importing file');
+      alert(err.response?.data?.message || 'Import failed. Please check the file and try again.');
     } finally {
       e.target.value = '';
     }
@@ -251,13 +253,18 @@ function App() {
   };
 
   const handleVerify = async (ids: string[]) => {
-    if (userRole !== 'admin') return;
+    if (userRole !== 'admin' || verifyingRef.current) return;
+    verifyingRef.current = true;
+    setIsVerifying(true);
     try {
       await verifyTransactions(ids);
       await fetchData();
       setActiveTab('all');
     } catch (err) {
       alert('승인 중 오류가 발생했습니다.');
+    } finally {
+      verifyingRef.current = false;
+      setIsVerifying(false);
     }
   };
 
@@ -484,6 +491,7 @@ function App() {
               onBulkUpdate={handleBulkUpdate}
               onBulkUpdateMember={handleBulkUpdateMember}
               onVerify={handleVerify}
+              isVerifying={isVerifying}
               onRefresh={fetchData}
               period={period}
               setPeriod={setPeriod}

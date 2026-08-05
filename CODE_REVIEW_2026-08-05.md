@@ -132,6 +132,20 @@ to a less frequent operational check if free-tier usage becomes constrained.
 7. Route-level authorization and Import integration tests against a temporary
    database.
 
+## Remediation Status
+
+- **Implemented in the follow-up safety change:** trusted-Origin checking,
+  in-memory login throttling, password length validation, upload and row
+  limits, atomic Import-row claiming, approval and recurring audit records,
+  transactional cleanup/rule application with batch audit logs, and stale
+  audit-restore conflict checks.
+- **Covered by new unit tests:** login throttling/password and Origin policy,
+  Import-row claim/audit behavior, Import row limit, cleanup audit batch, and
+  stale audit restore conflict.
+- **Still recommended:** temporary-database route integration tests and a true
+  parallel-request test, because mock-based unit tests do not prove database
+  lock behavior end to end.
+
 ## Verified Baseline
 
 - Production dependency audit: no runtime vulnerabilities reported for server
@@ -142,6 +156,9 @@ to a less frequent operational check if free-tier usage becomes constrained.
 
 ## Revision History
 
+- **2026-08-05**: Recorded remediation status after the required safety changes.
+  - **Reason**: Keep the review actionable and distinguish implemented controls
+    from remaining integration-test work.
 - **2026-08-05**: Created the senior-level operational code review.
   - **Reason**: Prioritize concrete reliability, security, concurrency, and
     maintainability risks before further feature work.

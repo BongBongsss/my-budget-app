@@ -10,7 +10,7 @@ vi.mock('../db', () => ({
 }));
 
 import prisma from '../db';
-import { BadRequestError, NotFoundError } from '../utils/errors';
+import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors';
 import { restoreAuditLogs, restoreLatestAuditBatch, restoreTransactionFromAuditLog } from './auditLogService';
 
 describe('AuditLogService', () => {
@@ -50,6 +50,30 @@ describe('AuditLogService', () => {
     await expect(restoreTransactionFromAuditLog('log-1', { role: 'admin' }))
       .rejects
       .toBeInstanceOf(BadRequestError);
+  });
+
+  it('refuses to restore an older update over a newer transaction change', async () => {
+    const beforeData = { id: 'tx-1', category: 'Food' };
+    const afterData = { id: 'tx-1', category: 'Transport' };
+    const tx = {
+      auditLog: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'log-update-1', entityType: 'transaction', entityId: 'tx-1', action: 'update',
+          beforeData, afterData,
+        }),
+        update: vi.fn(),
+      },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue({ id: 'tx-1', category: 'Housing' }),
+        update: vi.fn(),
+      },
+    };
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreTransactionFromAuditLog('log-update-1', { role: 'admin' }))
+      .rejects
+      .toBeInstanceOf(ConflictError);
+    expect(tx.transaction.update).not.toHaveBeenCalled();
   });
 
   it('restores the transaction snapshot and writes a restore log', async () => {

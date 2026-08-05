@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 import { Asset, Prisma, Transaction } from '@prisma/client';
 import prisma from '../db';
-import { BadRequestError, NotFoundError } from '../utils/errors';
+import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors';
 
 export type AuditActor = {
   role?: string;
@@ -11,7 +11,7 @@ export type AuditActor = {
 type AuditInput = {
   entityType: string;
   entityId: string;
-  action: 'create' | 'update' | 'delete' | 'restore';
+  action: 'create' | 'update' | 'delete' | 'restore' | 'approve';
   beforeData?: unknown;
   afterData?: unknown;
   actor?: AuditActor;
@@ -101,6 +101,7 @@ export const getLatestRestorableBatch = async () => findLatestRestorableBatch(pr
 
 const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member'];
 const assetUpdateFields = ['name', 'type', 'balance', 'memo'];
+const importRowUpdateFields = [...transactionUpdateFields, 'status', 'invalidReason', 'committedAt', 'transactionId'];
 
 const changedFields = (beforeData: Record<string, any>, afterData: Record<string, any>, fields: string[]) => (
   fields.filter((field) => beforeData[field] !== afterData[field])
@@ -111,14 +112,26 @@ const restoreUpdateFromAuditLog = async (tx: Prisma.TransactionClient, auditLog:
   const afterData = auditLog.afterData as Record<string, any> | null;
   if (!beforeData || !afterData) throw new BadRequestError('Update log does not contain restorable data.');
 
-  const fields = auditLog.entityType === 'asset' ? assetUpdateFields : transactionUpdateFields;
+  const fields = auditLog.entityType === 'asset'
+    ? assetUpdateFields
+    : auditLog.entityType === 'importRow'
+      ? importRowUpdateFields
+      : transactionUpdateFields;
   const fieldsToRestore = changedFields(beforeData, afterData, fields);
   if (fieldsToRestore.length === 0) throw new BadRequestError('Update log has no changed fields to restore.');
   const restoreData = Object.fromEntries(fieldsToRestore.map((field) => [field, beforeData[field]]));
 
+  const assertCurrentMatchesAudit = (current: Record<string, any>) => {
+    const changedSinceAudit = fieldsToRestore.some((field) => current[field] !== afterData[field]);
+    if (changedSinceAudit) {
+      throw new ConflictError('This record has changed since the selected activity log. Refresh and restore the newest matching change instead.', 'STALE_AUDIT_RESTORE');
+    }
+  };
+
   if (auditLog.entityType === 'asset') {
     const current = await tx.asset.findUnique({ where: { id: auditLog.entityId } });
     if (!current) throw new NotFoundError('Asset to restore was not found.');
+    assertCurrentMatchesAudit(current);
     const restored = await tx.asset.update({ where: { id: auditLog.entityId }, data: restoreData });
     await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'asset', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
     return restored;
@@ -127,6 +140,7 @@ const restoreUpdateFromAuditLog = async (tx: Prisma.TransactionClient, auditLog:
   if (auditLog.entityType === 'importRow') {
     const current = await tx.importRow.findUnique({ where: { id: auditLog.entityId } });
     if (!current) throw new NotFoundError('Import row to restore was not found.');
+    assertCurrentMatchesAudit(current);
     const restored = await tx.importRow.update({ where: { id: auditLog.entityId }, data: restoreData });
     await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'importRow', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
     return restored;
@@ -134,6 +148,7 @@ const restoreUpdateFromAuditLog = async (tx: Prisma.TransactionClient, auditLog:
 
   const current = await tx.transaction.findUnique({ where: { id: auditLog.entityId } });
   if (!current) throw new NotFoundError('Transaction to restore was not found.');
+  assertCurrentMatchesAudit(current);
   const restored = await tx.transaction.update({ where: { id: auditLog.entityId }, data: restoreData });
   await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'transaction', entityId: restored.id, action: 'restore', beforeData: current, afterData: restored, actor }) });
   return restored;

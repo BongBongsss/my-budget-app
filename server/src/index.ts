@@ -21,8 +21,9 @@ import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
 import { errorHandler } from './middleware/errorHandler';
-import { UnauthorizedError, BadRequestError } from './utils/errors';
+import { UnauthorizedError, BadRequestError, ForbiddenError } from './utils/errors';
 import { asyncHandler } from './utils/asyncHandler';
+import { assertStrongPassword, assertTrustedMutationOrigin, loginAttemptLimiter } from './security/authSecurity';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -52,7 +53,7 @@ app.use(cors({
     if (!origin || clientOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new ForbiddenError('Origin is not allowed by CORS.', 'UNTRUSTED_ORIGIN'));
     }
   },
   credentials: true,
@@ -60,8 +61,22 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ limit: '50mb', extended: true }));
+app.use((req, _res, next) => {
+  try {
+    assertTrustedMutationOrigin(
+      req.method,
+      req.get('origin'),
+      clientOrigins,
+      process.env.NODE_ENV === 'production',
+    );
+    next();
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.use(express.json({ limit: '2mb' }));
+app.use(express.urlencoded({ limit: '64kb', extended: true }));
 
 app.use(session({
   store: new PgSession({
@@ -104,8 +119,18 @@ const isAdmin = (req: any, res: any, next: any) => {
 
 app.post('/api/login', asyncHandler(async (req: any, res: any) => {
   const { username, password } = req.body;
+  const loginName = typeof username === 'string' ? username : '';
+  const ipAddress = req.ip || 'unknown';
+
+  loginAttemptLimiter.assertAllowed(ipAddress, loginName);
 
   if (username !== 'admin' && username !== 'viewer') {
+    loginAttemptLimiter.recordFailure(ipAddress, loginName);
+    throw new UnauthorizedError('Invalid ID or Password');
+  }
+
+  if (typeof password !== 'string') {
+    loginAttemptLimiter.recordFailure(ipAddress, loginName);
     throw new UnauthorizedError('Invalid ID or Password');
   }
 
@@ -116,10 +141,12 @@ app.post('/api/login', asyncHandler(async (req: any, res: any) => {
 
   const isMatch = await bcrypt.compare(password, auth.passwordHash);
   if (isMatch) {
+    loginAttemptLimiter.clear(ipAddress, loginName);
     req.session.authenticated = true;
     req.session.role = username as 'admin' | 'viewer';
     res.json({ success: true, role: username });
   } else {
+    loginAttemptLimiter.recordFailure(ipAddress, loginName);
     throw new UnauthorizedError('Invalid ID or Password');
   }
 }));
@@ -143,7 +170,7 @@ app.post('/api/change-password', asyncHandler(async (req: any, res: any) => {
   const role = req.session.role;
 
   if (!role) throw new UnauthorizedError();
-  if (!newPassword) throw new BadRequestError('New password is required');
+  assertStrongPassword(newPassword);
 
   const auth = await prisma.auth.findUnique({ where: { role } });
   if (!auth) throw new UnauthorizedError();

@@ -73,7 +73,7 @@ git diff --check
 
 Baseline verification completed on 2026-08-05:
 
-- Server unit tests: 6 files / 22 tests passed.
+- Server unit tests: 7 files / 29 tests passed.
 - Client tests: 6 files / 12 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
@@ -99,9 +99,26 @@ Before implementing a non-trivial change:
 
 ## Next Reliability Work
 
-1. Audit transaction/batch restore atomicity and document any gaps.
+1. Add temporary-database integration tests for authentication, Import approval,
+   and audit restore conflict handling.
 2. Add regression coverage for multi-item bulk restore.
-3. Add structured request/error logging without exposing sensitive data.
+3. Introduce server-side pagination before transaction volume makes full-list
+   loading slow.
+
+## Production Safety Controls
+
+- Production state-changing API requests require the configured client Origin;
+  this protects the cross-site session cookie from forged browser requests.
+- Five failed login attempts for the same IP and account are limited for 15
+  minutes. Successful login clears the failed-attempt record.
+- New passwords must be 12 to 128 characters long.
+- Import files are limited to 10 MB and 20,000 rows. The server returns a safe
+  explanation instead of attempting an unbounded in-memory parse.
+- Import approval atomically claims staged rows before transaction creation.
+  Approval, recurring creation, cleanup reclassification, and automatic rule
+  application now write audit records where they change financial data.
+- Restoring an older update is refused when the record has been changed again,
+  preventing an old activity-log entry from overwriting a newer edit.
 
 ## Local Full Backup
 
@@ -133,6 +150,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Added production safety controls for request origin, login attempts, Import limits, approval concurrency, and audit restore conflicts.
+  - **Reason**: Close the operational security and data-integrity risks identified by the senior code review without changing existing transaction data.
 
 - **2026-08-05**: Unified the member values used by the desktop filter and both transaction editors.
   - **Reason**: Prevent mobile edits from saving values that differ from the database and desktop UI (`효`, `굥`, `미지정`).

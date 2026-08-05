@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { AppError } from '../utils/errors';
+import { MulterError } from 'multer';
 
 type RequestWithId = Request & { requestId?: string };
 
@@ -10,6 +11,23 @@ export const errorHandler = (
   next: NextFunction
 ) => {
   const requestId = (req as RequestWithId).requestId || 'unknown';
+  if (err instanceof MulterError) {
+    console.warn(JSON.stringify({
+      level: 'warn',
+      requestId,
+      method: req.method,
+      path: req.originalUrl,
+      code: err.code,
+    }));
+    return res.status(400).json({
+      status: 400,
+      code: err.code === 'LIMIT_FILE_SIZE' ? 'IMPORT_FILE_TOO_LARGE' : 'INVALID_UPLOAD',
+      message: err.code === 'LIMIT_FILE_SIZE'
+        ? 'Import files must be 10 MB or smaller.'
+        : 'The uploaded file is not valid.',
+      requestId,
+    });
+  }
   const isKnownError = err instanceof AppError;
   const status = isKnownError ? err.status : 500;
   const code = isKnownError ? err.code : 'INTERNAL_SERVER_ERROR';

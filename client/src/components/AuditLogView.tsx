@@ -12,6 +12,7 @@ const actionLabels: Record<string, string> = {
   update: '수정',
   delete: '삭제',
   restore: '복구',
+  approve: '승인',
 };
 
 const actionColors: Record<string, { bg: string; color: string }> = {
@@ -19,6 +20,7 @@ const actionColors: Record<string, { bg: string; color: string }> = {
   update: { bg: '#dbeafe', color: '#1d4ed8' },
   delete: { bg: '#fee2e2', color: '#991b1b' },
   restore: { bg: '#fef3c7', color: '#92400e' },
+  approve: { bg: '#e0e7ff', color: '#4338ca' },
 };
 
 const entityLabels: Record<string, string> = {
@@ -186,6 +188,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             <option value="update">수정</option>
             <option value="delete">삭제</option>
             <option value="restore">복구</option>
+            <option value="approve">승인</option>
           </select>
           <button className="btn btn-secondary" onClick={fetchLogs} disabled={loading}>
             <RefreshCw size={16} style={{ marginRight: '6px' }} />

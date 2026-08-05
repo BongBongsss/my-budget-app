@@ -1,5 +1,8 @@
 import Papa from 'papaparse';
 import readXlsxFile from 'read-excel-file/node';
+import { BadRequestError } from '../utils/errors';
+
+export const MAX_IMPORT_ROWS = 20_000;
 
 export interface ParsedTransaction {
   date: string;
@@ -153,6 +156,10 @@ const getInvalidReasons = (row: Record<string, any>, transaction?: ParsedTransac
 };
 
 const parseRowsForImport = (data: Record<string, any>[]): ParsedImportRow[] => {
+  if (data.length > MAX_IMPORT_ROWS) {
+    throw new BadRequestError(`Import files may contain at most ${MAX_IMPORT_ROWS.toLocaleString()} rows.`, 'IMPORT_ROW_LIMIT_EXCEEDED');
+  }
+
   return data.map((row, index) => {
     const transaction = normalizeData(row);
     return {
@@ -173,6 +180,9 @@ export const parseCSV = (buffer: Buffer): ParsedTransaction[] => {
 export const parseCSVForImport = (buffer: Buffer): ParsedImportRow[] => {
   const csvString = buffer.toString('utf-8');
   const result = Papa.parse(csvString, { header: true, skipEmptyLines: true });
+  if (result.errors.length > 0) {
+    throw new BadRequestError('The CSV file could not be parsed. Save it as CSV UTF-8 and try again.', 'INVALID_IMPORT_FILE');
+  }
   return parseRowsForImport(result.data as Record<string, any>[]);
 };
 

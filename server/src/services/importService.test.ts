@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { getImportFileFormat, parseCSV, parseExcelForImport } from './importService';
+import { MAX_IMPORT_ROWS, getImportFileFormat, parseCSV, parseCSVForImport, parseExcelForImport } from './importService';
 
 const readXlsxFileMock = vi.hoisted(() => vi.fn());
 
@@ -54,5 +54,12 @@ describe('importService', () => {
     expect(getImportFileFormat('statement.xlsx')).toBe('xlsx');
     expect(getImportFileFormat('statement.xls')).toBe('legacy-xls');
     expect(getImportFileFormat('statement.pdf')).toBeNull();
+  });
+
+  it('rejects Import files that exceed the safe row limit', () => {
+    const rows = Array.from({ length: MAX_IMPORT_ROWS + 1 }, (_, index) => `2026-08-05,Store ${index},1000`);
+    const csv = ['date,vendor,amount', ...rows].join('\n');
+
+    expect(() => parseCSVForImport(Buffer.from(csv, 'utf-8'))).toThrow('at most');
   });
 });

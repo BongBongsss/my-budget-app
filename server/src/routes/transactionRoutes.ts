@@ -19,7 +19,15 @@ import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError, UnauthorizedError } from '../utils/errors';
 
 const router = Router();
-const upload = multer({ storage: multer.memoryStorage() });
+const MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: MAX_IMPORT_FILE_SIZE_BYTES,
+    files: 1,
+    fields: 10,
+  },
+});
 
 const getAuditActor = (req: Request) => ({
   role: req.session?.role,
@@ -33,7 +41,7 @@ const requireAdmin = (req: Request) => {
 };
 
 router.post('/cleanup', asyncHandler(async (req: Request, res: Response) => {
-  const result = await cleanupTransactions();
+  const result = await cleanupTransactions(getAuditActor(req));
   res.json({ success: true, ...result });
 }));
 
@@ -42,13 +50,13 @@ router.post('/verify', asyncHandler(async (req: Request, res: Response) => {
   if (!Array.isArray(ids)) {
     throw new BadRequestError('Expected an array of IDs');
   }
-  const result = await verifyTransactions(ids);
+  const result = await verifyTransactions(ids, getAuditActor(req));
   res.json({ success: true, count: result.count });
 }));
 
 router.post('/apply-rules', asyncHandler(async (req: Request, res: Response) => {
-  const count = await applyAutoRulesToExisting();
-  res.json({ success: true, count });
+  const result = await applyAutoRulesToExisting(getAuditActor(req));
+  res.json({ success: true, ...result });
 }));
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
