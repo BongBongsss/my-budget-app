@@ -78,6 +78,8 @@ Baseline verification completed on 2026-08-05:
 - Client tests: 6 files / 11 tests passed.
 - Client TypeScript check and production build passed.
 - `git diff --check` passed.
+- Browser E2E coverage validates the viewer login-to-dashboard flow with mocked
+  API responses and does not access production data.
 
 For data-affecting work, also verify the relevant scenarios in
 `VERIFICATION_SCENARIOS_2026-06-05.md`. The hard-coded record counts in that
@@ -105,6 +107,9 @@ Before implementing a non-trivial change:
 ---
 
 ## Revision History
+
+- **2026-08-05**: Added Playwright browser testing and a mocked viewer login flow to CI.
+  - **Reason**: Catch regressions in the real browser startup and authentication journey before deployment.
 
 - **2026-08-05**: Added isolated client error boundaries for charts, transactions, assets, and activity logs.
   - **Reason**: Keep the rest of the application usable when one high-risk UI section fails to render.
