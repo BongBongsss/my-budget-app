@@ -842,7 +842,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     align-items: end !important;
   }
   .search-controls { min-width: 0; flex-wrap: wrap; }
-  .search-controls .edit-input { flex: 1 1 120px; min-width: 0; }
+  .search-controls select.edit-input { flex: 0 1 auto; width: auto !important; max-width: 48vw; min-width: 0; }
+  .search-controls input.edit-input { flex: 1 1 120px; min-width: 0; }
   .list-export-controls { justify-content: flex-end; }
 
   .desktop-transaction-table { display: none; }
