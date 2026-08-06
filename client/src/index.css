@@ -1203,20 +1203,12 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-chart-tabs button { padding: 0.28rem 0.45rem; border: 0; border-radius: 5px; background: transparent; color: #64748b; font-size: 0.65rem; cursor: pointer; }
   .mobile-asset-chart-tabs button.is-active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgb(15 23 42 / 0.12); font-weight: 700; }
   .mobile-asset-composition-list { display: grid; gap: 0.4rem; }
-  .mobile-asset-composition-bar { cursor: default; }
-  .mobile-asset-composition-bar-content {
-    position: relative;
-    z-index: 1;
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
-    align-items: center;
-    gap: 0.45rem;
-    color: #0f172a;
-    text-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
-  }
-  .mobile-asset-composition-name { overflow: hidden; font-size: 0.78rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
-  .mobile-asset-composition-amount { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
-  .mobile-asset-composition-percentage { color: #334155; font-size: 0.68rem; font-weight: 800; white-space: nowrap; }
+  .mobile-asset-composition-item { min-width: 0; }
+  .mobile-asset-composition-bar { min-height: 28px; padding: 0.3rem 0.4rem; cursor: default; }
+  .mobile-asset-composition-label,
+  .mobile-asset-composition-amount { position: relative; z-index: 1; overflow: hidden; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); white-space: nowrap; }
+  .mobile-asset-composition-label { display: inline-block; max-width: 48%; color: #0f172a; font-size: 0.7rem; font-weight: 800; text-overflow: ellipsis; }
+  .mobile-asset-composition-amount { float: right; max-width: 52%; color: #334155; font-size: 0.64rem; font-weight: 700; text-overflow: ellipsis; }
   .mobile-asset-chart-area { height: 270px; width: 100%; }
   .mobile-history-save { margin: 0 0 0.5rem auto; padding: 0.28rem 0.45rem; font-size: 0.68rem; }
 
