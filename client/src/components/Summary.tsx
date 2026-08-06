@@ -46,7 +46,7 @@ const Summary: React.FC<SummaryProps> = ({
         setMemberFilter={setMemberFilter}
       />
 
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-3 gap-6 mb-8 summary-cards">
         <div className="card-summary income">
           <div className="icon"><ArrowUpCircle size={24} /></div>
           <div className="details">

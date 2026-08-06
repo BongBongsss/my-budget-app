@@ -142,11 +142,16 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 }
 
 .view-action-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
   margin-bottom: 1rem;
+  padding: 0.65rem 0;
+  background: #e0f2fe;
 }
 
 .view-action-bar h2 {
@@ -925,6 +930,55 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .entry-modal { width: 100%; max-height: min(88dvh, 760px); border-radius: 18px 18px 0 0; }
   .entry-modal-header { padding: 0.85rem 1rem; }
   .entry-form { padding: 1rem; }
+
+  .summary-cards,
+  .asset-summary-cards {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 0.45rem !important;
+    margin-bottom: 1.25rem !important;
+  }
+
+  .summary-cards .card-summary,
+  .asset-summary-cards .card-summary {
+    min-width: 0;
+    min-height: 96px;
+    padding: 0.6rem;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 0.35rem;
+  }
+
+  .summary-cards .card-summary .icon,
+  .asset-summary-cards .card-summary .icon {
+    width: 32px;
+    height: 32px;
+    margin-right: 0;
+  }
+
+  .summary-cards .card-summary .icon svg,
+  .asset-summary-cards .card-summary .icon svg { width: 18px; height: 18px; }
+
+  .summary-cards .card-summary .details,
+  .asset-summary-cards .card-summary .details { min-width: 0; width: 100%; }
+
+  .summary-cards .card-summary .details span,
+  .asset-summary-cards .card-summary .details span { font-size: 0.65rem; white-space: nowrap; }
+
+  .summary-cards .card-summary .details h2,
+  .asset-summary-cards .card-summary .details h2 {
+    overflow: hidden;
+    font-size: 0.82rem;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .asset-summary-cards .card-summary .details h2 span {
+    display: block;
+    margin-top: 0.15rem;
+    font-size: 0.65rem !important;
+  }
   .card-form, .transaction-list { padding: 1rem; }
 
   .grid-form { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 0.65rem !important; }

@@ -183,7 +183,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
 
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto">
-      <div className="grid grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-3 gap-6 mb-8 asset-summary-cards">
         <div className="card-summary balance shadow-md">
             <div className="icon"><TrendingUp size={24}/></div>
             <div className="details">
