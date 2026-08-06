@@ -302,14 +302,15 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
             {sortedGroupedEntries.map(([type, value], index) => {
               const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
               return (
-                <div className="mobile-comparison-bar" key={type}>
+                <div className="mobile-comparison-bar mobile-asset-composition-bar" key={type}>
                   <span
                     className="mobile-comparison-bar-fill"
                     style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }}
                   />
                   <span className="mobile-comparison-bar-content">
-                    <span className="mobile-comparison-bar-name">{type}</span>
-                    <span className="mobile-comparison-bar-value">{value.toLocaleString()}원 · {percentage.toFixed(1)}%</span>
+                    <span className="mobile-asset-composition-name">{type}</span>
+                    <span className="mobile-asset-composition-amount">{value.toLocaleString()}원</span>
+                    <span className="mobile-asset-composition-percentage">{percentage.toFixed(1)}%</span>
                   </span>
                 </div>
               );

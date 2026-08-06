@@ -209,20 +209,21 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
 
   if (isCompactMobile) {
     return (
-      <div className="card-form mobile-comparison-chart-card" style={{ marginBottom: '32px' }} onClick={clearHighlight}>
-        <div className="mobile-comparison-chart-header">
-          <div><span className="mobile-comparison-chart-dot income" />수입 구성</div>
-          <div><span className="mobile-comparison-chart-dot expense" />지출 구성</div>
-        </div>
-        <p className="mobile-comparison-chart-guide">항목 또는 막대를 누르면 해당 거래만 조회합니다.</p>
-        <div className="mobile-comparison-columns">
-          <section aria-label="수입 카테고리 목록">
-            {renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
-          </section>
-          <section aria-label="지출 카테고리 목록">
-            {renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
-          </section>
-        </div>
+      <div className="mobile-comparison-chart-grid" style={{ marginBottom: '32px' }}>
+        <section className="card-form mobile-comparison-chart-card" onClick={clearHighlight} aria-label="수입 구성">
+          <div className="mobile-comparison-chart-header income">
+            <span className="mobile-comparison-chart-dot income" />수입 구성
+          </div>
+          <p className="mobile-comparison-chart-guide">항목을 누르면 거래를 조회합니다.</p>
+          {renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
+        </section>
+        <section className="card-form mobile-comparison-chart-card" onClick={clearHighlight} aria-label="지출 구성">
+          <div className="mobile-comparison-chart-header expense">
+            <span className="mobile-comparison-chart-dot expense" />지출 구성
+          </div>
+          <p className="mobile-comparison-chart-guide">항목을 누르면 거래를 조회합니다.</p>
+          {renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
+        </section>
       </div>
     );
   }

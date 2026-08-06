@@ -1152,26 +1152,28 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .summary-chart-legend button { gap: 2px !important; padding: 2px !important; }
   .summary-chart-legend span { font-size: 0.55rem !important; }
 
+  .mobile-comparison-chart-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.5rem;
+  }
   .mobile-comparison-chart-card {
     min-height: 0 !important;
-    padding: 0.8rem !important;
+    padding: 0.65rem !important;
     overflow: hidden !important;
   }
   .mobile-comparison-chart-header {
     display: flex;
-    justify-content: space-between;
-    gap: 1rem;
+    align-items: center;
+    gap: 0.35rem;
     color: #334155;
     font-size: 0.8rem;
     font-weight: 700;
   }
-  .mobile-comparison-chart-header > div { display: flex; align-items: center; gap: 0.35rem; }
   .mobile-comparison-chart-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
   .mobile-comparison-chart-dot.income { background: #22c55e; }
   .mobile-comparison-chart-dot.expense { background: #ef4444; }
-  .mobile-comparison-chart-guide { margin: 0.3rem 0 0.55rem; color: #64748b; font-size: 0.62rem; }
-  .mobile-comparison-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.5rem; }
-  .mobile-comparison-columns > section { min-width: 0; }
+  .mobile-comparison-chart-guide { margin: 0.25rem 0 0.45rem; color: #64748b; font-size: 0.56rem; }
   .mobile-comparison-list { display: grid; gap: 0.35rem; }
   .mobile-comparison-bar {
     position: relative;
@@ -1191,7 +1193,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-comparison-bar-fill { position: absolute; inset: 0 auto 0 0; opacity: 0.78; }
   .mobile-comparison-bar-content { position: relative; z-index: 1; display: grid; gap: 0.05rem; color: #0f172a; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
   .mobile-comparison-bar-name { overflow: hidden; font-size: 0.67rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-  .mobile-comparison-bar-value { overflow: hidden; color: #334155; font-size: 0.54rem; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-comparison-bar-value { overflow: hidden; color: #1e293b; font-size: 0.58rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 
   .asset-desktop-charts { display: none; }
   .mobile-asset-chart { display: block; min-height: 0 !important; margin-bottom: 1rem; padding: 0.8rem !important; }
@@ -1201,6 +1203,20 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-chart-tabs button { padding: 0.28rem 0.45rem; border: 0; border-radius: 5px; background: transparent; color: #64748b; font-size: 0.65rem; cursor: pointer; }
   .mobile-asset-chart-tabs button.is-active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgb(15 23 42 / 0.12); font-weight: 700; }
   .mobile-asset-composition-list { display: grid; gap: 0.4rem; }
+  .mobile-asset-composition-bar { cursor: default; }
+  .mobile-asset-composition-bar-content {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    align-items: center;
+    gap: 0.45rem;
+    color: #0f172a;
+    text-shadow: 0 1px 2px rgb(255 255 255 / 0.9);
+  }
+  .mobile-asset-composition-name { overflow: hidden; font-size: 0.78rem; font-weight: 800; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-asset-composition-amount { font-size: 0.68rem; font-weight: 700; white-space: nowrap; }
+  .mobile-asset-composition-percentage { color: #334155; font-size: 0.68rem; font-weight: 800; white-space: nowrap; }
   .mobile-asset-chart-area { height: 270px; width: 100%; }
   .mobile-history-save { margin: 0 0 0.5rem auto; padding: 0.28rem 0.45rem; font-size: 0.68rem; }
 
