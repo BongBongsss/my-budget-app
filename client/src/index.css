@@ -217,6 +217,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .entry-form { padding: 1.25rem; }
 .entry-form .form-actions { grid-column: 1 / -1; gap: 0.5rem; }
+.entry-form .form-group input,
+.entry-form .form-group select { width: 100%; min-width: 0; }
 .entry-asset-form { margin: 0 !important; box-shadow: none; }
 
 .mobile-entry-fab {
