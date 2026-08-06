@@ -139,6 +139,93 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     </div>
   );
 
+  const renderSplitHalf = (type: 'income' | 'expense', processed: any, direction: -1 | 1) => {
+    const center = 160;
+    const radius = 138;
+    let angle = -Math.PI / 2;
+
+    return processed.activeGroups.map((group: string) => {
+      const value = processed.categoryData[group];
+      const percentage = processed.totalAmount ? (value / processed.totalAmount) * 100 : 0;
+      const arc = (percentage / 100) * Math.PI;
+      const endAngle = angle + direction * arc;
+      const startX = center + radius * Math.cos(angle);
+      const startY = center + radius * Math.sin(angle);
+      const endX = center + radius * Math.cos(endAngle);
+      const endY = center + radius * Math.sin(endAngle);
+      const labelAngle = angle + direction * arc / 2;
+      const labelRadius = percentage < 6 ? 104 : 76;
+      const labelX = center + labelRadius * Math.cos(labelAngle);
+      const labelY = center + labelRadius * Math.sin(labelAngle);
+      const isSelected = activeHighlight?.type === type && activeHighlight.group === group;
+      const isDimmed = !!activeHighlight && !isSelected;
+      const shortLabel = group.length > 6 ? `${group.slice(0, 5)}…` : group;
+
+      angle = endAngle;
+
+      return (
+        <g key={`${type}-${group}`}>
+          <path
+            d={`M ${center} ${center} L ${startX} ${startY} A ${radius} ${radius} 0 0 ${direction === 1 ? 1 : 0} ${endX} ${endY} Z`}
+            fill={processed.groupColorMap[group]}
+            fillOpacity={isDimmed ? 0.25 : 1}
+            stroke="#fff"
+            strokeWidth="1"
+            style={{ cursor: 'pointer', transition: 'fill-opacity 0.2s' }}
+            onClick={(event) => {
+              event.stopPropagation();
+              handleGroupClick(type, group);
+            }}
+          >
+            <title>{`${group}: ${percentage.toFixed(1)}% (${value.toLocaleString()}원)`}</title>
+          </path>
+          <text
+            x={labelX}
+            y={labelY - 3}
+            textAnchor="middle"
+            fontSize={percentage < 6 ? 6.5 : 8}
+            fontWeight="700"
+            fill="#0f172a"
+            stroke="#fff"
+            strokeWidth="2"
+            paintOrder="stroke"
+            pointerEvents="none"
+          >
+            <tspan x={labelX}>{shortLabel}</tspan>
+            <tspan x={labelX} dy="9">{`${percentage.toFixed(1)}%`}</tspan>
+          </text>
+        </g>
+      );
+    });
+  };
+
+  if (isCompactMobile) {
+    return (
+      <div className="card-form mobile-split-chart-card" style={{ marginBottom: '32px' }}>
+        <div className="mobile-split-chart-header">
+          <div><span className="mobile-split-chart-dot income" />수입 구성</div>
+          <div><span className="mobile-split-chart-dot expense" />지출 구성</div>
+        </div>
+        <p className="mobile-split-chart-guide">항목을 누르면 해당 거래만 조회합니다.</p>
+        <svg
+          className="mobile-split-chart"
+          viewBox="0 0 320 320"
+          role="img"
+          aria-label="왼쪽은 수입 비중, 오른쪽은 지출 비중"
+          onClick={clearHighlight}
+        >
+          {renderSplitHalf('income', incomeData, -1)}
+          {renderSplitHalf('expense', expenseData, 1)}
+          <line x1="160" y1="22" x2="160" y2="298" stroke="#fff" strokeWidth="2" pointerEvents="none" />
+        </svg>
+        <div className="mobile-split-chart-legends">
+          <div>{renderLegend('income', incomeData)}</div>
+          <div>{renderLegend('expense', expenseData)}</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="grid grid-cols-2 gap-6 summary-charts" style={{ marginBottom: '32px' }}>
       {/* 좌측: 수입 섹션 */}
