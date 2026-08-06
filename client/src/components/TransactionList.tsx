@@ -70,6 +70,16 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [reviewType, setReviewType] = useState<'question' | 'change_request'>('question');
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewBody, setReviewBody] = useState('');
+  const [expandedMobileTransactionIds, setExpandedMobileTransactionIds] = useState<Set<string>>(new Set());
+
+  const toggleMobileTransactionDetails = (id: string) => {
+    setExpandedMobileTransactionIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const refreshReviewState = async (target: Transaction) => {
     await loadReviewRequests(target);
@@ -656,7 +666,11 @@ const TransactionList: React.FC<TransactionListProps> = ({
         {paginatedTransactions.map((tx) => {
           const isEditing = editingId === tx.id;
           return (
-            <article className="mobile-transaction-card" key={`mobile-${tx.id}`}>
+            <article
+              className={`mobile-transaction-card ${expandedMobileTransactionIds.has(tx.id!) ? 'is-expanded' : ''}`}
+              key={`mobile-${tx.id}`}
+              onClick={() => !isEditing && toggleMobileTransactionDetails(tx.id!)}
+            >
               {isEditing ? (
                 <div className="mobile-edit-form">
                   <div className="mobile-edit-grid">

@@ -886,6 +886,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .mobile-transaction-cards { display: none; }
 .mobile-asset-cards { display: none; }
+.mobile-asset-chart { display: none; }
 
 .period-member-filter {
   display: flex;
@@ -943,19 +944,17 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .summary-cards .card-summary,
   .asset-summary-cards .card-summary {
     min-width: 0;
-    min-height: 96px;
-    padding: 0.6rem;
+    min-height: 64px;
+    padding: 0.5rem;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 0.35rem;
+    gap: 0;
   }
 
   .summary-cards .card-summary .icon,
   .asset-summary-cards .card-summary .icon {
-    width: 32px;
-    height: 32px;
-    margin-right: 0;
+    display: none;
   }
 
   .summary-cards .card-summary .icon svg,
@@ -965,12 +964,12 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .asset-summary-cards .card-summary .details { min-width: 0; width: 100%; }
 
   .summary-cards .card-summary .details span,
-  .asset-summary-cards .card-summary .details span { font-size: 0.65rem; white-space: nowrap; }
+  .asset-summary-cards .card-summary .details span { font-size: 0.6rem; white-space: nowrap; }
 
   .summary-cards .card-summary .details h2,
   .asset-summary-cards .card-summary .details h2 {
     overflow: hidden;
-    font-size: 0.82rem;
+    font-size: 0.8rem;
     line-height: 1.2;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1045,6 +1044,11 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-card-topline strong { margin-left: auto; color: #1e293b; font-size: 0.9rem; }
   .mobile-card-vendor { margin-top: 0.25rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
   .mobile-card-meta, .mobile-card-note { margin-top: 0.12rem; color: #64748b; font-size: 0.7rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .mobile-transaction-card { cursor: pointer; }
+  .mobile-transaction-card:not(.is-expanded) .mobile-card-note,
+  .mobile-transaction-card:not(.is-expanded) .mobile-card-actions { display: none; }
+  .mobile-card-note { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+  .mobile-transaction-card.is-expanded .mobile-card-note { -webkit-line-clamp: unset; }
   .mobile-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.4rem; }
   .mobile-card-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.72rem; }
   .mobile-card-actions .btn-icon { padding: 0.2rem; }
@@ -1065,6 +1069,12 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-topline strong { margin-left: auto; color: #1e293b; font-size: 0.9rem; }
   .mobile-asset-name { margin-top: 0.25rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; overflow-wrap: anywhere; }
   .mobile-asset-note, .mobile-asset-meta { margin-top: 0.12rem; color: #64748b; font-size: 0.7rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .mobile-asset-card { cursor: pointer; }
+  .mobile-asset-card:not(.is-expanded) .mobile-asset-note,
+  .mobile-asset-card:not(.is-expanded) .mobile-asset-meta,
+  .mobile-asset-card:not(.is-expanded) .mobile-asset-actions { display: none; }
+  .mobile-asset-note { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
+  .mobile-asset-card.is-expanded .mobile-asset-note { -webkit-line-clamp: unset; }
   .mobile-asset-actions { display: flex; justify-content: flex-end; gap: 0.3rem; margin-top: 0.4rem; }
   .mobile-asset-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.72rem; }
   .mobile-asset-actions svg { width: 15px; height: 15px; }
@@ -1164,6 +1174,16 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-comparison-bar-content { position: relative; z-index: 1; display: grid; gap: 0.05rem; color: #0f172a; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
   .mobile-comparison-bar-name { overflow: hidden; font-size: 0.67rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
   .mobile-comparison-bar-value { overflow: hidden; color: #334155; font-size: 0.54rem; text-overflow: ellipsis; white-space: nowrap; }
+
+  .asset-desktop-charts { display: none; }
+  .mobile-asset-chart { display: block; min-height: 0 !important; margin-bottom: 1rem; padding: 0.8rem !important; }
+  .mobile-asset-chart-header { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.6rem; }
+  .mobile-asset-chart-header h3 { margin: 0; font-size: 0.95rem; }
+  .mobile-asset-chart-tabs { display: flex; gap: 0.25rem; padding: 0.2rem; border-radius: 7px; background: #f1f5f9; }
+  .mobile-asset-chart-tabs button { padding: 0.28rem 0.45rem; border: 0; border-radius: 5px; background: transparent; color: #64748b; font-size: 0.65rem; cursor: pointer; }
+  .mobile-asset-chart-tabs button.is-active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgb(15 23 42 / 0.12); font-weight: 700; }
+  .mobile-asset-chart-area { height: 270px; width: 100%; }
+  .mobile-history-save { margin: 0 0 0.5rem auto; padding: 0.28rem 0.45rem; font-size: 0.68rem; }
 
   .undo-toast { width: calc(100vw - 1.5rem); bottom: 1rem; padding: 0.75rem; gap: 0.6rem; }
   .undo-toast span { flex: 1; font-size: 0.85rem; }

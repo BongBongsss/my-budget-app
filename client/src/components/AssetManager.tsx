@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2';
+import { Pie, Line, Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import EntryModal from './EntryModal';
 
@@ -26,6 +26,17 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     name: '', type: 'bank', balance: 0, memo: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mobileChartView, setMobileChartView] = useState<'composition' | 'trend'>('composition');
+  const [expandedMobileAssetIds, setExpandedMobileAssetIds] = useState<Set<string>>(new Set());
+
+  const toggleMobileAssetDetails = (id: string) => {
+    setExpandedMobileAssetIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
 
   const fetchData = async () => {
     try {
@@ -181,6 +192,16 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     ]
   };
 
+  const mobileCompositionData = {
+    labels: sortedGroupedEntries.map(([label]) => label),
+    datasets: [{
+      data: sortedGroupedEntries.map(([, value]) => value),
+      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'],
+      borderRadius: 5,
+      barThickness: 18,
+    }],
+  };
+
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto">
       <div className="grid grid-cols-3 gap-6 mb-8 asset-summary-cards">
@@ -207,7 +228,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-6 items-start mb-8">
+      <div className="grid grid-cols-2 gap-6 items-start mb-8 asset-desktop-charts">
         <div className="card-form shadow-md p-4" style={{ minHeight: '400px' }}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 구성비</h3>
@@ -383,7 +404,11 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
           {assets.length === 0 ? (
             <div className="mobile-asset-empty">등록된 자산이 없습니다.</div>
           ) : assets.map((asset) => (
-            <article className="mobile-asset-card" key={`mobile-${asset.id}`}>
+            <article
+              className={`mobile-asset-card ${expandedMobileAssetIds.has(asset.id!) ? 'is-expanded' : ''}`}
+              key={`mobile-${asset.id}`}
+              onClick={() => editingId !== asset.id && toggleMobileAssetDetails(asset.id!)}
+            >
               {editingId === asset.id ? (
                 <>
                   <div className="mobile-asset-edit-grid">
@@ -421,6 +446,52 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
             </article>
           ))}
         </div>
+      </div>
+
+      <div className="mobile-asset-chart card-form shadow-md">
+        <div className="mobile-asset-chart-header">
+          <h3>{mobileChartView === 'composition' ? '자산 구성비' : '자산 변화 추이'}</h3>
+          <div className="mobile-asset-chart-tabs">
+            <button type="button" className={mobileChartView === 'composition' ? 'is-active' : ''} onClick={() => setMobileChartView('composition')}>구성비</button>
+            <button type="button" className={mobileChartView === 'trend' ? 'is-active' : ''} onClick={() => setMobileChartView('trend')}>변화 추이</button>
+          </div>
+        </div>
+        {mobileChartView === 'composition' ? (
+          <div className="mobile-asset-chart-area">
+            <Bar
+              data={mobileCompositionData}
+              options={{
+                indexAxis: 'y',
+                maintainAspectRatio: false,
+                scales: {
+                  x: { display: false, beginAtZero: true },
+                  y: { grid: { display: false }, ticks: { font: { size: 10 } } },
+                },
+                plugins: {
+                  legend: { display: false },
+                  datalabels: {
+                    anchor: 'end', align: 'end', color: '#334155', font: { size: 9, weight: 'bold' },
+                    formatter: (value: number) => value.toLocaleString(),
+                  },
+                },
+              }}
+            />
+          </div>
+        ) : (
+          <>
+            {isAdmin && <button onClick={handleSaveHistory} className="btn btn-secondary mobile-history-save">이력 저장</button>}
+            <div className="mobile-asset-chart-area">
+              <Line
+                data={lineData}
+                options={{
+                  maintainAspectRatio: false,
+                  plugins: { legend: { display: true, labels: { boxWidth: 10, font: { size: 9 } } }, datalabels: { display: false } },
+                  scales: { y: { beginAtZero: true, ticks: { font: { size: 9 }, callback: (value) => `${(Number(value) / 100000000).toFixed(0)}억` } } },
+                }}
+              />
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
