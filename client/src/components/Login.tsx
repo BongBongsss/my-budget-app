@@ -27,7 +27,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="login-icon">
             <Wallet size={32} />
           </div>
-          <h2>Smart Budget Manager</h2>
+          <h2>효굥봉 가계부</h2>
           <p>내 손안의 똑똑한 가계부 관리자</p>
         </div>
 
@@ -61,7 +61,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         </form>
         
         <div style={{ marginTop: '2rem', fontSize: '0.75rem', color: '#94a3b8' }}>
-          &copy; 2026 Smart Budget Manager. All rights reserved.
+          &copy; 2026 효굥봉 가계부. All rights reserved.
         </div>
       </div>
     </div>
