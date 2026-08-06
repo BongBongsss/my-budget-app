@@ -103,6 +103,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
   const [loading, setLoading] = useState(false);
   const [restoringId, setRestoringId] = useState<string | null>(null);
   const [latestBatch, setLatestBatch] = useState<{ count: number } | null>(null);
+  const [expandedLogIds, setExpandedLogIds] = useState<Set<string>>(new Set());
 
   const fetchLogs = async () => {
     setLoading(true);
@@ -114,6 +115,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         limit: itemsPerPage,
       });
       setLogs(res.data.logs);
+      setExpandedLogIds(new Set());
       setTotal(res.data.total);
       setTotalPages(res.data.totalPages);
       const batch = await getLatestAuditBatch();
@@ -154,6 +156,15 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
     await restoreLatestAuditBatch();
     await fetchLogs();
     onRestored();
+  };
+
+  const toggleLogDetails = (id: string) => {
+    setExpandedLogIds((previous) => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
   };
 
   return (
@@ -229,8 +240,22 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             const changedFields = getChangedFields(log);
             const deletedDetails = getDeletedDetails(log);
 
+            const isExpanded = expandedLogIds.has(log.id);
+
             return (
-              <tr key={log.id}>
+              <tr
+                key={log.id}
+                className={isExpanded ? 'is-expanded' : ''}
+                onClick={() => toggleLogDetails(log.id)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    toggleLogDetails(log.id);
+                  }
+                }}
+                tabIndex={0}
+                aria-expanded={isExpanded}
+              >
                 <td>{new Date(log.createdAt).toLocaleString()}</td>
                 <td>
                   <span style={{ background: colors.bg, color: colors.color, padding: '3px 8px', borderRadius: '999px', fontWeight: 700 }}>
@@ -260,7 +285,10 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
                   {canRestore ? (
                     <button
                       className="btn btn-secondary"
-                      onClick={() => handleRestore(log)}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleRestore(log);
+                      }}
                       disabled={restoringId === log.id}
                       style={{ padding: '5px 10px' }}
                     >

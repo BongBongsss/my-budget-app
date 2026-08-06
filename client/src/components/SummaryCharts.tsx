@@ -20,6 +20,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const [expenseView, setExpenseView] = useState<'pie' | 'bar'>('pie');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
   const [isCompactMobile, setIsCompactMobile] = useState(false);
+  const [isIncomeExpanded, setIsIncomeExpanded] = useState(false);
+  const [isExpenseExpanded, setIsExpenseExpanded] = useState(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -139,9 +141,21 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     </div>
   );
 
-  const renderMobileBarList = (type: 'income' | 'expense', processed: any) => (
+  const renderMobileBarList = (
+    type: 'income' | 'expense',
+    processed: any,
+    isExpanded: boolean,
+    onToggleExpanded: () => void,
+  ) => {
+    const topGroups = processed.activeGroups.slice(0, 10);
+    const remainingGroups = processed.activeGroups.slice(10);
+    const visibleGroups = isExpanded ? processed.activeGroups : topGroups;
+    const remainingAmount = remainingGroups.reduce((sum: number, group: string) => sum + processed.categoryData[group], 0);
+    const remainingPercentage = processed.totalAmount ? (remainingAmount / processed.totalAmount) * 100 : 0;
+
+    return (
     <div className="mobile-comparison-list">
-      {processed.activeGroups.map((group: string) => {
+      {visibleGroups.map((group: string) => {
         const value = processed.categoryData[group];
         const percentage = processed.totalAmount ? (value / processed.totalAmount) * 100 : 0;
         const isSelected = activeHighlight?.type === type && activeHighlight.group === group;
@@ -171,8 +185,27 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           </button>
         );
       })}
+      {remainingGroups.length > 0 && (
+        <button
+          type="button"
+          className="mobile-comparison-bar mobile-comparison-more"
+          aria-expanded={isExpanded}
+          title={isExpanded ? '상위 10개만 보기' : `그 외 ${remainingGroups.length}개 항목 펼치기`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleExpanded();
+          }}
+        >
+          <span className="mobile-comparison-bar-fill" style={{ width: `${Math.max(remainingPercentage, 2)}%` }} />
+          <span className="mobile-comparison-bar-content">
+            <span className="mobile-comparison-bar-name">{isExpanded ? '상위 10개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
+            <span className="mobile-comparison-bar-value">{remainingAmount.toLocaleString()}원 · {remainingPercentage.toFixed(1)}%</span>
+          </span>
+        </button>
+      )}
     </div>
-  );
+    );
+  };
 
   if (isCompactMobile) {
     return (
@@ -183,8 +216,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         </div>
         <p className="mobile-comparison-chart-guide">항목 또는 막대를 누르면 해당 거래만 조회합니다.</p>
         <div className="mobile-comparison-columns">
-          <section aria-label="수입 카테고리 목록">{renderMobileBarList('income', incomeData)}</section>
-          <section aria-label="지출 카테고리 목록">{renderMobileBarList('expense', expenseData)}</section>
+          <section aria-label="수입 카테고리 목록">
+            {renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
+          </section>
+          <section aria-label="지출 카테고리 목록">
+            {renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
+          </section>
         </div>
       </div>
     );
