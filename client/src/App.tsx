@@ -439,7 +439,7 @@ function App() {
   return (
     <div className="container">
       <header className="header app-header">
-        <h1 className="app-title">Smart Budget Manager</h1>
+        <h1 className="app-title">효굥봉 가계부</h1>
         <button
           type="button"
           className="mobile-header-menu-toggle"

@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
-import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
-import { Pie, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
+import { Bar, Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import EntryModal from './EntryModal';
 
-ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
+ChartJS.register(Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
 
 interface AssetManagerProps {
   userRole?: 'admin' | 'viewer';
@@ -28,6 +28,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileChartView, setMobileChartView] = useState<'composition' | 'trend'>('composition');
   const [expandedMobileAssetIds, setExpandedMobileAssetIds] = useState<Set<string>>(new Set());
+  const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
 
   const toggleMobileAssetDetails = (id: string) => {
     setExpandedMobileAssetIds((previous) => {
@@ -175,11 +176,23 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   const sortedGroupedEntries = Object.entries(groupedAssets)
     .sort(([, a], [, b]) => b - a);
 
+  const visibleAssets = selectedAssetType
+    ? assets.filter((asset) => (assetTypeMap[asset.type] || asset.type) === selectedAssetType)
+    : assets;
+
   const chartData = {
     labels: sortedGroupedEntries.map(([label]) => label),
     datasets: [{
       data: sortedGroupedEntries.map(([, value]) => value),
-      backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'],
+      backgroundColor: sortedGroupedEntries.map(([type], index) => {
+        const color = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6];
+        return selectedAssetType && selectedAssetType !== type ? `${color}33` : color;
+      }),
+      borderColor: sortedGroupedEntries.map(([type]) => selectedAssetType === type ? '#1e293b' : 'transparent'),
+      borderWidth: 1,
+      borderRadius: 5,
+      barThickness: 20,
+      maxBarThickness: 24,
     }]
   };
 
@@ -223,40 +236,44 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 구성비</h3>
             </div>
-            <div style={{ height: '300px', width: '100%' }}>
-                <Pie 
+            <div style={{ height: `${Math.max(300, sortedGroupedEntries.length * 42)}px`, width: '100%' }}>
+                <Bar
                     data={chartData} 
                     options={{ 
                         maintainAspectRatio: false,
-                        radius: '95%',
-                        layout: { padding: 10 },
+                        indexAxis: 'y',
+                        layout: { padding: { right: 78 } },
+                        onClick: (_event: any, elements: any[]) => {
+                            if (elements.length > 0) {
+                                const selectedType = sortedGroupedEntries[elements[0].index]?.[0];
+                                setSelectedAssetType((current) => current === selectedType ? null : selectedType);
+                            } else {
+                                setSelectedAssetType(null);
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                grid: { color: '#eef2f7' },
+                                ticks: { callback: (value: any) => `${(Number(value) / 100000000).toFixed(1)}억` }
+                            },
+                            y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
+                        },
                         plugins: { 
                             legend: { display: false },
                             datalabels: {
-                                formatter: (value: any, ctx: any) => {
-                                    const label = ctx.chart.data.labels?.[ctx.dataIndex];
-                                    const percentage = (value / totalBalanceForPie * 100).toFixed(1);
-                                    return `${label}\n${percentage}%`;
-                                },
-                                color: '#333', 
+                                anchor: 'end',
+                                align: 'end',
+                                color: '#334155',
                                 font: { weight: 'bold', size: 10 },
-                                textAlign: 'center',
-                                display: (ctx: any) => {
-                                    const percentage = (ctx.dataset.data[ctx.dataIndex] / totalBalanceForPie) * 100;
-                                    return percentage >= 5;
+                                formatter: (value: number) => {
+                                    const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
+                                    return `${(value / 100000000).toFixed(2)}억원 (${percentage.toFixed(1)}%)`;
                                 }
                             }
                         }
                     }} 
                 />
-            </div>
-            <div className="flex flex-wrap justify-center gap-2 mt-4">
-                {sortedGroupedEntries.map(([type, value], index) => (
-                    <div key={type} className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded" style={{ fontSize: '0.65rem' }}>
-                        <div style={{ width: '8px', height: '8px', backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
-                        {type} ({((value / totalBalanceForPie) * 100).toFixed(1)}%)
-                    </div>
-                ))}
             </div>
         </div>
 
@@ -379,7 +396,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                 </tr>
                 </thead>
                 <tbody>
-                {assets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : assets.map(asset => (
+                {visibleAssets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : visibleAssets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
                     <td className="p-3 border-b text-sm text-gray-600">
@@ -434,9 +451,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
             </button>
           </div>
 
-          {assets.length === 0 ? (
+          {visibleAssets.length === 0 ? (
             <div className="mobile-asset-empty">등록된 자산이 없습니다.</div>
-          ) : assets.map((asset) => (
+          ) : visibleAssets.map((asset) => (
             <article
               className={`mobile-asset-card ${expandedMobileAssetIds.has(asset.id!) ? 'is-expanded' : ''}`}
               key={`mobile-${asset.id}`}

@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
-import { PieChart, BarChart3 } from 'lucide-react';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { getGroupName } from '../utils/categoryUtils';
 
@@ -16,8 +15,8 @@ interface SummaryChartsProps {
 }
 
 const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period, onHighlight }) => {
-  const [incomeView, setIncomeView] = useState<'pie' | 'bar'>('pie');
-  const [expenseView, setExpenseView] = useState<'pie' | 'bar'>('pie');
+  const [incomeView] = useState<'pie' | 'bar'>('bar');
+  const [expenseView] = useState<'pie' | 'bar'>('bar');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
   const [isCompactMobile, setIsCompactMobile] = useState(false);
   const [isIncomeExpanded, setIsIncomeExpanded] = useState(false);
@@ -109,6 +108,59 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       onHighlight(newHighlight);
     }
   };
+
+  const getCompositionBarData = (type: 'income' | 'expense', processed: any) => ({
+    labels: processed.activeGroups,
+    datasets: [{
+      data: processed.activeGroups.map((group: string) => processed.categoryData[group]),
+      backgroundColor: processed.activeGroups.map((group: string) => {
+        const isSelected = activeHighlight?.type === type && activeHighlight.group === group;
+        const isDimmed = !!activeHighlight && !isSelected;
+        return isDimmed ? `${processed.groupColorMap[group]}33` : processed.groupColorMap[group];
+      }),
+      borderColor: processed.activeGroups.map((group: string) => (
+        activeHighlight?.type === type && activeHighlight.group === group ? '#1e293b' : 'transparent'
+      )),
+      borderWidth: 1,
+      borderRadius: 5,
+      barThickness: 20,
+      maxBarThickness: 24,
+    }],
+  });
+
+  const getCompositionBarOptions = (type: 'income' | 'expense', processed: any) => ({
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    layout: { padding: { right: 112 } },
+    onClick: (_event: unknown, elements: Array<{ index: number }>) => {
+      if (elements.length > 0) handleGroupClick(type, processed.activeGroups[elements[0].index]);
+      else clearHighlight();
+    },
+    scales: {
+      x: {
+        beginAtZero: true,
+        grid: { color: '#eef2f7' },
+        ticks: {
+          callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억`,
+          font: { size: 10 },
+        },
+      },
+      y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' as const } } },
+    },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end' as const,
+        align: 'end' as const,
+        color: '#334155',
+        font: { size: 10, weight: 'bold' as const },
+        formatter: (value: number) => {
+          const percentage = processed.totalAmount ? (value / processed.totalAmount) * 100 : 0;
+          return `${value.toLocaleString()}원 (${percentage.toFixed(1)}%)`;
+        },
+      },
+    },
+  });
 
   const clearHighlight = () => {
     setActiveHighlight(null);
@@ -214,14 +266,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           <div className="mobile-comparison-chart-header income">
             <span className="mobile-comparison-chart-dot income" />수입 구성
           </div>
-          <p className="mobile-comparison-chart-guide">항목을 누르면 거래를 조회합니다.</p>
           {renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
         </section>
         <section className="card-form mobile-comparison-chart-card" onClick={clearHighlight} aria-label="지출 구성">
           <div className="mobile-comparison-chart-header expense">
             <span className="mobile-comparison-chart-dot expense" />지출 구성
           </div>
-          <p className="mobile-comparison-chart-guide">항목을 누르면 거래를 조회합니다.</p>
           {renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
         </section>
       </div>
@@ -233,23 +283,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       {/* 좌측: 수입 섹션 */}
       <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>Income {incomeView === 'pie' ? 'Breakdown' : 'Trend'}</h3>
-            <div style={{ display: 'flex', gap: '5px' }}>
-                <button 
-                    onClick={() => setIncomeView('pie')}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', backgroundColor: incomeView === 'pie' ? '#dcfce7' : '#fff' }}
-                    title="원형 차트"
-                >
-                    <PieChart size={16} color={incomeView === 'pie' ? '#10b981' : '#64748b'} />
-                </button>
-                <button 
-                    onClick={() => setIncomeView('bar')}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', backgroundColor: incomeView === 'bar' ? '#dcfce7' : '#fff' }}
-                    title="막대 차트"
-                >
-                    <BarChart3 size={16} color={incomeView === 'bar' ? '#10b981' : '#64748b'} />
-                </button>
-            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>수입 구성</h3>
         </div>
 
         <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
@@ -289,22 +323,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             />
           ) : (
             <Bar 
-              data={getBarData('income', incomeData)} 
-              options={{ 
-                maintainAspectRatio: false,
-                onClick: (evt, elements) => {
-                    if (elements.length > 0) handleGroupClick('income', incomeData.activeGroups[elements[0].datasetIndex]);
-                    else clearHighlight();
-                },
-                scales: { 
-                  x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
-                  y: { 
-                      type: 'logarithmic', stacked: true, 
-                      ticks: { font: { size: 10 }, callback: (val) => (val as number) >= 1000000 && (val as number) % 1000000 === 0 ? `${(val as number) / 1000000}M` : '' }
-                  } 
-                },
-                plugins: { legend: { display: false }, datalabels: { display: false } }
-              }} 
+              data={getCompositionBarData('income', incomeData)}
+              options={getCompositionBarOptions('income', incomeData)}
             />
           )}
         </div>
@@ -314,23 +334,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       {/* 우측: 지출 섹션 */}
       <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>Expense {expenseView === 'pie' ? 'Breakdown' : 'Trend'}</h3>
-            <div style={{ display: 'flex', gap: '5px' }}>
-                <button 
-                    onClick={() => setExpenseView('pie')}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', backgroundColor: expenseView === 'pie' ? '#fee2e2' : '#fff' }}
-                    title="원형 차트"
-                >
-                    <PieChart size={16} color={expenseView === 'pie' ? '#ef4444' : '#64748b'} />
-                </button>
-                <button 
-                    onClick={() => setExpenseView('bar')}
-                    style={{ padding: '4px 8px', borderRadius: '6px', border: '1px solid #ddd', cursor: 'pointer', backgroundColor: expenseView === 'bar' ? '#fee2e2' : '#fff' }}
-                    title="막대 차트"
-                >
-                    <BarChart3 size={16} color={expenseView === 'bar' ? '#ef4444' : '#64748b'} />
-                </button>
-            </div>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>지출 구성</h3>
         </div>
 
         <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
@@ -370,22 +374,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             />
           ) : (
             <Bar 
-              data={getBarData('expense', expenseData)} 
-              options={{ 
-                maintainAspectRatio: false,
-                onClick: (evt, elements) => {
-                    if (elements.length > 0) handleGroupClick('expense', expenseData.activeGroups[elements[0].datasetIndex]);
-                    else clearHighlight();
-                },
-                scales: { 
-                  x: { stacked: true, grid: { display: false }, ticks: { font: { size: 10 } } }, 
-                  y: { 
-                      type: 'logarithmic', stacked: true, 
-                      ticks: { font: { size: 10 }, callback: (val) => (val as number) >= 1000000 && (val as number) % 1000000 === 0 ? `${(val as number) / 1000000}M` : '' }
-                  } 
-                },
-                plugins: { legend: { display: false }, datalabels: { display: false } }
-              }} 
+              data={getCompositionBarData('expense', expenseData)}
+              options={getCompositionBarOptions('expense', expenseData)}
             />
           )}
         </div>
