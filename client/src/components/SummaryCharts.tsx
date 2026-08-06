@@ -340,10 +340,11 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     processed: any,
     isExpanded: boolean,
     onToggleExpanded: () => void,
+    showAll = false,
   ) => {
     const topGroups = processed.activeGroups.slice(0, 9);
-    const remainingGroups = processed.activeGroups.slice(9);
-    const visibleGroups = isExpanded ? processed.activeGroups : topGroups;
+    const remainingGroups = showAll ? [] : processed.activeGroups.slice(9);
+    const visibleGroups = showAll || isExpanded ? processed.activeGroups : topGroups;
     const remainingAmount = remainingGroups.reduce((sum: number, group: string) => sum + processed.categoryData[group], 0);
     const remainingPercentage = processed.totalAmount ? (remainingAmount / processed.totalAmount) * 100 : 0;
 
@@ -388,7 +389,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
           type="button"
           className="mobile-comparison-bar mobile-comparison-more"
           aria-expanded={isExpanded}
-          title={isExpanded ? '상위 8개만 보기' : `그 외 ${remainingGroups.length}개 항목 펼치기`}
+          title={isExpanded ? '상위 9개만 보기' : `그 외 ${remainingGroups.length}개 항목 펼치기`}
           onClick={(event) => {
             event.stopPropagation();
             onToggleExpanded();
@@ -396,7 +397,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
         >
           <span className="mobile-comparison-bar-fill" style={{ width: `${Math.max(remainingPercentage, 2)}%` }} />
           <span className="mobile-comparison-bar-content">
-            <span className="mobile-comparison-bar-name">{isExpanded ? '상위 8개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
+            <span className="mobile-comparison-bar-name">{isExpanded ? '상위 9개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
             <span className="mobile-comparison-bar-value">{remainingAmount.toLocaleString()}원 · {remainingPercentage.toFixed(1)}%</span>
           </span>
         </button>
@@ -429,7 +430,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
   return (
     <div className="grid grid-cols-2 gap-6 summary-charts" style={{ marginBottom: '32px' }}>
       {/* 좌측: 수입 섹션 */}
-      <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '650px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>{trendGroups.income ? `${trendGroups.income} · 최근 10개월 추세` : '수입 구성'}</h3>
             {trendGroups.income && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, income: null }))}>← 구성비</button>}
@@ -437,14 +438,14 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
 
         <div
           className="summary-chart-area"
-          style={{ height: '540px', flex: '0 0 540px', marginTop: '10px', position: 'relative', overflow: 'visible' }}
+          style={{ flex: '0 0 auto', marginTop: '10px', position: 'relative', overflow: 'visible' }}
           onPointerDown={(event) => handleChartPointerDown('income', incomeData, incomeChartRef.current, event)}
           onPointerUp={clearTrendPressTimer}
           onPointerCancel={clearTrendPressTimer}
           onPointerLeave={clearTrendPressTimer}
         >
-          {trendGroups.income ? (
-            <Bar data={getMonthlyTrendData('income', trendGroups.income)} options={getMonthlyTrendOptions()} />
+            {trendGroups.income ? (
+              renderMobileTrendList('income', trendGroups.income)
           ) : incomeView === 'pie' ? (
             <Pie 
               data={{
@@ -480,17 +481,13 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               }} 
             />
           ) : (
-            <Bar
-              ref={incomeChartRef}
-              data={getCompositionBarData('income', incomeData)}
-              options={getCompositionBarOptions('income', incomeData)}
-            />
+            renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value), true)
           )}
         </div>
       </div>
 
       {/* 우측: 지출 섹션 */}
-      <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '650px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
             <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>{trendGroups.expense ? `${trendGroups.expense} · 최근 10개월 추세` : '지출 구성'}</h3>
             {trendGroups.expense && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, expense: null }))}>← 구성비</button>}
@@ -498,14 +495,14 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
 
         <div
           className="summary-chart-area"
-          style={{ height: '540px', flex: '0 0 540px', marginTop: '10px', position: 'relative', overflow: 'visible' }}
+          style={{ flex: '0 0 auto', marginTop: '10px', position: 'relative', overflow: 'visible' }}
           onPointerDown={(event) => handleChartPointerDown('expense', expenseData, expenseChartRef.current, event)}
           onPointerUp={clearTrendPressTimer}
           onPointerCancel={clearTrendPressTimer}
           onPointerLeave={clearTrendPressTimer}
         >
-          {trendGroups.expense ? (
-            <Bar data={getMonthlyTrendData('expense', trendGroups.expense)} options={getMonthlyTrendOptions()} />
+            {trendGroups.expense ? (
+              renderMobileTrendList('expense', trendGroups.expense)
           ) : expenseView === 'pie' ? (
             <Pie 
               data={{
@@ -541,11 +538,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               }} 
             />
           ) : (
-            <Bar
-              ref={expenseChartRef}
-              data={getCompositionBarData('expense', expenseData)}
-              options={getCompositionBarOptions('expense', expenseData)}
-            />
+            renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value), true)
           )}
         </div>
       </div>

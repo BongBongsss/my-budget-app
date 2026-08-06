@@ -11,7 +11,7 @@ vi.mock('react-chartjs-2', async () => {
 });
 
 describe('SummaryCharts', () => {
-  it('uses an enlarged fixed chart area for readable desktop composition bars', () => {
+  it('uses axis-free composition lists on desktop as well as mobile', () => {
     const { container } = render(
       <SummaryCharts
         transactions={[{ id: '1', date: '2026-02-01', type: 'income', category: '급여', vendor: '회사', amount: 100, source: 'manual' }]}
@@ -22,11 +22,9 @@ describe('SummaryCharts', () => {
       />,
     );
 
-    const chartAreas = container.querySelectorAll('.summary-chart-area');
-    expect(chartAreas).toHaveLength(2);
-    chartAreas.forEach((area) => {
-      expect((area as HTMLElement).style.height).toBe('540px');
-      expect((area as HTMLElement).style.flex).toBe('0 0 540px');
-    });
+    const compositionLists = container.querySelectorAll('.summary-chart-area .mobile-comparison-list');
+    expect(compositionLists).toHaveLength(2);
+    expect(container.querySelectorAll('[data-testid="bar-chart"]')).toHaveLength(0);
+    expect(container.querySelectorAll('.mobile-comparison-bar')).toHaveLength(1);
   });
 });

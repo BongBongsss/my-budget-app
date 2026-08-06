@@ -59,6 +59,29 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   display: none;
 }
 
+/* Desktop trend view uses the same compact, axis-free layout as mobile. */
+.summary-chart-area .mobile-comparison-list {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.6rem 2rem 0.6rem 0.4rem;
+}
+.summary-chart-area .mobile-comparison-bar {
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0.38rem 0.55rem;
+  overflow: hidden;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+.summary-chart-area .mobile-comparison-bar-fill { position: absolute; inset: 0 auto 0 0; opacity: 0.78; }
+.summary-chart-area .mobile-comparison-bar-content { position: relative; z-index: 1; display: grid; gap: 0.1rem; color: #0f172a; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
+.summary-chart-area .mobile-comparison-bar-name { overflow: hidden; font-size: 0.85rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.summary-chart-area .mobile-comparison-bar-value { overflow: hidden; color: #1e293b; font-size: 0.76rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+
 .grid { 
   display: grid; 
   gap: 1.5rem; 
