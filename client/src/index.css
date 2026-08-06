@@ -1249,7 +1249,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     color: #475569;
     font-size: 0.62rem;
   }
-  .mobile-summary-trend-chart-area { height: 260px; width: 100%; margin-top: 0.35rem; }
+  .mobile-trend-list { gap: 0.35rem; }
+  .mobile-trend-bar { cursor: default; }
   .mobile-comparison-chart-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
   .mobile-comparison-chart-dot.income { background: #22c55e; }
   .mobile-comparison-chart-dot.expense { background: #ef4444; }
