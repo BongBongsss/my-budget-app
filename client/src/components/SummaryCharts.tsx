@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -19,6 +19,17 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const [incomeView, setIncomeView] = useState<'pie' | 'bar'>('pie');
   const [expenseView, setExpenseView] = useState<'pie' | 'bar'>('pie');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
+  const [isCompactMobile, setIsCompactMobile] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+
+    const mediaQuery = window.matchMedia('(max-width: 768px)');
+    const updateLayout = () => setIsCompactMobile(mediaQuery.matches);
+    updateLayout();
+    mediaQuery.addEventListener('change', updateLayout);
+    return () => mediaQuery.removeEventListener('change', updateLayout);
+  }, []);
 
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
@@ -103,7 +114,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const renderLegend = (type: 'income' | 'expense', processed: any) => (
-    <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
+    <div className="summary-chart-legend" style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '8px', marginTop: '8px' }}>
       {processed.activeGroups.map((group: string) => (
         <button
           type="button"
@@ -129,7 +140,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   );
 
   return (
-    <div className="grid grid-cols-2 gap-6" style={{ marginBottom: '32px' }}>
+    <div className="grid grid-cols-2 gap-6 summary-charts" style={{ marginBottom: '32px' }}>
       {/* 좌측: 수입 섹션 */}
       <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
@@ -164,8 +175,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 }]
               }} 
               options={{ 
-                maintainAspectRatio: false, radius: '95%',
-                layout: { padding: 45 },
+                maintainAspectRatio: false, radius: isCompactMobile ? '90%' : '95%',
+                layout: { padding: isCompactMobile ? 5 : 45 },
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('income', incomeData.activeGroups[elements[0].index]);
                     else clearHighlight();
@@ -182,7 +193,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     anchor: 'end', align: 'start',
                     offset: (ctx: any) => ((ctx.dataset.data[ctx.dataIndex] as number / incomeData.totalAmount) * 100) >= 8 ? 30 : -45,
-                    display: 'auto'
+                    display: isCompactMobile ? false : 'auto'
                   }
                 }
               }} 
@@ -245,8 +256,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                 }]
               }} 
               options={{ 
-                maintainAspectRatio: false, radius: '95%',
-                layout: { padding: 45 },
+                maintainAspectRatio: false, radius: isCompactMobile ? '90%' : '95%',
+                layout: { padding: isCompactMobile ? 5 : 45 },
                 onClick: (evt, elements) => {
                     if (elements.length > 0) handleGroupClick('expense', expenseData.activeGroups[elements[0].index]);
                     else clearHighlight();
@@ -263,7 +274,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
                     textStrokeColor: '#fff', textStrokeWidth: 2,
                     anchor: 'end', align: 'start',
                     offset: (ctx: any) => ((ctx.dataset.data[ctx.dataIndex] as number / expenseData.totalAmount) * 100) >= 8 ? 30 : -45,
-                    display: 'auto'
+                    display: isCompactMobile ? false : 'auto'
                   }
                 }
               }} 
