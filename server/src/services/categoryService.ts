@@ -1,5 +1,6 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
+import { isRuleMatch, sortRulesBySpecificity } from './ruleMatching';
 
 export interface CategoryRule {
   id: string;
@@ -15,7 +16,8 @@ export interface CategoryGroupRule {
 
 // 기존 대분류 매칭 규칙
 export const getCategoryRules = async (): Promise<CategoryRule[]> => {
-  return await prisma.categoryRule.findMany();
+  const rules = await prisma.categoryRule.findMany();
+  return sortRulesBySpecificity(rules);
 };
 
 export const addCategoryRule = async (keyword: string, assigned_category: string) => {
@@ -94,8 +96,7 @@ export const bulkAutoCategorize = async (vendors: string[]): Promise<Record<stri
   const resultMap: Record<string, string> = {};
 
   vendors.forEach(vendor => {
-    const normalizedVendor = (vendor || '').toLowerCase().replace(/\s+/g, ' ').trim();
-    const matchedRule = rules.find(rule => normalizedVendor.includes(rule.keyword.toLowerCase().trim()));
+    const matchedRule = rules.find(rule => isRuleMatch(vendor, rule.keyword));
     resultMap[vendor] = matchedRule ? matchedRule.assigned_category : '기타';
   });
 
@@ -105,8 +106,7 @@ export const bulkAutoCategorize = async (vendors: string[]): Promise<Record<stri
 // 카테고리 자동 지정 (Vendor -> 대분류)
 export const autoCategorize = async (vendor: string): Promise<string> => {
   const rules = await getCategoryRules();
-  const normalizedVendor = vendor.toLowerCase().replace(/\s+/g, ' ').trim();
-  const matchedRule = rules.find(rule => normalizedVendor.includes(rule.keyword.toLowerCase().trim()));
+  const matchedRule = rules.find(rule => isRuleMatch(vendor, rule.keyword));
   return matchedRule ? matchedRule.assigned_category : '기타';
 };
 

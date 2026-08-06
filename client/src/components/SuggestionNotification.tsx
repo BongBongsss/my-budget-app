@@ -1,92 +1,112 @@
-import React, { useState, useEffect } from 'react';
-import instance from '../api';
-
-interface RuleCandidate {
-  id: string;
-  vendor: string;
-  suggestedCategory: string;
-  occurrenceCount: number;
-}
+import React, { useEffect, useState } from 'react';
+import {
+  approveRuleSuggestion,
+  deferRuleSuggestion,
+  getRuleSuggestions,
+  ignoreRuleSuggestion,
+  RuleSuggestion,
+} from '../api';
 
 interface Props {
   onRuleApproved: () => void;
 }
 
 const SuggestionNotification: React.FC<Props> = ({ onRuleApproved }) => {
-  const [candidates, setCandidates] = useState<RuleCandidate[]>([]);
-  const [show, setShow] = useState(false);
+  const [candidates, setCandidates] = useState<RuleSuggestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [processingId, setProcessingId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCandidates();
+    void fetchCandidates();
   }, []);
 
   const fetchCandidates = async () => {
     try {
-      const res = await instance.get('/suggestions/candidates');
-      // Ensure res.data is an array
-      const data = Array.isArray(res.data) ? res.data : [];
-      setCandidates(data);
-      if (data.length > 0) setShow(true);
-    } catch (err) {
-      console.error('Failed to fetch candidates:', err);
+      const response = await getRuleSuggestions();
+      setCandidates(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      console.error('Failed to fetch rule suggestions:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDismiss = (candidate: RuleCandidate) => {
-    setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+  const removeCandidate = (candidateId: string) => {
+    setCandidates((previous) => previous.filter((candidate) => candidate.id !== candidateId));
   };
 
-  const handleIgnore = async (candidate: RuleCandidate) => {
+  const handleApprove = async (candidate: RuleSuggestion) => {
+    setProcessingId(candidate.id);
     try {
-        await instance.post('/ignored-rules', { keyword: candidate.vendor });
-        setCandidates(prev => prev.filter(c => c.id !== candidate.id));
-    } catch (err) {
-        alert('무시 처리 실패');
-    }
-  };
-
-  const handleApprove = async (candidate: RuleCandidate) => {
-    try {
-      await instance.post('/suggestions/approve', {
-        vendor: candidate.vendor,
-        category: candidate.suggestedCategory
-      });
-      setCandidates(prev => prev.filter(c => c.id !== candidate.id));
+      await approveRuleSuggestion(candidate.vendor, candidate.suggestedCategory);
+      removeCandidate(candidate.id);
       onRuleApproved();
-    } catch (err) {
-      alert('규칙 승인 실패');
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '규칙을 등록하지 못했습니다.');
+    } finally {
+      setProcessingId(null);
     }
   };
 
-  if (!show || !Array.isArray(candidates) || candidates.length === 0) return null;
+  const handleDefer = async (candidate: RuleSuggestion) => {
+    setProcessingId(candidate.id);
+    try {
+      await deferRuleSuggestion(candidate.vendor);
+      removeCandidate(candidate.id);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '추천을 보류하지 못했습니다.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  const handleIgnore = async (candidate: RuleSuggestion) => {
+    setProcessingId(candidate.id);
+    try {
+      await ignoreRuleSuggestion(candidate.vendor);
+      removeCandidate(candidate.id);
+    } catch (error) {
+      alert(error instanceof Error ? error.message : '추천 제외 처리하지 못했습니다.');
+    } finally {
+      setProcessingId(null);
+    }
+  };
+
+  if (isLoading || candidates.length === 0) return null;
 
   return (
-    <div className="suggestion-notification" style={{
-      background: '#fef3c7',
-      padding: '15px',
-      borderRadius: '8px',
-      marginBottom: '20px',
-      border: '1px solid #f59e0b'
-    }}>
-      <h3 style={{ margin: '0 0 10px 0' }}>💡 자동화 규칙 추천</h3>
-      <p>사용자님의 수정 패턴을 분석한 결과, 다음 규칙을 생성할 수 있습니다:</p>
-      <ul style={{ paddingLeft: '20px' }}>
-        {candidates.map(c => (
-          <li key={c.id} style={{ marginBottom: '5px' }}>
-            <strong>{c.vendor}</strong> → <strong>{c.suggestedCategory}</strong> (반복 횟수: {c.occurrenceCount})
-            <button onClick={() => handleApprove(c)} className="btn btn-primary" style={{ marginLeft: '10px', padding: '2px 8px', fontSize: '12px' }}>
-              승인
-            </button>
-            <button onClick={() => handleDismiss(c)} className="btn btn-secondary" style={{ marginLeft: '5px', padding: '2px 8px', fontSize: '12px', backgroundColor: '#e5e7eb', color: '#374151', border: 'none' }}>
-              미승인
-            </button>
-            <button onClick={() => handleIgnore(c)} className="btn btn-secondary" style={{ marginLeft: '5px', padding: '2px 8px', fontSize: '12px', backgroundColor: '#fca5a5', color: '#991b1b', border: 'none' }}>
-              무시
-            </button>
-          </li>
-        ))}
+    <section
+      aria-label="자동분류 규칙 추천"
+      className="suggestion-notification"
+      style={{ background: '#fef3c7', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #f59e0b' }}
+    >
+      <h3 style={{ margin: '0 0 6px' }}>자동분류 규칙 추천</h3>
+      <p style={{ margin: '0 0 10px' }}>확정된 거래 이력을 바탕으로, 일관성이 높은 거래처만 추천합니다.</p>
+      <ul style={{ paddingLeft: '20px', margin: 0 }}>
+        {candidates.map((candidate) => {
+          const isProcessing = processingId === candidate.id;
+          return (
+            <li key={candidate.id} style={{ marginBottom: '10px' }}>
+              <strong>{candidate.vendor}</strong> → <strong>{candidate.suggestedCategory}</strong>
+              <span style={{ display: 'block', fontSize: '12px', color: '#6b4f00', marginTop: '2px' }}>
+                근거: {candidate.totalOccurrences}건 중 {candidate.occurrenceCount}건 일치 ({candidate.confidence}%) · 최근 {candidate.lastUsedAt}
+              </span>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '5px', marginTop: '5px' }}>
+                <button disabled={isProcessing} onClick={() => void handleApprove(candidate)} className="btn btn-primary" style={{ padding: '2px 8px', fontSize: '12px' }}>
+                  규칙 등록
+                </button>
+                <button disabled={isProcessing} onClick={() => void handleDefer(candidate)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '12px' }}>
+                  30일 보류
+                </button>
+                <button disabled={isProcessing} onClick={() => void handleIgnore(candidate)} className="btn btn-secondary" style={{ padding: '2px 8px', fontSize: '12px', backgroundColor: '#fca5a5', color: '#991b1b', border: 'none' }}>
+                  추천 안 함
+                </button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
-    </div>
+    </section>
   );
 };
 

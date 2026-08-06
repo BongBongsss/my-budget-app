@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
-import { getRuleCandidates } from '../services/suggestionService';
-import { addCategoryRule } from '../services/categoryService';
+import { approveRuleCandidate, getRuleCandidates } from '../services/suggestionService';
+import { deferRuleSuggestion } from '../services/suggestionDeferralService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
 
@@ -15,11 +15,20 @@ router.get('/candidates', asyncHandler(async (req: Request, res: Response) => {
 // 추천 규칙 승인 (실제 규칙으로 등록)
 router.post('/approve', asyncHandler(async (req: Request, res: Response) => {
   const { vendor, category } = req.body;
-  if (!vendor || !category) {
+  if (!vendor || !category || typeof vendor !== 'string' || typeof category !== 'string') {
     throw new BadRequestError('Vendor and category are required');
   }
-  const newRule = await addCategoryRule(vendor, category);
+  const newRule = await approveRuleCandidate(vendor, category);
   res.json(newRule);
+}));
+
+router.post('/defer', asyncHandler(async (req: Request, res: Response) => {
+  const { vendor } = req.body;
+  if (!vendor || typeof vendor !== 'string') {
+    throw new BadRequestError('Vendor is required');
+  }
+  await deferRuleSuggestion(vendor);
+  res.json({ success: true });
 }));
 
 export default router;

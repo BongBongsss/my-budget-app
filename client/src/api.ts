@@ -133,6 +133,16 @@ export interface PaymentRule {
   keyword: string;
 }
 
+export interface RuleSuggestion {
+  id: string;
+  vendor: string;
+  suggestedCategory: string;
+  occurrenceCount: number;
+  totalOccurrences: number;
+  confidence: number;
+  lastUsedAt: string;
+}
+
 export interface AuditLog {
   id: string;
   entityType: string;
@@ -223,6 +233,11 @@ export const getLatestAuditBatch = () => instance.get<{ batchId: string; count: 
 export const restoreLatestAuditBatch = () => instance.post<{ success: boolean; count: number }>('/audit-logs/latest-batch/restore');
 
 // Rules
+export const getRuleSuggestions = () => instance.get<RuleSuggestion[]>('/suggestions/candidates');
+export const approveRuleSuggestion = (vendor: string, category: string) =>
+  instance.post<CategoryRule>('/suggestions/approve', { vendor, category });
+export const deferRuleSuggestion = (vendor: string) => instance.post('/suggestions/defer', { vendor });
+export const ignoreRuleSuggestion = (vendor: string) => instance.post('/ignored-rules', { keyword: vendor });
 export const getRules = () => instance.get<CategoryRule[]>('/rules');
 export const addRule = (rule: Partial<CategoryRule>) => instance.post<CategoryRule>('/rules', rule);
 export const updateRule = (id: string, rule: Partial<CategoryRule>) => instance.put(`/rules/${id}`, rule);

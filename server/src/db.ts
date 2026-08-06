@@ -267,6 +267,24 @@ export const initDb = async () => {
     throw err;
   }
 
+  // Deferred rule suggestions: postpone a recommendation without changing transaction data.
+  try {
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "DeferredRuleSuggestion" (
+        "id" text NOT NULL PRIMARY KEY,
+        "vendorKey" text NOT NULL UNIQUE,
+        "deferredUntil" timestamp(3) NOT NULL,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "DeferredRuleSuggestion_deferredUntil_idx" ON "DeferredRuleSuggestion" ("deferredUntil");`);
+    console.log('Deferred rule suggestion table check/creation completed.');
+  } catch (err) {
+    console.error('Failed to initialize deferred rule suggestions:', err);
+    throw err;
+  }
+
   // Initial password seeding
   try {
     const existingAdmin = await prisma.auth.findUnique({ where: { role: 'admin' } });

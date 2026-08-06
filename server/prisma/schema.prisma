@@ -135,6 +135,16 @@ model IgnoredRule {
   keyword String @unique
 }
 
+model DeferredRuleSuggestion {
+  id            String   @id @default(uuid())
+  vendorKey     String   @unique
+  deferredUntil DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([deferredUntil])
+}
+
 model ExclusionRule {
   id      String @id @default(uuid())
   keyword String @unique
