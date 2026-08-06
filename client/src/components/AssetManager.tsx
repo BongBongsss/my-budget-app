@@ -198,22 +198,22 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
         <div className="card-summary balance shadow-md">
             <div className="icon"><TrendingUp size={24}/></div>
             <div className="details">
-                <span>총 순자산</span>
-                <h2>{netAssets.toLocaleString()} <span style={{ fontSize: '1rem', color: '#666' }}>({totalAssets > 0 ? ((netAssets / totalAssets) * 100).toFixed(1) : 0}%)</span></h2>
+                <span>총 순자산 ({totalAssets > 0 ? ((netAssets / totalAssets) * 100).toFixed(1) : 0}%)</span>
+                <h2>{netAssets.toLocaleString()}</h2>
             </div>
         </div>
         <div className="card-summary income shadow-md">
             <div className="icon"><Landmark size={24}/></div>
             <div className="details">
-                <span>총 자산</span>
+                <span>총 자산 (100.0%)</span>
                 <h2>{totalAssets.toLocaleString()}</h2>
             </div>
         </div>
         <div className="card-summary expense shadow-md">
             <div className="icon"><CreditCard size={24}/></div>
             <div className="details">
-                <span>총 부채</span>
-                <h2>{totalLiabilities.toLocaleString()} <span style={{ fontSize: '1rem', color: '#666' }}>({totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : 0}%)</span></h2>
+                <span>총 부채 ({totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : 0}%)</span>
+                <h2>{totalLiabilities.toLocaleString()}</h2>
             </div>
         </div>
       </div>
@@ -309,7 +309,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                       style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }}
                     />
                     <span className="mobile-asset-composition-label">{type} ({percentage.toFixed(1)}%)</span>
-                    <span className="mobile-asset-composition-amount">상세금액 ({(value / 100000000).toFixed(1)}억원)</span>
+                    <span className="mobile-asset-composition-amount">{(value / 100000000).toFixed(2)}억원</span>
                   </div>
                 </div>
               );

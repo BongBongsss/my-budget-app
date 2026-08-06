@@ -4,9 +4,10 @@ import { Notice, createNotice, deleteNotice, getNotices, markNoticeRead } from '
 
 interface NoticeCenterProps {
   isAdmin: boolean;
+  onUnreadCountChange?: (count: number) => void;
 }
 
-const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin }) => {
+const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChange }) => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [unreadNotices, setUnreadNotices] = useState<Notice[]>([]);
   const [isListOpen, setIsListOpen] = useState(false);
@@ -35,6 +36,10 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin }) => {
   useEffect(() => {
     loadNotices();
   }, []);
+
+  useEffect(() => {
+    onUnreadCountChange?.(unreadCount);
+  }, [onUnreadCountChange, unreadCount]);
 
   const handleCreate = async () => {
     if (!title.trim() || !body.trim() || isSaving) return;

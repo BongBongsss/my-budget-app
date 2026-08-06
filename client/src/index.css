@@ -55,6 +55,10 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   flex-wrap: nowrap;
 }
 
+.mobile-header-menu-toggle {
+  display: none;
+}
+
 .grid { 
   display: grid; 
   gap: 1.5rem; 
@@ -1005,9 +1009,61 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .form-actions { grid-column: 1 / -1; justify-content: stretch; }
   .form-actions .btn { width: 100%; justify-content: center; }
 
-  .app-header { align-items: stretch; gap: 0.75rem; }
-  .app-title { flex-basis: auto; font-size: 1.3rem; }
-  .app-nav, .header-actions { flex-basis: 100%; justify-content: center; flex-wrap: wrap; }
+  .app-header { position: relative; align-items: center; gap: 0.75rem; }
+  .app-title { flex: 1 1 auto; flex-basis: auto; font-size: 1.3rem; }
+  .mobile-header-menu-toggle {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border: 1px solid #d8e0ec;
+    border-radius: 9px;
+    background: #f8fafc;
+    color: #475569;
+  }
+  .mobile-header-menu-badge {
+    position: absolute;
+    top: -7px;
+    right: -8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    border: 2px solid #e0f0ff;
+    border-radius: 999px;
+    background: #d33434;
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 700;
+    line-height: 1;
+  }
+  .app-nav { order: 3; flex-basis: 100%; justify-content: center; flex-wrap: wrap; }
+  .header-actions {
+    display: none;
+    position: absolute;
+    top: 43px;
+    right: 0;
+    z-index: 40;
+    flex: 0 0 auto;
+    width: min(190px, calc(100vw - 2rem));
+    padding: 0.5rem;
+    align-items: stretch;
+    justify-content: stretch;
+    gap: 0.35rem;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    border: 1px solid #dbe5f1;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 12px 28px rgba(30, 41, 59, 0.18);
+  }
+  .header-actions.is-mobile-open { display: flex; }
+  .header-actions > * { width: 100%; }
+  .header-actions .header-action-btn { justify-content: flex-start; }
   .main-nav { width: 100%; gap: 4px; }
   .nav-item { flex: 1 1 30%; justify-content: center; padding: 8px 6px; font-size: 0.8rem; }
   .header-action-btn { min-height: 34px; }

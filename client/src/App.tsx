@@ -15,7 +15,7 @@ import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -37,6 +37,8 @@ function App() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
@@ -327,6 +329,20 @@ function App() {
     <div className="container">
       <header className="header app-header">
         <h1 className="app-title">Smart Budget Manager</h1>
+        <button
+          type="button"
+          className="mobile-header-menu-toggle"
+          onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
+          aria-label={isMobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
+          aria-expanded={isMobileMenuOpen}
+        >
+          <Menu size={21} />
+          {unreadNoticeCount > 0 && (
+            <span className="mobile-header-menu-badge" aria-label={`읽지 않은 공지 ${unreadNoticeCount}개`}>
+              {unreadNoticeCount > 9 ? '9+' : unreadNoticeCount}
+            </span>
+          )}
+        </button>
         <nav className="main-nav app-nav">
           <button 
             className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
@@ -347,17 +363,23 @@ function App() {
             <History size={18} /> 활동 로그
           </button>
         </nav>
-        <div className="header-actions">
-          <NoticeCenter isAdmin={userRole === 'admin'} />
+        <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
+          <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} />
 
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary header-action-btn" onClick={() => fileInputRef.current?.click()}>
+            <button className="btn btn-secondary header-action-btn" onClick={() => {
+              setIsMobileMenuOpen(false);
+              fileInputRef.current?.click();
+            }}>
                 <Upload size={16} /> Import
             </button>
           )}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary header-action-btn" onClick={handleExportBackup}>
+            <button className="btn btn-secondary header-action-btn" onClick={() => {
+              setIsMobileMenuOpen(false);
+              handleExportBackup();
+            }}>
                 <Download size={16} /> Export
             </button>
           )}
@@ -365,12 +387,18 @@ function App() {
           
           {/* Admin 전용 버튼: Settings */}
           {userRole === 'admin' && (
-            <button className="btn btn-secondary header-action-btn" onClick={() => setIsSettingsModalOpen(true)}>
+            <button className="btn btn-secondary header-action-btn" onClick={() => {
+              setIsMobileMenuOpen(false);
+              setIsSettingsModalOpen(true);
+            }}>
                 <Settings size={16} /> Settings
             </button>
           )}
           
-          <button className="btn btn-danger header-action-btn" onClick={handleLogout}>
+          <button className="btn btn-danger header-action-btn" onClick={() => {
+            setIsMobileMenuOpen(false);
+            handleLogout();
+          }}>
             LogOut
           </button>
         </div>
