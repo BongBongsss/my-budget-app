@@ -147,8 +147,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     isExpanded: boolean,
     onToggleExpanded: () => void,
   ) => {
-    const topGroups = processed.activeGroups.slice(0, 10);
-    const remainingGroups = processed.activeGroups.slice(10);
+    const topGroups = processed.activeGroups.slice(0, 8);
+    const remainingGroups = processed.activeGroups.slice(8);
     const visibleGroups = isExpanded ? processed.activeGroups : topGroups;
     const remainingAmount = remainingGroups.reduce((sum: number, group: string) => sum + processed.categoryData[group], 0);
     const remainingPercentage = processed.totalAmount ? (remainingAmount / processed.totalAmount) * 100 : 0;
@@ -190,7 +190,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
           type="button"
           className="mobile-comparison-bar mobile-comparison-more"
           aria-expanded={isExpanded}
-          title={isExpanded ? '상위 10개만 보기' : `그 외 ${remainingGroups.length}개 항목 펼치기`}
+          title={isExpanded ? '상위 8개만 보기' : `그 외 ${remainingGroups.length}개 항목 펼치기`}
           onClick={(event) => {
             event.stopPropagation();
             onToggleExpanded();
@@ -198,7 +198,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         >
           <span className="mobile-comparison-bar-fill" style={{ width: `${Math.max(remainingPercentage, 2)}%` }} />
           <span className="mobile-comparison-bar-content">
-            <span className="mobile-comparison-bar-name">{isExpanded ? '상위 10개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
+            <span className="mobile-comparison-bar-name">{isExpanded ? '상위 8개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
             <span className="mobile-comparison-bar-value">{remainingAmount.toLocaleString()}원 · {remainingPercentage.toFixed(1)}%</span>
           </span>
         </button>

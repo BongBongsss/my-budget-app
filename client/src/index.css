@@ -943,6 +943,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
   .summary-cards .card-summary,
   .asset-summary-cards .card-summary {
+    position: relative;
     min-width: 0;
     min-height: 64px;
     padding: 0.5rem;
@@ -951,6 +952,23 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     justify-content: center;
     gap: 0;
   }
+  .summary-cards .card-summary::before,
+  .asset-summary-cards .card-summary::before {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0;
+    width: 3px;
+    border-radius: 0 3px 3px 0;
+    background: #64748b;
+    content: '';
+  }
+  .summary-cards .card-summary.income::before,
+  .asset-summary-cards .card-summary.income::before { background: #22c55e; }
+  .summary-cards .card-summary.expense::before,
+  .asset-summary-cards .card-summary.expense::before { background: #ef4444; }
+  .summary-cards .card-summary.balance::before,
+  .asset-summary-cards .card-summary.balance::before { background: #3b82f6; }
 
   .summary-cards .card-summary .icon,
   .asset-summary-cards .card-summary .icon {
@@ -1182,6 +1200,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-chart-tabs { display: flex; gap: 0.25rem; padding: 0.2rem; border-radius: 7px; background: #f1f5f9; }
   .mobile-asset-chart-tabs button { padding: 0.28rem 0.45rem; border: 0; border-radius: 5px; background: transparent; color: #64748b; font-size: 0.65rem; cursor: pointer; }
   .mobile-asset-chart-tabs button.is-active { background: #fff; color: #2563eb; box-shadow: 0 1px 2px rgb(15 23 42 / 0.12); font-weight: 700; }
+  .mobile-asset-composition-list { display: grid; gap: 0.4rem; }
   .mobile-asset-chart-area { height: 270px; width: 100%; }
   .mobile-history-save { margin: 0 0 0.5rem auto; padding: 0.28rem 0.45rem; font-size: 0.68rem; }
 
