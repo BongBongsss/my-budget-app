@@ -241,6 +241,13 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   background: #2563eb;
   box-shadow: 0 10px 24px rgba(37, 99, 235, 0.35);
   font-weight: 700;
+  touch-action: none;
+  cursor: grab;
+}
+
+.mobile-entry-fab[data-dragging="true"] {
+  cursor: grabbing;
+  opacity: 0.88;
 }
 
 .import-result-modal {
@@ -1010,9 +1017,16 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .form-actions .btn { width: 100%; justify-content: center; }
 
   .app-header { position: relative; align-items: center; gap: 0.75rem; }
-  .app-title { flex: 1 1 auto; flex-basis: auto; font-size: 1.3rem; }
+  .app-title {
+    flex: 1 1 auto;
+    flex-basis: auto;
+    padding-right: 48px;
+    font-size: 1.3rem;
+  }
   .mobile-header-menu-toggle {
-    position: relative;
+    position: absolute;
+    top: 0;
+    right: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;

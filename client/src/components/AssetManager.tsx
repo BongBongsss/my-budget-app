@@ -195,25 +195,25 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto">
       <div className="grid grid-cols-3 gap-6 mb-8 asset-summary-cards">
-        <div className="card-summary balance shadow-md">
-            <div className="icon"><TrendingUp size={24}/></div>
-            <div className="details">
-                <span>총 순자산 ({totalAssets > 0 ? ((netAssets / totalAssets) * 100).toFixed(1) : 0}%)</span>
-                <h2>{netAssets.toLocaleString()}</h2>
-            </div>
-        </div>
         <div className="card-summary income shadow-md">
             <div className="icon"><Landmark size={24}/></div>
             <div className="details">
-                <span>총 자산 (100.0%)</span>
+                <span>자산 (100.0%)</span>
                 <h2>{totalAssets.toLocaleString()}</h2>
             </div>
         </div>
         <div className="card-summary expense shadow-md">
             <div className="icon"><CreditCard size={24}/></div>
             <div className="details">
-                <span>총 부채 ({totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : 0}%)</span>
+                <span>부채 ({totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : 0}%)</span>
                 <h2>{totalLiabilities.toLocaleString()}</h2>
+            </div>
+        </div>
+        <div className="card-summary balance shadow-md">
+            <div className="icon"><TrendingUp size={24}/></div>
+            <div className="details">
+                <span>순자산 ({totalAssets > 0 ? ((netAssets / totalAssets) * 100).toFixed(1) : 0}%)</span>
+                <h2>{netAssets.toLocaleString()}</h2>
             </div>
         </div>
       </div>

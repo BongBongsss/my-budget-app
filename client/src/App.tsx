@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import api from './api';
 import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
@@ -31,6 +31,17 @@ type ImportSummary = {
 };
 
 type UndoAction = { label: string; auditLogIds: string[] };
+type FloatingButtonPosition = { left: number; top: number };
+type FloatingButtonDrag = {
+  pointerId: number;
+  startX: number;
+  startY: number;
+  originLeft: number;
+  originTop: number;
+  width: number;
+  height: number;
+  isDragging: boolean;
+};
 
 function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -47,12 +58,26 @@ function App() {
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [entryButtonPosition, setEntryButtonPosition] = useState<FloatingButtonPosition | null>(() => {
+    try {
+      const savedPosition = window.localStorage.getItem('mobile-entry-button-position');
+      if (!savedPosition) return null;
+      const parsed = JSON.parse(savedPosition);
+      return Number.isFinite(parsed?.left) && Number.isFinite(parsed?.top) ? parsed : null;
+    } catch {
+      return null;
+    }
+  });
+  const [isEntryButtonDragging, setIsEntryButtonDragging] = useState(false);
 
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const verifyingRef = useRef(false);
+  const entryButtonHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const entryButtonDragRef = useRef<FloatingButtonDrag | null>(null);
+  const suppressEntryButtonClickRef = useRef(false);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -61,6 +86,92 @@ function App() {
   const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string} | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const clearEntryButtonHoldTimer = () => {
+    if (entryButtonHoldTimerRef.current) {
+      clearTimeout(entryButtonHoldTimerRef.current);
+      entryButtonHoldTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearEntryButtonHoldTimer(), []);
+
+  useEffect(() => {
+    try {
+      if (entryButtonPosition) {
+        window.localStorage.setItem('mobile-entry-button-position', JSON.stringify(entryButtonPosition));
+      }
+    } catch {
+      // 위치 저장을 지원하지 않는 환경에서는 현재 화면 내 위치만 사용한다.
+    }
+  }, [entryButtonPosition]);
+
+  const clampEntryButtonPosition = (left: number, top: number, width = 52, height = 52): FloatingButtonPosition => ({
+    left: Math.min(Math.max(8, left), Math.max(8, window.innerWidth - width - 8)),
+    top: Math.min(Math.max(8, top), Math.max(8, window.innerHeight - height - 8)),
+  });
+
+  const handleEntryButtonPointerDown = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+    const button = event.currentTarget;
+    const rect = button.getBoundingClientRect();
+    button.setPointerCapture(event.pointerId);
+    entryButtonDragRef.current = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originLeft: rect.left,
+      originTop: rect.top,
+      width: rect.width,
+      height: rect.height,
+      isDragging: false,
+    };
+    clearEntryButtonHoldTimer();
+    entryButtonHoldTimerRef.current = setTimeout(() => {
+      const drag = entryButtonDragRef.current;
+      if (!drag || drag.pointerId !== event.pointerId) return;
+      drag.isDragging = true;
+      suppressEntryButtonClickRef.current = true;
+      setIsEntryButtonDragging(true);
+    }, 350);
+  };
+
+  const handleEntryButtonPointerMove = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = entryButtonDragRef.current;
+    if (!drag || drag.pointerId !== event.pointerId) return;
+
+    const movedDistance = Math.hypot(event.clientX - drag.startX, event.clientY - drag.startY);
+    if (!drag.isDragging) {
+      if (movedDistance > 8) clearEntryButtonHoldTimer();
+      return;
+    }
+
+    event.preventDefault();
+    setEntryButtonPosition(clampEntryButtonPosition(
+      drag.originLeft + event.clientX - drag.startX,
+      drag.originTop + event.clientY - drag.startY,
+      drag.width,
+      drag.height,
+    ));
+  };
+
+  const finishEntryButtonDrag = (event: ReactPointerEvent<HTMLButtonElement>) => {
+    const drag = entryButtonDragRef.current;
+    clearEntryButtonHoldTimer();
+    if (!drag || drag.pointerId !== event.pointerId) return;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+    if (drag.isDragging) {
+      setIsEntryButtonDragging(false);
+      window.setTimeout(() => { suppressEntryButtonClickRef.current = false; }, 0);
+    }
+    entryButtonDragRef.current = null;
+  };
+
+  const entryButtonStyle: CSSProperties | undefined = entryButtonPosition
+    ? { left: `${entryButtonPosition.left}px`, top: `${entryButtonPosition.top}px`, right: 'auto', bottom: 'auto' }
+    : undefined;
 
   const fetchData = async () => {
     try {
@@ -573,7 +684,16 @@ function App() {
         <button
           type="button"
           className="mobile-entry-fab"
-          onClick={() => currentView === 'budget' ? setIsTransactionFormOpen(true) : setIsAssetFormOpen(true)}
+          style={entryButtonStyle}
+          onPointerDown={handleEntryButtonPointerDown}
+          onPointerMove={handleEntryButtonPointerMove}
+          onPointerUp={finishEntryButtonDrag}
+          onPointerCancel={finishEntryButtonDrag}
+          onClick={() => {
+            if (suppressEntryButtonClickRef.current) return;
+            currentView === 'budget' ? setIsTransactionFormOpen(true) : setIsAssetFormOpen(true);
+          }}
+          data-dragging={isEntryButtonDragging}
           aria-label={currentView === 'budget' ? '거래 입력' : '자산 등록'}
           title={currentView === 'budget' ? '거래 입력' : '자산 등록'}
         >

@@ -50,21 +50,21 @@ const Summary: React.FC<SummaryProps> = ({
         <div className="card-summary income">
           <div className="icon"><ArrowUpCircle size={24} /></div>
           <div className="details">
-            <span>Total Income</span>
+            <span>수입</span>
             <h2>{income.toLocaleString()}</h2>
           </div>
         </div>
         <div className="card-summary expense">
           <div className="icon"><ArrowDownCircle size={24} /></div>
           <div className="details">
-            <span>Total Expenses</span>
+            <span>지출</span>
             <h2>{expense.toLocaleString()}</h2>
           </div>
         </div>
         <div className="card-summary balance">
           <div className="icon"><Wallet size={24} /></div>
           <div className="details">
-            <span>Balance</span>
+            <span>잔액</span>
             <h2>{balance.toLocaleString()}</h2>
           </div>
         </div>
