@@ -307,7 +307,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     className="mobile-comparison-bar-fill"
                     style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }}
                   />
-                  <span className="mobile-comparison-bar-content">
+                  <span className="mobile-comparison-bar-content mobile-asset-composition-bar-content">
                     <span className="mobile-asset-composition-name">{type}</span>
                     <span className="mobile-asset-composition-amount">{value.toLocaleString()}원</span>
                     <span className="mobile-asset-composition-percentage">{percentage.toFixed(1)}%</span>
