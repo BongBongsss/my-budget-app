@@ -340,11 +340,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     processed: any,
     isExpanded: boolean,
     onToggleExpanded: () => void,
-    showAll = false,
   ) => {
     const topGroups = processed.activeGroups.slice(0, 9);
-    const remainingGroups = showAll ? [] : processed.activeGroups.slice(9);
-    const visibleGroups = showAll || isExpanded ? processed.activeGroups : topGroups;
+    const remainingGroups = processed.activeGroups.slice(9);
+    const visibleGroups = isExpanded ? processed.activeGroups : topGroups;
     const remainingAmount = remainingGroups.reduce((sum: number, group: string) => sum + processed.categoryData[group], 0);
     const remainingPercentage = processed.totalAmount ? (remainingAmount / processed.totalAmount) * 100 : 0;
 
@@ -481,7 +480,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               }} 
             />
           ) : (
-            renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value), true)
+            renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))
           )}
         </div>
       </div>
@@ -538,7 +537,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               }} 
             />
           ) : (
-            renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value), true)
+            renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))
           )}
         </div>
       </div>

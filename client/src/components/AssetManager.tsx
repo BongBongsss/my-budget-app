@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
-import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale, Title, PointElement, LineElement } from 'chart.js';
+import { Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import EntryModal from './EntryModal';
 
-ChartJS.register(Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
+ChartJS.register(Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, LineElement, PointElement, Title);
 
 interface AssetManagerProps {
   userRole?: 'admin' | 'viewer';
@@ -180,22 +180,6 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     ? assets.filter((asset) => (assetTypeMap[asset.type] || asset.type) === selectedAssetType)
     : assets;
 
-  const chartData = {
-    labels: sortedGroupedEntries.map(([label]) => label),
-    datasets: [{
-      data: sortedGroupedEntries.map(([, value]) => value),
-      backgroundColor: sortedGroupedEntries.map(([type], index) => {
-        const color = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6];
-        return selectedAssetType && selectedAssetType !== type ? `${color}33` : color;
-      }),
-      borderColor: sortedGroupedEntries.map(([type]) => selectedAssetType === type ? '#1e293b' : 'transparent'),
-      borderWidth: 1,
-      borderRadius: 5,
-      barThickness: 20,
-      maxBarThickness: 24,
-    }]
-  };
-
   const lineData = {
     labels: history.map(h => h.yearMonth),
     datasets: [
@@ -232,50 +216,30 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       </div>
 
       <div className="grid grid-cols-2 gap-6 items-start mb-8 asset-desktop-charts">
-        <div className="card-form shadow-md p-4" style={{ minHeight: '520px' }}>
+        <div className="card-form shadow-md p-4">
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 구성비</h3>
             </div>
-            <div style={{ height: `${Math.max(420, sortedGroupedEntries.length * 50)}px`, width: '100%' }}>
-                <Bar
-                    data={chartData} 
-                    options={{ 
-                        maintainAspectRatio: false,
-                        indexAxis: 'y',
-                        layout: { padding: { right: 108 } },
-                        onClick: (_event: any, elements: any[]) => {
-                            if (elements.length > 0) {
-                                const selectedType = sortedGroupedEntries[elements[0].index]?.[0];
-                                setSelectedAssetType((current) => current === selectedType ? null : selectedType);
-                            } else {
-                                setSelectedAssetType(null);
-                            }
-                        },
-                        scales: {
-                            x: {
-                                beginAtZero: true,
-                                display: false,
-                                grid: { display: false },
-                                border: { display: false },
-                                ticks: { display: false }
-                            },
-                            y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' } } }
-                        },
-                        plugins: { 
-                            legend: { display: false },
-                            datalabels: {
-                                anchor: 'end',
-                                align: 'end',
-                                color: '#334155',
-                                font: { weight: 'bold', size: 12 },
-                                formatter: (value: number) => {
-                                    const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
-                                    return `${(value / 100000000).toFixed(2)}억원 (${percentage.toFixed(1)}%)`;
-                                }
-                            }
-                        }
-                    }} 
-                />
+            <div className="desktop-asset-composition-list">
+                {sortedGroupedEntries.map(([type, value], index) => {
+                  const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
+                  const isSelected = selectedAssetType === type;
+                  const isDimmed = !!selectedAssetType && !isSelected;
+                  return (
+                    <button
+                      type="button"
+                      className={`desktop-asset-composition-bar ${isSelected ? 'is-selected' : ''}`}
+                      key={type}
+                      aria-pressed={isSelected}
+                      style={{ opacity: isDimmed ? 0.35 : 1 }}
+                      onClick={() => setSelectedAssetType((current) => current === type ? null : type)}
+                    >
+                      <span className="desktop-asset-composition-fill" style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }} />
+                      <span className="desktop-asset-composition-label">{type} ({percentage.toFixed(1)}%)</span>
+                      <span className="desktop-asset-composition-amount">{(value / 100000000).toFixed(2)}억원</span>
+                    </button>
+                  );
+                })}
             </div>
         </div>
 
