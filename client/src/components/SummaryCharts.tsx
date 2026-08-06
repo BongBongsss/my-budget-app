@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Transaction, CategoryItem } from '../api';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
@@ -18,9 +18,14 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const [incomeView] = useState<'pie' | 'bar'>('bar');
   const [expenseView] = useState<'pie' | 'bar'>('bar');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
+  const [trendGroups, setTrendGroups] = useState<{ income: string | null; expense: string | null }>({ income: null, expense: null });
   const [isCompactMobile, setIsCompactMobile] = useState(false);
   const [isIncomeExpanded, setIsIncomeExpanded] = useState(false);
   const [isExpenseExpanded, setIsExpenseExpanded] = useState(false);
+  const incomeChartRef = useRef<any>(null);
+  const expenseChartRef = useRef<any>(null);
+  const trendPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const suppressNextGroupClickRef = useRef(false);
 
   useEffect(() => {
     if (typeof window === 'undefined' || !window.matchMedia) return;
@@ -31,6 +36,15 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     mediaQuery.addEventListener('change', updateLayout);
     return () => mediaQuery.removeEventListener('change', updateLayout);
   }, []);
+
+  const clearTrendPressTimer = () => {
+    if (trendPressTimerRef.current) {
+      clearTimeout(trendPressTimerRef.current);
+      trendPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearTrendPressTimer(), []);
 
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
@@ -99,6 +113,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   };
 
   const handleGroupClick = (type: 'income' | 'expense', group: string) => {
+    if (suppressNextGroupClickRef.current) {
+      suppressNextGroupClickRef.current = false;
+      return;
+    }
     if (activeHighlight?.type === type && activeHighlight?.group === group) {
       setActiveHighlight(null);
       onHighlight(null);
@@ -108,6 +126,80 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       onHighlight(newHighlight);
     }
   };
+
+  const requestTrendView = (type: 'income' | 'expense', group: string) => {
+    clearTrendPressTimer();
+    trendPressTimerRef.current = setTimeout(() => {
+      trendPressTimerRef.current = null;
+      suppressNextGroupClickRef.current = true;
+      const confirmed = window.confirm(`“${group}”의 최근 12개월 추세를 보시겠습니까?`);
+      if (confirmed) {
+        setTrendGroups((current) => ({ ...current, [type]: group }));
+      }
+      window.setTimeout(() => { suppressNextGroupClickRef.current = false; }, 1200);
+    }, 500);
+  };
+
+  const getGroupFromChartPointer = (chart: any, event: React.PointerEvent<HTMLDivElement>, processed: any) => {
+    if (!chart) return null;
+    const elements = chart.getElementsAtEventForMode(event.nativeEvent, 'nearest', { intersect: true }, false);
+    if (elements.length > 0) return processed.activeGroups[elements[0].index] || null;
+
+    const yScale = chart.scales.y;
+    const rect = chart.canvas.getBoundingClientRect();
+    const y = (event.clientY - rect.top) * (chart.height / rect.height);
+    if (y < yScale.top || y > yScale.bottom) return null;
+    const index = Math.round(yScale.getValueForPixel(y));
+    return processed.activeGroups[index] || null;
+  };
+
+  const handleChartPointerDown = (
+    type: 'income' | 'expense',
+    processed: any,
+    chart: any,
+    event: React.PointerEvent<HTMLDivElement>,
+  ) => {
+    const group = getGroupFromChartPointer(chart, event, processed);
+    if (group) requestTrendView(type, group);
+  };
+
+  const getMonthlyTrendData = (type: 'income' | 'expense', group: string) => {
+    const current = new Date();
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(current.getFullYear(), current.getMonth() - 11 + index, 1);
+      const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      return { key, label: `${date.getFullYear()}년 ${date.getMonth() + 1}월` };
+    });
+    const values = months.map(({ key }) => transactions
+      .filter((transaction) => transaction.type === type && transaction.date.startsWith(key) && getGroupName(transaction.category, categories) === group)
+      .reduce((sum, transaction) => sum + transaction.amount, 0));
+    const color = type === 'income' ? '#4ade80' : '#f87171';
+
+    return {
+      labels: months.map(({ label }) => label),
+      datasets: [{ data: values, backgroundColor: color, borderRadius: 5, barThickness: 20, maxBarThickness: 24 }],
+    };
+  };
+
+  const getMonthlyTrendOptions = () => ({
+    maintainAspectRatio: false,
+    indexAxis: 'y' as const,
+    layout: { padding: { right: 102 } },
+    scales: {
+      x: { beginAtZero: true, grid: { color: '#eef2f7' }, ticks: { font: { size: 11 }, callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억` } },
+      y: { grid: { display: false }, ticks: { font: { size: 12, weight: 'bold' as const } } },
+    },
+    plugins: {
+      legend: { display: false },
+      datalabels: {
+        anchor: 'end' as const,
+        align: 'end' as const,
+        color: '#334155',
+        font: { size: 11, weight: 'bold' as const },
+        formatter: (value: number) => `${value.toLocaleString()}원`,
+      },
+    },
+  });
 
   const getCompositionBarData = (type: 'income' | 'expense', processed: any) => ({
     labels: processed.activeGroups,
@@ -123,17 +215,28 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
       )),
       borderWidth: 1,
       borderRadius: 5,
-      barThickness: 20,
-      maxBarThickness: 24,
+      barThickness: 26,
+      maxBarThickness: 30,
     }],
   });
 
   const getCompositionBarOptions = (type: 'income' | 'expense', processed: any) => ({
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
-    layout: { padding: { right: 112 } },
-    onClick: (_event: unknown, elements: Array<{ index: number }>) => {
-      if (elements.length > 0) handleGroupClick(type, processed.activeGroups[elements[0].index]);
+    layout: { padding: { right: 142 } },
+    onClick: (event: any, elements: Array<{ index: number }>, chart: any) => {
+      if (suppressNextGroupClickRef.current) {
+        suppressNextGroupClickRef.current = false;
+        return;
+      }
+      const group = elements.length > 0
+        ? processed.activeGroups[elements[0].index]
+        : (() => {
+          const yScale = chart.scales.y;
+          if (event.y < yScale.top || event.y > yScale.bottom) return null;
+          return processed.activeGroups[Math.round(yScale.getValueForPixel(event.y))] || null;
+        })();
+      if (group) handleGroupClick(type, group);
       else clearHighlight();
     },
     scales: {
@@ -142,10 +245,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         grid: { color: '#eef2f7' },
         ticks: {
           callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억`,
-          font: { size: 10 },
+          font: { size: 12 },
         },
       },
-      y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' as const } } },
+      y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' as const } } },
     },
     plugins: {
       legend: { display: false },
@@ -153,7 +256,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
         anchor: 'end' as const,
         align: 'end' as const,
         color: '#334155',
-        font: { size: 10, weight: 'bold' as const },
+        font: { size: 12, weight: 'bold' as const },
         formatter: (value: number) => {
           const percentage = processed.totalAmount ? (value / processed.totalAmount) * 100 : 0;
           return `${value.toLocaleString()}원 (${percentage.toFixed(1)}%)`;
@@ -221,6 +324,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             aria-pressed={isSelected}
             title={`${group}: ${value.toLocaleString()}원 (${percentage.toFixed(1)}%)`}
             style={{ opacity: isDimmed ? 0.35 : 1 }}
+            onPointerDown={() => requestTrendView(type, group)}
+            onPointerUp={clearTrendPressTimer}
+            onPointerCancel={clearTrendPressTimer}
+            onPointerLeave={clearTrendPressTimer}
             onClick={(event) => {
               event.stopPropagation();
               handleGroupClick(type, group);
@@ -262,17 +369,23 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   if (isCompactMobile) {
     return (
       <div className="mobile-comparison-chart-grid" style={{ marginBottom: '32px' }}>
-        <section className="card-form mobile-comparison-chart-card" onClick={clearHighlight} aria-label="수입 구성">
+        <section className={`card-form mobile-comparison-chart-card ${trendGroups.income ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="수입 구성">
           <div className="mobile-comparison-chart-header income">
-            <span className="mobile-comparison-chart-dot income" />수입 구성
+            <span className="mobile-comparison-chart-dot income" />{trendGroups.income ? `${trendGroups.income} · 최근 12개월` : '수입 구성'}
+            {trendGroups.income && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, income: null })); }}>← 구성비</button>}
           </div>
-          {renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
+          {trendGroups.income ? (
+            <div className="mobile-summary-trend-chart-area"><Bar data={getMonthlyTrendData('income', trendGroups.income)} options={getMonthlyTrendOptions()} /></div>
+          ) : renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
         </section>
-        <section className="card-form mobile-comparison-chart-card" onClick={clearHighlight} aria-label="지출 구성">
+        <section className={`card-form mobile-comparison-chart-card ${trendGroups.expense ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="지출 구성">
           <div className="mobile-comparison-chart-header expense">
-            <span className="mobile-comparison-chart-dot expense" />지출 구성
+            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense ? `${trendGroups.expense} · 최근 12개월` : '지출 구성'}
+            {trendGroups.expense && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, expense: null })); }}>← 구성비</button>}
           </div>
-          {renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
+          {trendGroups.expense ? (
+            <div className="mobile-summary-trend-chart-area"><Bar data={getMonthlyTrendData('expense', trendGroups.expense)} options={getMonthlyTrendOptions()} /></div>
+          ) : renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
         </section>
       </div>
     );
@@ -281,13 +394,23 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   return (
     <div className="grid grid-cols-2 gap-6 summary-charts" style={{ marginBottom: '32px' }}>
       {/* 좌측: 수입 섹션 */}
-      <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '650px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>수입 구성</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>{trendGroups.income ? `${trendGroups.income} · 최근 12개월 추세` : '수입 구성'}</h3>
+            {trendGroups.income && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, income: null }))}>← 구성비</button>}
         </div>
 
-        <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
-          {incomeView === 'pie' ? (
+        <div
+          className="summary-chart-area"
+          style={{ height: '540px', flex: '0 0 540px', marginTop: '10px', position: 'relative', overflow: 'visible' }}
+          onPointerDown={(event) => handleChartPointerDown('income', incomeData, incomeChartRef.current, event)}
+          onPointerUp={clearTrendPressTimer}
+          onPointerCancel={clearTrendPressTimer}
+          onPointerLeave={clearTrendPressTimer}
+        >
+          {trendGroups.income ? (
+            <Bar data={getMonthlyTrendData('income', trendGroups.income)} options={getMonthlyTrendOptions()} />
+          ) : incomeView === 'pie' ? (
             <Pie 
               data={{
                 labels: incomeData.activeGroups,
@@ -322,23 +445,33 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
             />
           ) : (
-            <Bar 
+            <Bar
+              ref={incomeChartRef}
               data={getCompositionBarData('income', incomeData)}
               options={getCompositionBarOptions('income', incomeData)}
             />
           )}
         </div>
-        {renderLegend('income', incomeData)}
       </div>
 
       {/* 우측: 지출 섹션 */}
-      <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '550px', padding: '15px', position: 'relative', overflow: 'visible' }}>
+      <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: '650px', padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>지출 구성</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>{trendGroups.expense ? `${trendGroups.expense} · 최근 12개월 추세` : '지출 구성'}</h3>
+            {trendGroups.expense && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, expense: null }))}>← 구성비</button>}
         </div>
 
-        <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
-          {expenseView === 'pie' ? (
+        <div
+          className="summary-chart-area"
+          style={{ height: '540px', flex: '0 0 540px', marginTop: '10px', position: 'relative', overflow: 'visible' }}
+          onPointerDown={(event) => handleChartPointerDown('expense', expenseData, expenseChartRef.current, event)}
+          onPointerUp={clearTrendPressTimer}
+          onPointerCancel={clearTrendPressTimer}
+          onPointerLeave={clearTrendPressTimer}
+        >
+          {trendGroups.expense ? (
+            <Bar data={getMonthlyTrendData('expense', trendGroups.expense)} options={getMonthlyTrendOptions()} />
+          ) : expenseView === 'pie' ? (
             <Pie 
               data={{
                 labels: expenseData.activeGroups,
@@ -373,13 +506,13 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
               }} 
             />
           ) : (
-            <Bar 
+            <Bar
+              ref={expenseChartRef}
               data={getCompositionBarData('expense', expenseData)}
               options={getCompositionBarOptions('expense', expenseData)}
             />
           )}
         </div>
-        {renderLegend('expense', expenseData)}
       </div>
     </div>
   );

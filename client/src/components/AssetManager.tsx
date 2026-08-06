@@ -232,17 +232,17 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       </div>
 
       <div className="grid grid-cols-2 gap-6 items-start mb-8 asset-desktop-charts">
-        <div className="card-form shadow-md p-4" style={{ minHeight: '400px' }}>
+        <div className="card-form shadow-md p-4" style={{ minHeight: '520px' }}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 구성비</h3>
             </div>
-            <div style={{ height: `${Math.max(300, sortedGroupedEntries.length * 42)}px`, width: '100%' }}>
+            <div style={{ height: `${Math.max(420, sortedGroupedEntries.length * 50)}px`, width: '100%' }}>
                 <Bar
                     data={chartData} 
                     options={{ 
                         maintainAspectRatio: false,
                         indexAxis: 'y',
-                        layout: { padding: { right: 78 } },
+                        layout: { padding: { right: 108 } },
                         onClick: (_event: any, elements: any[]) => {
                             if (elements.length > 0) {
                                 const selectedType = sortedGroupedEntries[elements[0].index]?.[0];
@@ -255,9 +255,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                             x: {
                                 beginAtZero: true,
                                 grid: { color: '#eef2f7' },
-                                ticks: { callback: (value: any) => `${(Number(value) / 100000000).toFixed(1)}억` }
+                                ticks: { font: { size: 12 }, callback: (value: any) => `${(Number(value) / 100000000).toFixed(1)}억` }
                             },
-                            y: { grid: { display: false }, ticks: { font: { size: 11, weight: 'bold' } } }
+                            y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' } } }
                         },
                         plugins: { 
                             legend: { display: false },
@@ -265,7 +265,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                                 anchor: 'end',
                                 align: 'end',
                                 color: '#334155',
-                                font: { weight: 'bold', size: 10 },
+                                font: { weight: 'bold', size: 12 },
                                 formatter: (value: number) => {
                                     const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
                                     return `${(value / 100000000).toFixed(2)}억원 (${percentage.toFixed(1)}%)`;
@@ -277,18 +277,18 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
             </div>
         </div>
 
-        <div className="card-form shadow-md p-4" style={{ minHeight: '400px' }}>
+        <div className="card-form shadow-md p-4" style={{ minHeight: '520px' }}>
             <div className="flex justify-between items-center mb-4">
                 <h3 className="text-lg font-bold" style={{ margin: 0 }}>자산 변화 추이</h3>
                 <button onClick={handleSaveHistory} className="btn btn-primary text-xs py-1 px-3">이력 저장</button>
             </div>
-            <div style={{ height: '300px', width: '100%' }}>
+            <div style={{ height: '420px', width: '100%' }}>
                 <Line 
                     data={lineData} 
                     options={{ 
                         maintainAspectRatio: false,
                         plugins: { 
-                            legend: { display: true },
+                            legend: { display: true, labels: { font: { size: 12 } } },
                             datalabels: { display: false }
                         },
                         scales: {
@@ -297,6 +297,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                                 max: 2000000000,
                                 ticks: {
                                     stepSize: 500000000,
+                                    font: { size: 12 },
                                     callback: (value: any) => `${(value / 1000000000).toFixed(1)}B`
                                 }
                             }
@@ -320,14 +321,19 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
               const percentage = totalBalanceForPie ? (value / totalBalanceForPie) * 100 : 0;
               return (
                 <div className="mobile-asset-composition-item" key={type}>
-                  <div className="mobile-comparison-bar mobile-asset-composition-bar">
+                  <button
+                    type="button"
+                    className={`mobile-comparison-bar mobile-asset-composition-bar ${selectedAssetType === type ? 'is-selected' : ''}`}
+                    aria-pressed={selectedAssetType === type}
+                    onClick={() => setSelectedAssetType((current) => current === type ? null : type)}
+                  >
                     <span
                       className="mobile-comparison-bar-fill"
                       style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b'][index % 6] }}
                     />
                     <span className="mobile-asset-composition-label">{type} ({percentage.toFixed(1)}%)</span>
                     <span className="mobile-asset-composition-amount">{(value / 100000000).toFixed(2)}억원</span>
-                  </div>
+                  </button>
                 </div>
               );
             })}
