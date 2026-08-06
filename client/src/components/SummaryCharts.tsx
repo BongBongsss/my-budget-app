@@ -264,9 +264,17 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       const group = elements.length > 0
         ? processed.activeGroups[elements[0].index]
         : (() => {
+          // Chart.js의 event.y는 브라우저 확대/캔버스 배율에 따라 화면 좌표와
+          // 달라질 수 있다. 축 라벨을 눌렀을 때도 캔버스 기준 좌표로 환산한다.
+          const nativeEvent = event.native ?? event;
+          const rect = chart.canvas.getBoundingClientRect();
+          const clientY = nativeEvent.clientY;
+          const y = typeof clientY === 'number'
+            ? (clientY - rect.top) * (chart.height / rect.height)
+            : event.y;
           const yScale = chart.scales.y;
-          if (event.y < yScale.top || event.y > yScale.bottom) return null;
-          return processed.activeGroups[Math.round(yScale.getValueForPixel(event.y))] || null;
+          if (y < yScale.top || y > yScale.bottom) return null;
+          return processed.activeGroups[Math.round(yScale.getValueForPixel(y))] || null;
         })();
       if (group) handleGroupClick(type, group);
       else clearHighlight();
@@ -274,11 +282,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     scales: {
       x: {
         beginAtZero: true,
-        grid: { color: '#eef2f7' },
-        ticks: {
-          callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억`,
-          font: { size: 12 },
-        },
+        display: false,
+        grid: { display: false },
+        border: { display: false },
+        ticks: { display: false },
       },
       y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' as const } } },
     },

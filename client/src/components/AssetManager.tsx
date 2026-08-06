@@ -254,8 +254,10 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                         scales: {
                             x: {
                                 beginAtZero: true,
-                                grid: { color: '#eef2f7' },
-                                ticks: { font: { size: 12 }, callback: (value: any) => `${(Number(value) / 100000000).toFixed(1)}억` }
+                                display: false,
+                                grid: { display: false },
+                                border: { display: false },
+                                ticks: { display: false }
                             },
                             y: { grid: { display: false }, ticks: { font: { size: 13, weight: 'bold' } } }
                         },

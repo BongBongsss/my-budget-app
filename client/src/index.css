@@ -1128,24 +1128,24 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .desktop-transaction-table { display: none; }
   .mobile-transaction-cards { display: grid; gap: 0.45rem; }
   .mobile-transaction-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.5rem 0.6rem; background: #fff; }
-  .mobile-card-topline { display: flex; align-items: center; gap: 0.35rem; color: #64748b; font-size: 0.7rem; }
-  .mobile-card-topline strong { margin-left: auto; color: #1e293b; font-size: 0.9rem; }
-  .mobile-card-vendor { margin-top: 0.25rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; }
-  .mobile-card-meta, .mobile-card-note { margin-top: 0.12rem; color: #64748b; font-size: 0.7rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .mobile-card-topline { display: flex; align-items: center; gap: 0.35rem; color: #64748b; font-size: 0.75rem; }
+  .mobile-card-topline strong { margin-left: auto; color: #1e293b; font-size: 0.95rem; }
+  .mobile-card-vendor { margin-top: 0.25rem; font-size: 0.98rem; font-weight: 700; color: #1e293b; }
+  .mobile-card-meta, .mobile-card-note { margin-top: 0.12rem; color: #64748b; font-size: 0.75rem; line-height: 1.3; overflow-wrap: anywhere; }
   .mobile-transaction-card { cursor: pointer; }
   .mobile-transaction-card:not(.is-expanded) .mobile-card-note,
   .mobile-transaction-card:not(.is-expanded) .mobile-card-actions { display: none; }
   .mobile-card-note { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
   .mobile-transaction-card.is-expanded .mobile-card-note { -webkit-line-clamp: unset; }
   .mobile-card-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.3rem; margin-top: 0.4rem; }
-  .mobile-card-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.72rem; }
+  .mobile-card-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.78rem; }
   .mobile-card-actions .btn-icon { padding: 0.2rem; }
   .mobile-card-actions svg { width: 15px; height: 15px; }
   .mobile-card-actions .btn-danger { background: #dc2626; color: white; }
 
   .mobile-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
-  .mobile-edit-grid label { display: flex; flex-direction: column; gap: 0.2rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
-  .mobile-edit-grid input, .mobile-edit-grid select { width: 100%; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
+  .mobile-edit-grid label { display: flex; flex-direction: column; gap: 0.2rem; color: #64748b; font-size: 0.8rem; font-weight: 600; }
+  .mobile-edit-grid input, .mobile-edit-grid select { width: 100%; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.92rem; }
   .mobile-edit-wide { grid-column: 1 / -1; }
 
   .desktop-asset-table { display: none; }
@@ -1153,10 +1153,10 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-sort { display: flex; gap: 0.5rem; }
   .mobile-asset-sort .btn { flex: 1; padding: 0.45rem 0.6rem; font-size: 0.8rem; }
   .mobile-asset-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 0.55rem 0.6rem; background: #fff; }
-  .mobile-asset-topline { display: flex; align-items: center; gap: 0.35rem; color: #64748b; font-size: 0.7rem; }
-  .mobile-asset-topline strong { margin-left: auto; color: #1e293b; font-size: 0.9rem; }
-  .mobile-asset-name { margin-top: 0.25rem; font-size: 0.9rem; font-weight: 700; color: #1e293b; overflow-wrap: anywhere; }
-  .mobile-asset-note, .mobile-asset-meta { margin-top: 0.12rem; color: #64748b; font-size: 0.7rem; line-height: 1.3; overflow-wrap: anywhere; }
+  .mobile-asset-topline { display: flex; align-items: center; gap: 0.35rem; color: #64748b; font-size: 0.75rem; }
+  .mobile-asset-topline strong { margin-left: auto; color: #1e293b; font-size: 0.95rem; }
+  .mobile-asset-name { margin-top: 0.25rem; font-size: 0.98rem; font-weight: 700; color: #1e293b; overflow-wrap: anywhere; }
+  .mobile-asset-note, .mobile-asset-meta { margin-top: 0.12rem; color: #64748b; font-size: 0.75rem; line-height: 1.3; overflow-wrap: anywhere; }
   .mobile-asset-card { cursor: pointer; }
   .mobile-asset-card:not(.is-expanded) .mobile-asset-note,
   .mobile-asset-card:not(.is-expanded) .mobile-asset-meta,
@@ -1164,12 +1164,12 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-asset-note { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 1; }
   .mobile-asset-card.is-expanded .mobile-asset-note { -webkit-line-clamp: unset; }
   .mobile-asset-actions { display: flex; justify-content: flex-end; gap: 0.3rem; margin-top: 0.4rem; }
-  .mobile-asset-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.72rem; }
+  .mobile-asset-actions .btn { padding: 0.28rem 0.45rem; font-size: 0.78rem; }
   .mobile-asset-actions svg { width: 15px; height: 15px; }
   .mobile-asset-actions .btn-danger { background: #dc2626; color: white; }
   .mobile-asset-edit-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.6rem; }
-  .mobile-asset-edit-grid label { display: flex; flex-direction: column; gap: 0.2rem; color: #64748b; font-size: 0.75rem; font-weight: 600; }
-  .mobile-asset-edit-grid input, .mobile-asset-edit-grid select { width: 100%; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
+  .mobile-asset-edit-grid label { display: flex; flex-direction: column; gap: 0.2rem; color: #64748b; font-size: 0.8rem; font-weight: 600; }
+  .mobile-asset-edit-grid input, .mobile-asset-edit-grid select { width: 100%; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.92rem; }
   .mobile-asset-edit-wide { grid-column: 1 / -1; }
   .mobile-asset-empty { padding: 1rem; text-align: center; color: #94a3b8; }
 
@@ -1181,11 +1181,11 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .audit-log-table thead { display: none; }
   .audit-log-table tbody { display: grid; gap: 0.45rem; }
   .audit-log-table tr { display: block; padding: 0.55rem 0.6rem; border: 1px solid #e2e8f0; border-radius: 8px; cursor: pointer; }
-  .audit-log-table td { display: inline-block; padding: 0; border: 0; font-size: 0.78rem; vertical-align: middle; }
+  .audit-log-table td { display: inline-block; padding: 0; border: 0; font-size: 0.85rem; vertical-align: middle; }
   .audit-log-table td:nth-child(1) { color: #64748b; margin-right: 0.45rem; }
   .audit-log-table td:nth-child(2) { margin-right: 0.45rem; }
   .audit-log-table td:nth-child(3) { color: #64748b; }
-  .audit-log-table td:nth-child(4) { display: block; margin-top: 0.25rem; font-size: 0.78rem; }
+  .audit-log-table td:nth-child(4) { display: block; margin-top: 0.25rem; font-size: 0.85rem; }
   .audit-log-table td:nth-child(4) > div:not(:first-child), .audit-log-table tr:not(.is-expanded) td:nth-child(5), .audit-log-table tr:not(.is-expanded) td:nth-child(6) { display: none; }
   .audit-log-table tr.is-expanded td:nth-child(4) > div:not(:first-child) { display: block; }
   .audit-log-table td:nth-child(5) { display: block; margin-top: 0.35rem; color: #64748b; }
@@ -1237,7 +1237,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     align-items: center;
     gap: 0.35rem;
     color: #334155;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 700;
   }
   .mobile-comparison-back {
@@ -1247,7 +1247,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     border-radius: 5px;
     background: #fff;
     color: #475569;
-    font-size: 0.62rem;
+    font-size: 0.68rem;
   }
   .mobile-trend-list { gap: 0.35rem; }
   .mobile-trend-bar { cursor: default; }
@@ -1273,8 +1273,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .mobile-comparison-bar.is-selected { box-shadow: 0 0 0 1px #3b82f6; }
   .mobile-comparison-bar-fill { position: absolute; inset: 0 auto 0 0; opacity: 0.78; }
   .mobile-comparison-bar-content { position: relative; z-index: 1; display: grid; gap: 0.05rem; color: #0f172a; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
-  .mobile-comparison-bar-name { overflow: hidden; font-size: 0.67rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
-  .mobile-comparison-bar-value { overflow: hidden; color: #1e293b; font-size: 0.58rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-comparison-bar-name { overflow: hidden; font-size: 0.72rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-comparison-bar-value { overflow: hidden; color: #1e293b; font-size: 0.64rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
 
   .asset-desktop-charts { display: none; }
   .mobile-asset-chart { display: block; min-height: 0 !important; margin-bottom: 1rem; padding: 0.8rem !important; }
@@ -1293,8 +1293,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   }
   .mobile-asset-composition-label,
   .mobile-asset-composition-amount { position: relative; z-index: 1; overflow: hidden; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); white-space: nowrap; }
-  .mobile-asset-composition-label { display: inline-block; max-width: 48%; color: #0f172a; font-size: 0.7rem; font-weight: 800; text-overflow: ellipsis; }
-  .mobile-asset-composition-amount { float: right; max-width: 52%; color: #334155; font-size: 0.64rem; font-weight: 700; text-overflow: ellipsis; }
+  .mobile-asset-composition-label { display: inline-block; max-width: 48%; color: #0f172a; font-size: 0.75rem; font-weight: 800; text-overflow: ellipsis; }
+  .mobile-asset-composition-amount { float: right; max-width: 52%; color: #334155; font-size: 0.7rem; font-weight: 700; text-overflow: ellipsis; }
   .mobile-asset-chart-area { height: 270px; width: 100%; }
   .mobile-history-save { margin: 0 0 0.5rem auto; padding: 0.28rem 0.45rem; font-size: 0.68rem; }
 
