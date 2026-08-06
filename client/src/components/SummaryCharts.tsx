@@ -152,7 +152,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             </div>
         </div>
 
-        <div className="summary-chart-area" style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
+        <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
           {incomeView === 'pie' ? (
             <Pie 
               data={{
@@ -233,7 +233,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
             </div>
         </div>
 
-        <div className="summary-chart-area" style={{ height: '420px', flex: 1, marginTop: '10px', position: 'relative', overflow: 'visible' }}>
+        <div className="summary-chart-area" style={{ height: '420px', flex: '0 0 420px', marginTop: '10px', position: 'relative', overflow: 'visible' }}>
           {expenseView === 'pie' ? (
             <Pie 
               data={{
