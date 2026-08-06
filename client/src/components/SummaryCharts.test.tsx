@@ -15,6 +15,7 @@ describe('SummaryCharts', () => {
     const { container } = render(
       <SummaryCharts
         transactions={[{ id: '1', date: '2026-02-01', type: 'income', category: '급여', vendor: '회사', amount: 100, source: 'manual' }]}
+        trendTransactions={[{ id: '1', date: '2026-02-01', type: 'income', category: '급여', vendor: '회사', amount: 100, source: 'manual' }]}
         categories={[{ id: 'category-1', name: '급여', groupName: '급여' }]}
         period="month"
         onHighlight={vi.fn()}

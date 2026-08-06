@@ -9,12 +9,13 @@ ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, L
 
 interface SummaryChartsProps {
   transactions: Transaction[];
+  trendTransactions: Transaction[];
   categories: CategoryItem[];
   period: 'all' | 'month' | 'year';
   onHighlight: (filter: { type: 'income' | 'expense', group: string } | null) => void;
 }
 
-const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories, period, onHighlight }) => {
+const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransactions, categories, period, onHighlight }) => {
   const [incomeView] = useState<'pie' | 'bar'>('bar');
   const [expenseView] = useState<'pie' | 'bar'>('bar');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
@@ -168,9 +169,9 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
     const months = Array.from({ length: 12 }, (_, index) => {
       const date = new Date(current.getFullYear(), current.getMonth() - 11 + index, 1);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      return { key, label: `${date.getFullYear()}년 ${date.getMonth() + 1}월` };
+      return { key, label: `${String(date.getFullYear()).slice(-2)}.${String(date.getMonth() + 1).padStart(2, '0')}` };
     });
-    const values = months.map(({ key }) => transactions
+    const values = months.map(({ key }) => trendTransactions
       .filter((transaction) => transaction.type === type && transaction.date.startsWith(key) && getGroupName(transaction.category, categories) === group)
       .reduce((sum, transaction) => sum + transaction.amount, 0));
     const color = type === 'income' ? '#4ade80' : '#f87171';
@@ -184,18 +185,19 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, categories,
   const getMonthlyTrendOptions = () => ({
     maintainAspectRatio: false,
     indexAxis: 'y' as const,
-    layout: { padding: { right: 102 } },
+    layout: { padding: { right: 10, left: 2 } },
     scales: {
-      x: { beginAtZero: true, grid: { color: '#eef2f7' }, ticks: { font: { size: 11 }, callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억` } },
-      y: { grid: { display: false }, ticks: { font: { size: 12, weight: 'bold' as const } } },
+      x: { beginAtZero: true, grid: { color: '#eef2f7' }, ticks: { font: { size: 9 }, callback: (value: number | string) => `${(Number(value) / 100000000).toFixed(1)}억` } },
+      y: { grid: { display: false }, ticks: { font: { size: 10, weight: 'bold' as const } } },
     },
     plugins: {
       legend: { display: false },
       datalabels: {
-        anchor: 'end' as const,
-        align: 'end' as const,
-        color: '#334155',
-        font: { size: 11, weight: 'bold' as const },
+        anchor: 'center' as const,
+        align: 'center' as const,
+        color: '#fff',
+        font: { size: 8, weight: 'bold' as const },
+        display: (context: any) => Number(context.dataset.data[context.dataIndex]) > 0,
         formatter: (value: number) => `${value.toLocaleString()}원`,
       },
     },

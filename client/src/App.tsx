@@ -399,6 +399,12 @@ function App() {
     return true;
   });
 
+  const allVerifiedForMember = transactions.filter(t => {
+    const isVerified = t.isVerified !== false;
+    const matchesMember = memberFilter === 'all' || t.member === memberFilter;
+    return isVerified && matchesMember;
+  });
+
   const allVerifiedForPeriod = filteredByPeriod.filter(t => {
     const isVerified = t.isVerified !== false;
     const matchesMember = memberFilter === 'all' || t.member === memberFilter;
@@ -532,7 +538,13 @@ function App() {
           />
           <SuggestionNotification onRuleApproved={fetchData} />
           <ErrorBoundary title="차트를 불러오지 못했습니다.">
-            <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={handleChartHighlight} />
+            <SummaryCharts
+              transactions={allVerifiedForPeriod}
+              trendTransactions={allVerifiedForMember}
+              categories={categories}
+              period={period}
+              onHighlight={handleChartHighlight}
+            />
           </ErrorBoundary>
           
           {userRole === 'admin' && isTransactionFormOpen && (
