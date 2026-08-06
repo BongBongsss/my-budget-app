@@ -9,12 +9,13 @@ import SummaryCharts from './components/SummaryCharts';
 import TransactionList from './components/TransactionList';
 import SettingsModal from './components/SettingsModal';
 import AssetManager from './components/AssetManager';
+import EntryModal from './components/EntryModal';
 import AuditLogView from './components/AuditLogView';
 import NoticeCenter from './components/NoticeCenter';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -36,6 +37,8 @@ function App() {
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
+  const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'logs'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -273,6 +276,9 @@ function App() {
     if (filter) setActiveTab('all');
   };
 
+  const closeTransactionForm = () => setIsTransactionFormOpen(false);
+  const closeAssetForm = () => setIsAssetFormOpen(false);
+
   const filteredByPeriod = transactions.filter(t => {
     if (period === 'all') return true;
     if (period === 'month') return t.date.startsWith(`${year}-${String(month).padStart(2, '0')}`);
@@ -372,6 +378,12 @@ function App() {
 
       {currentView === 'budget' ? (
         <div className="view-budget animate-fadeIn">
+          <div className="view-action-bar">
+            <h2>가계부 관리</h2>
+            {userRole === 'admin' && <button type="button" className="btn btn-primary desktop-entry-button" onClick={() => setIsTransactionFormOpen(true)}>
+              <Plus size={18} /> 거래 입력
+            </button>}
+          </div>
           <Summary 
             transactions={allVerifiedForPeriod} 
             period={period} setPeriod={setPeriod} 
@@ -384,7 +396,11 @@ function App() {
             <SummaryCharts transactions={allVerifiedForPeriod} categories={categories} period={period} onHighlight={handleChartHighlight} />
           </ErrorBoundary>
           
-          {userRole === 'admin' && <TransactionForm onSuccess={fetchData} categories={categories} />}
+          {userRole === 'admin' && isTransactionFormOpen && (
+            <EntryModal title="거래 입력" onClose={closeTransactionForm}>
+              <TransactionForm onSuccess={() => { closeTransactionForm(); fetchData(); }} onCancel={closeTransactionForm} categories={categories} compact />
+            </EntryModal>
+          )}
           
           <div className="tabs transaction-tabs" style={{ marginBottom: 0, display: 'flex', alignItems: 'center' }}>
             {/* Force cache refresh: v2 */}
@@ -509,14 +525,33 @@ function App() {
         </div>
       ) : currentView === 'assets' ? (
         <div className="view-assets animate-fadeIn">
+          <div className="view-action-bar">
+            <h2>자산 관리</h2>
+            {userRole === 'admin' && <button type="button" className="btn btn-primary desktop-entry-button" onClick={() => setIsAssetFormOpen(true)}>
+              <Plus size={18} /> 자산 등록
+            </button>}
+          </div>
           <ErrorBoundary title="자산 관리를 불러오지 못했습니다.">
-            <AssetManager userRole={userRole} />
+            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} />
           </ErrorBoundary>
         </div>
       ) : (
           <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
             <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
           </ErrorBoundary>
+      )}
+
+      {userRole === 'admin' && currentView !== 'logs' && (
+        <button
+          type="button"
+          className="mobile-entry-fab"
+          onClick={() => currentView === 'budget' ? setIsTransactionFormOpen(true) : setIsAssetFormOpen(true)}
+          aria-label={currentView === 'budget' ? '거래 입력' : '자산 등록'}
+          title={currentView === 'budget' ? '거래 입력' : '자산 등록'}
+        >
+          <Plus size={24} />
+          <span>{currentView === 'budget' ? '거래 입력' : '자산 등록'}</span>
+        </button>
       )}
 
       {importSummary && (

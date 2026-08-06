@@ -4,14 +4,17 @@ import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAss
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title, PointElement, LineElement } from 'chart.js';
 import { Pie, Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
+import EntryModal from './EntryModal';
 
 ChartJS.register(ArcElement, Tooltip, Legend, ChartDataLabels, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title);
 
 interface AssetManagerProps {
   userRole?: 'admin' | 'viewer';
+  isAddOpen?: boolean;
+  onCloseAdd?: () => void;
 }
 
-const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
+const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -85,6 +88,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
       await addAsset(newAsset);
       setNewAsset({ name: '', type: 'bank', balance: 0, memo: '' });
       await fetchData();
+      onCloseAdd?.();
     } catch (err: any) {
       console.error('Failed to add asset:', err);
       alert(`자산 추가 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
@@ -274,7 +278,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
         </div>
       </div>
 
-      <div className="card-form shadow-md mb-8">
+      {isAdmin && isAddOpen && <EntryModal title="자산 등록" onClose={onCloseAdd || (() => undefined)}><div className="card-form entry-asset-form shadow-md mb-8">
           <div className="flex justify-between items-center mb-6">
             <h3 className="text-lg font-bold flex items-center gap-2">자산 추가</h3>
             <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
@@ -303,7 +307,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer' }) => {
               <input type="text" placeholder="기타 정보" className="w-full p-1.5 border rounded text-sm" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
             </div>
           </div>
-        </div>
+        </div></EntryModal>}
 
       <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">내 자산 목록</h3>
