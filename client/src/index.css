@@ -84,7 +84,7 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 .desktop-comparison-bar-content { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 1rem; color: #0f172a; font-size: 0.85rem; font-weight: 700; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
 .desktop-comparison-bar-content span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .desktop-comparison-bar-content span:last-child { flex: 0 0 auto; color: #1e293b; font-size: 0.76rem; }
-.summary-chart-area .mobile-comparison-bar-content { display: none; }
+.summary-chart-area .mobile-comparison-list:not(.mobile-trend-list) .mobile-comparison-bar-content { display: none; }
 .summary-chart-area .mobile-comparison-list.is-expanded,
 .mobile-comparison-chart-card .mobile-comparison-list.is-expanded { max-height: 420px; overflow-y: auto; padding-right: 0.55rem; }
 @media (min-width: 769px) {
