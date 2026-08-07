@@ -26,6 +26,17 @@ describe('importService', () => {
     }));
   });
 
+  it('leaves a missing category unassigned instead of defaulting to a category name', () => {
+    const csv = [
+      'date,vendor,amount',
+      '2026-08-06,Uncategorized vendor,1000',
+    ].join('\n');
+
+    const [result] = parseCSVForImport(Buffer.from(csv, 'utf-8'));
+
+    expect(result.transaction.category).toBe('');
+  });
+
   it('maps XLSX rows from the safe XLSX parser into import transactions', async () => {
     readXlsxFileMock.mockResolvedValueOnce([{
       sheet: 'Transactions',

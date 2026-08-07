@@ -154,7 +154,7 @@ export const stageImportRows = async (rows: ParsedImportRow[], filename?: string
       date: t.date || new Date().toISOString().split('T')[0],
       time: (t.time || '').trim(),
       type: (t.type || 'expense').trim(),
-      category: t.category || categoryMap[t.vendor] || '기타',
+      category: t.category || categoryMap[t.vendor] || '미분류',
       subcategory: (t.subcategory || '').trim(),
       vendor: (t.vendor || 'Unknown').trim(),
       amount: Math.abs(t.amount || 0),

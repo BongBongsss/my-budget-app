@@ -38,6 +38,8 @@ interface TransactionListProps {
 
 type CellFilterType = 'date' | 'time' | 'member' | 'type' | 'group' | 'category' | 'subcategory' | 'vendor' | 'amount' | 'source' | 'memo';
 
+const UNASSIGNED_CATEGORY = '미분류';
+
 const TransactionList: React.FC<TransactionListProps> = ({ 
   transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdate, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
@@ -106,6 +108,20 @@ const TransactionList: React.FC<TransactionListProps> = ({
     subcategories: Array.from(new Set(transactions.map(t => t.subcategory || '').filter(Boolean))).sort(),
     sources: Array.from(new Set(transactions.map(t => t.source || '').filter(Boolean))).sort(),
   };
+
+  const renderCategoryOptions = (category?: string) => (
+    <>
+      {!category && <option value="" disabled>미분류 (선택 필요)</option>}
+      {category && !categories.some((item) => item.name === category) && (
+        <option value={category}>
+          {category === UNASSIGNED_CATEGORY ? '미분류 (선택 필요)' : category}
+        </option>
+      )}
+      {categories.map((categoryItem) => (
+        <option key={categoryItem.id} value={categoryItem.name}>{categoryItem.name}</option>
+      ))}
+    </>
+  );
 
   const handleBulkUpdate = async () => {
     if (!isAdmin) return;
@@ -565,7 +581,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><select value={editValues.member || '미지정'} onChange={e => setEditValues({...editValues, member: e.target.value})} style={{ width: '100%' }}>{MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}</select></td>
                   <td><select value={editValues.type || 'expense'} onChange={e => setEditValues({...editValues, type: e.target.value as any})} style={{ width: '100%' }}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></td>
                   <td>{getGroupName(editValues.category || '', categories)}</td>
-                  <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></td>
+                  <td><select value={editValues.category || ''} onChange={e => setEditValues({...editValues, category: e.target.value})} style={{ width: '100%' }}>{renderCategoryOptions(editValues.category)}</select></td>
                   <td><input type="text" value={editValues.subcategory || ''} onChange={e => setEditValues({...editValues, subcategory: e.target.value})} style={{ width: '100%' }} /></td>
                   <td><input type="text" value={editValues.vendor || ''} onChange={e => setEditValues({...editValues, vendor: e.target.value})} style={{ width: '100%' }} /></td>
                   <td><input type="number" value={editValues.amount || 0} onChange={e => setEditValues({...editValues, amount: parseFloat(e.target.value)})} style={{ width: '100%', backgroundColor: '#f3f4f6', cursor: 'not-allowed' }} disabled /></td>
@@ -678,7 +694,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     <label>시간<input type="time" value={editValues.time || ''} disabled /></label>
                     <label>구성원<select value={editValues.member || '미지정'} onChange={e => setEditValues({ ...editValues, member: e.target.value })}>{MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
                     <label>유형<select value={editValues.type || 'expense'} onChange={e => setEditValues({ ...editValues, type: e.target.value as Transaction['type'] })}><option value="expense">지출</option><option value="income">수입</option><option value="exclude">미반영</option></select></label>
-                    <label>대분류<select value={editValues.category || ''} onChange={e => setEditValues({ ...editValues, category: e.target.value })}>{categories.map(cat => <option key={cat.id} value={cat.name}>{cat.name}</option>)}</select></label>
+                    <label>대분류<select value={editValues.category || ''} onChange={e => setEditValues({ ...editValues, category: e.target.value })}>{renderCategoryOptions(editValues.category)}</select></label>
                     <label>소분류<input value={editValues.subcategory || ''} onChange={e => setEditValues({ ...editValues, subcategory: e.target.value })} /></label>
                     <label className="mobile-edit-wide">내용<input value={editValues.vendor || ''} onChange={e => setEditValues({ ...editValues, vendor: e.target.value })} /></label>
                     <label>금액<input type="number" value={editValues.amount || 0} disabled /></label>

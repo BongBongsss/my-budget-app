@@ -132,7 +132,7 @@ const normalizeData = (row: Record<string, any>): ParsedTransaction => {
     date: normalizeDate(dateRaw),
     time,
     type,
-    category: String(pick(row, K.category, K.categoryAlt, 'category', 'Category') || K.other),
+    category: String(pick(row, K.category, K.categoryAlt, 'category', 'Category') || '').trim(),
     subcategory: String(pick(row, K.subcategory, 'subcategory', 'Subcategory') || ''),
     vendor: String(pick(row, K.content, K.merchant, K.name, 'vendor', 'Vendor') || 'Unknown').trim(),
     amount: Math.abs(amount),
