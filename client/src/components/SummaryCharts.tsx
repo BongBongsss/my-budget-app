@@ -387,6 +387,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               <span className="mobile-comparison-bar-name">{group}{isExcluded ? ' · 통계 제외됨' : ''}</span>
               <span className="mobile-comparison-bar-value">{value.toLocaleString()}원 · {percentage.toFixed(1)}%</span>
             </span>
+            <span className="desktop-comparison-bar-content">
+              <span>{group}{isExcluded ? ' · 통계 제외됨' : ''} ({percentage.toFixed(1)}%)</span>
+              <span>{value.toLocaleString()}원</span>
+            </span>
           </button>
         );
       })}
@@ -405,6 +409,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
           <span className="mobile-comparison-bar-content">
             <span className="mobile-comparison-bar-name">{isExpanded ? '상위 9개만 보기' : `그 외 ${remainingGroups.length}개`}</span>
             <span className="mobile-comparison-bar-value">{remainingAmount.toLocaleString()}원 · {remainingPercentage.toFixed(1)}%</span>
+          </span>
+          <span className="desktop-comparison-bar-content">
+            <span>{isExpanded ? '상위 9개만 보기' : `그 외 ${remainingGroups.length}개`} ({remainingPercentage.toFixed(1)}%)</span>
+            <span>{remainingAmount.toLocaleString()}원</span>
           </span>
         </button>
       )}
