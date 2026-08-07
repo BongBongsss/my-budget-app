@@ -497,7 +497,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     <strong>{asset.balance.toLocaleString()}원</strong>
                   </div>
                   <div className="mobile-asset-name">{asset.name}</div>
-                  <div className="mobile-asset-meta">구성원: {asset.member || '공동'}</div>
+                  <div className="mobile-asset-meta">명의: {asset.member || '공동'}</div>
                   {asset.memo && <div className="mobile-asset-note">{asset.memo}</div>}
                   <div className="mobile-asset-meta">수정: {asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</div>
                   {isAdmin && (
