@@ -593,7 +593,7 @@ function App() {
             )}
 
             {(['new', 'duplicate', 'invalid'].includes(activeTab)) && userRole === 'admin' && filteredTransactions.length > 0 && (
-              <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="bulk-transaction-actions" style={{ marginLeft: 'auto', display: 'flex', gap: '8px', alignItems: 'center' }}>
                 {activeTab !== 'invalid' && (
                   <>
                     <button
