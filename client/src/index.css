@@ -85,7 +85,7 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 .mobile-comparison-chart-card .mobile-comparison-list.is-expanded { max-height: 420px; overflow-y: auto; padding-right: 0.55rem; }
 @media (min-width: 769px) {
   .summary-chart-card:has(.mobile-comparison-list.is-expanded) .summary-chart-area { display: flex; flex: 1 1 auto !important; min-height: 0; }
-  .summary-chart-card:has(.mobile-comparison-list.is-expanded) .mobile-comparison-list.is-expanded { flex: 1 1 auto; max-height: none; }
+  .summary-chart-card:has(.mobile-comparison-list.is-expanded) .mobile-comparison-list.is-expanded { flex: 1 1 auto; min-height: 0; max-height: none; }
 }
 .chart-settings-button { display: inline-flex; align-items: center; justify-content: center; margin-left: auto; padding: 3px; border: 0; border-radius: 5px; background: transparent; color: #64748b; cursor: pointer; }
 .chart-statistics-settings { position: absolute; z-index: 20; top: 30px; right: 0; display: grid; gap: 7px; width: 220px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; box-shadow: 0 10px 24px rgb(15 23 42 / 0.18); font-size: 0.78rem; }
