@@ -31,6 +31,7 @@ type ImportSummary = {
 };
 
 type UndoAction = { label: string; auditLogIds: string[] };
+type StatisticsExclusions = { income: string[]; expense: string[] };
 type FloatingButtonPosition = { left: number; top: number };
 type FloatingButtonDrag = {
   pointerId: number;
@@ -69,6 +70,10 @@ function App() {
     }
   });
   const [isEntryButtonDragging, setIsEntryButtonDragging] = useState(false);
+  const [statisticsExclusions, setStatisticsExclusions] = useState<StatisticsExclusions>(() => {
+    try { return JSON.parse(window.localStorage.getItem('statistics-exclusions') || '') || { income: [], expense: [] }; }
+    catch { return { income: [], expense: [] }; }
+  });
 
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
@@ -415,6 +420,8 @@ function App() {
     const matchesMember = memberFilter === 'all' || t.member === memberFilter;
     return t.isVerified === false && matchesMember;
   });
+
+  const statisticsTransactionsForPeriod = allVerifiedForPeriod.filter((transaction) => !statisticsExclusions[transaction.type as 'income' | 'expense']?.includes(getGroupName(transaction.category, categories)));
   const newCount = unverifiedTransactions.filter(t => t.importStatus === 'new' || (!t.importStatus && !t.isDuplicate)).length;
   const duplicateCount = unverifiedTransactions.filter(t => t.importStatus === 'duplicate' || (!t.importStatus && t.isDuplicate)).length;
   const invalidCount = unverifiedTransactions.filter(t => t.importStatus === 'invalid' || t.isInvalid).length;
@@ -530,7 +537,7 @@ function App() {
             </button>}
           </div>
           <Summary 
-            transactions={allVerifiedForPeriod} 
+            transactions={statisticsTransactionsForPeriod}
             period={period} setPeriod={setPeriod} 
             year={year} setYear={setYear} 
             month={month} setMonth={setMonth} 
@@ -544,6 +551,8 @@ function App() {
               categories={categories}
               period={period}
               onHighlight={handleChartHighlight}
+              excludedGroups={statisticsExclusions}
+              onExcludedGroupsChange={setStatisticsExclusions}
             />
           </ErrorBoundary>
           
