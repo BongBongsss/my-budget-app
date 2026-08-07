@@ -641,7 +641,7 @@ function App() {
                       }
                     }}
                   >
-                    모두 승인하기
+                    모두 승인
                   </button>
                 )}
               </div>
