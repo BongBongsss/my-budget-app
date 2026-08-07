@@ -5,6 +5,7 @@ import { Pie, Bar } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import { getGroupName } from '../utils/categoryUtils';
 import { Settings } from 'lucide-react';
+import { saveChartStatisticsSettings } from '../api';
 
 ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LogarithmicScale, LinearScale, PointElement, BarElement, Title, ChartDataLabels);
 
@@ -353,7 +354,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     const remainingPercentage = processed.totalAmount ? (remainingAmount / processed.totalAmount) * 100 : 0;
 
     return (
-    <div className="mobile-comparison-list">
+    <div className={`mobile-comparison-list ${isExpanded ? 'is-expanded' : ''}`}>
       {visibleGroups.map((group: string) => {
         const value = processed.categoryData[group];
         const isExcluded = excludedGroups[type].includes(group);
@@ -418,7 +419,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
         const included = !excludedGroups[type].includes(group);
         return <label key={group}><input type="checkbox" checked={included} onChange={() => onExcludedGroupsChange((current) => ({ ...current, [type]: included ? current[type].concat(group) : current[type].filter((item) => item !== group) }))} /> {group}</label>;
       })}
-      <div><button type="button" onClick={() => onExcludedGroupsChange((current) => ({ ...current, [type]: [] }))}>전체 선택</button><button type="button" onClick={() => onExcludedGroupsChange((current) => ({ ...current, [type]: groups }))}>전체 해제</button><button type="button" onClick={() => { try { onExcludedGroupsChange(JSON.parse(window.localStorage.getItem('statistics-exclusions') || '')); } catch { /* no saved default */ } }}>기본값 복원</button><button type="button" onClick={() => { window.localStorage.setItem('statistics-exclusions', JSON.stringify(excludedGroups)); setSettingsType(null); }}>현재 조합을 기본값으로 저장</button></div>
+      <div><button type="button" onClick={() => onExcludedGroupsChange((current) => ({ ...current, [type]: [] }))}>전체 선택</button><button type="button" onClick={() => onExcludedGroupsChange((current) => ({ ...current, [type]: groups }))}>전체 해제</button><button type="button" onClick={() => { try { onExcludedGroupsChange(JSON.parse(window.localStorage.getItem('statistics-exclusions') || '')); } catch { /* no saved default */ } }}>기본값 복원</button><button type="button" onClick={async () => { await saveChartStatisticsSettings(excludedGroups); window.localStorage.setItem('statistics-exclusions', JSON.stringify(excludedGroups)); setSettingsType(null); }}>현재 조합을 기본값으로 저장</button></div>
     </div>
   );
 

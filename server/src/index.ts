@@ -15,6 +15,7 @@ import suggestionRoutes from './routes/suggestionRoutes';
 import ignoredRuleRoutes from './routes/ignoredRuleRoutes';
 import exclusionRuleRoutes from './routes/exclusionRuleRoutes';
 import auditLogRoutes from './routes/auditLogRoutes';
+import chartSettingsRoutes from './routes/chartSettingsRoutes';
 import reviewRequestRoutes from './routes/reviewRequestRoutes';
 import noticeRoutes from './routes/noticeRoutes';
 import cron from 'node-cron';
@@ -213,6 +214,7 @@ app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/ignored-rules', ignoredRuleRoutes);
 app.use('/api/exclusion-rules', exclusionRuleRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/chart-statistics-settings', chartSettingsRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Budget Automation API is running' });

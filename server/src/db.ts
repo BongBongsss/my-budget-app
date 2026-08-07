@@ -107,6 +107,8 @@ export const initDb = async () => {
     throw err;
   }
 
+  await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ChartStatisticsSettings" ("id" text PRIMARY KEY, "excludedGroups" jsonb NOT NULL DEFAULT '{"income":[],"expense":[]}', "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);`);
+
   // Import staging table check/creation and legacy unverified transaction migration
   try {
     await prisma.$executeRawUnsafe(`

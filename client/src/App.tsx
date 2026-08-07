@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
+import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import ErrorBoundary from './components/ErrorBoundary';
 import Summary from './components/Summary';
@@ -74,6 +74,7 @@ function App() {
     try { return JSON.parse(window.localStorage.getItem('statistics-exclusions') || '') || { income: [], expense: [] }; }
     catch { return { income: [], expense: [] }; }
   });
+  useEffect(() => { getChartStatisticsSettings().then((response) => setStatisticsExclusions(response.data)).catch(() => undefined); }, []);
 
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);

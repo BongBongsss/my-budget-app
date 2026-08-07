@@ -256,6 +256,8 @@ export const autoCategorizeVendor = (vendor: string) => instance.get<{ category:
 export const updateCategoryBatchGroup = (categoryIds: string[], groupName: string) => instance.post('/categories/batch-group', { categoryIds, groupName });
 export const addCategory = (cat: Partial<CategoryItem>) => instance.post<CategoryItem>('/categories', cat);
 export const deleteCategory = (id: string) => instance.delete('/categories', { data: { id } });
+export const getChartStatisticsSettings = () => instance.get<{ income: string[]; expense: string[] }>('/chart-statistics-settings');
+export const saveChartStatisticsSettings = (settings: { income: string[]; expense: string[] }) => instance.put('/chart-statistics-settings', settings);
 
 // Recurring
 export const getRecurring = () => instance.get<RecurringTransaction[]>('/recurring');
