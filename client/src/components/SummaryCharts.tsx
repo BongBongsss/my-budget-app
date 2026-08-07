@@ -427,18 +427,18 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       <div className="mobile-comparison-chart-grid" style={{ marginBottom: '32px' }}>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.income ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="수입 구성">
           <div className="mobile-comparison-chart-header income">
+            <span className="mobile-comparison-chart-dot income" />{trendGroups.income || '수입 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'income' ? null : 'income'); }} aria-label="수입 통계 설정"><Settings size={18} /></button>
             {renderSettings('income', incomeData.activeGroups)}
-            <span className="mobile-comparison-chart-dot income" />{trendGroups.income || '수입 구성'}
             {trendGroups.income && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, income: null })); }}>← 구성비</button>}
           </div>
           {trendGroups.income ? renderMobileTrendList('income', trendGroups.income) : renderMobileBarList('income', incomeData, isIncomeExpanded, () => setIsIncomeExpanded((value) => !value))}
         </section>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.expense ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="지출 구성">
           <div className="mobile-comparison-chart-header expense">
+            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense || '지출 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'expense' ? null : 'expense'); }} aria-label="지출 통계 설정"><Settings size={18} /></button>
             {renderSettings('expense', expenseData.activeGroups)}
-            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense || '지출 구성'}
             {trendGroups.expense && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, expense: null })); }}>← 구성비</button>}
           </div>
           {trendGroups.expense ? renderMobileTrendList('expense', trendGroups.expense) : renderMobileBarList('expense', expenseData, isExpenseExpanded, () => setIsExpenseExpanded((value) => !value))}
