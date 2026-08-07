@@ -113,6 +113,7 @@ model Asset {
   name      String   @unique
   type      String   // 'cash', 'bank', 'stock', 'realestate', 'liability', etc.
   balance   Float    @default(0)
+  member    String   @default("공동")
   isDeleted Boolean  @default(false)
   memo      String?
   createdAt DateTime @default(now())

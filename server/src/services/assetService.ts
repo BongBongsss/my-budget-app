@@ -7,6 +7,7 @@ const pickAssetInput = (data: any) => {
   if (data.name !== undefined) input.name = data.name;
   if (data.type !== undefined) input.type = data.type;
   if (data.balance !== undefined) input.balance = data.balance;
+  if (data.member !== undefined) input.member = data.member;
   if (data.memo !== undefined) input.memo = data.memo;
   return input;
 };

@@ -122,6 +122,7 @@ export interface Asset {
   name: string;
   type: 'cash' | 'bank' | 'stock' | 'realestate' | 'pension' | 'insurance' | 'liability' | 'other';
   balance: number;
+  member: '효' | '굥' | '봉' | '공동';
   memo?: string;
   createdAt?: string;
   updatedAt?: string;

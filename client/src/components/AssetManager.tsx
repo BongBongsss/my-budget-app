@@ -14,6 +14,8 @@ interface AssetManagerProps {
   onCloseAdd?: () => void;
 }
 
+const ASSET_MEMBER_OPTIONS: Asset['member'][] = ['효', '굥', '봉', '공동'];
+
 const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
@@ -23,7 +25,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   const originalAssets = useRef<Asset[]>([]);
   const [editForm, setEditForm] = useState<Partial<Asset>>({});
   const [newAsset, setNewAsset] = useState<Partial<Asset>>({
-    name: '', type: 'bank', balance: 0, memo: ''
+    name: '', type: 'bank', balance: 0, member: '공동', memo: ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [mobileChartView, setMobileChartView] = useState<'composition' | 'trend'>('composition');
@@ -98,7 +100,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     setIsSubmitting(true);
     try {
       await addAsset(newAsset);
-      setNewAsset({ name: '', type: 'bank', balance: 0, memo: '' });
+      setNewAsset({ name: '', type: 'bank', balance: 0, member: '공동', memo: '' });
       await fetchData();
       onCloseAdd?.();
     } catch (err: any) {
@@ -346,6 +348,12 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                 </div>
             </div>
             <div className="form-group">
+              <label className="text-xs font-bold text-gray-500 mb-0.5 block">구성원</label>
+              <select className="w-full p-1.5 border rounded text-sm" value={newAsset.member || '공동'} onChange={e => setNewAsset({ ...newAsset, member: e.target.value as Asset['member'] })}>
+                {ASSET_MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}
+              </select>
+            </div>
+            <div className="form-group">
               <label className="text-xs font-bold text-gray-500 mb-0.5 block">메모</label>
               <input type="text" placeholder="기타 정보" className="w-full p-1.5 border rounded text-sm" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
             </div>
@@ -360,6 +368,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
               <tr className="bg-gray-50">
                 <th className="p-3 text-left border-b">자산명</th>
                 <th className="p-3 text-left border-b cursor-pointer hover:bg-gray-200" onClick={handleSort}>유형 {sortOrder === 'asc' ? '▲' : sortOrder === 'desc' ? '▼' : '↕'}</th>
+                <th className="p-3 text-left border-b">구성원</th>
                 <th className="p-3 border-b cursor-pointer hover:bg-gray-200" style={{ textAlign: 'center' }} onClick={handleSortBalance}>잔액 {balanceSortOrder === 'asc' ? '▲' : balanceSortOrder === 'desc' ? '▼' : '↕'}</th>
                 <th className="p-3 text-left border-b">등록일</th>
                 <th className="p-3 text-left border-b">수정일</th>
@@ -368,7 +377,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                 </tr>
                 </thead>
                 <tbody>
-                {visibleAssets.length === 0 ? <tr><td colSpan={7} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : visibleAssets.map(asset => (
+                {visibleAssets.length === 0 ? <tr><td colSpan={8} className="p-10 text-center text-gray-400">등록된 자산이 없습니다.</td></tr> : visibleAssets.map(asset => (
                   <tr key={asset.id} className="hover:bg-gray-50">
                     <td className="p-3 border-b font-medium">{editingId === asset.id ? <input className="w-full p-1 border rounded" value={editForm.name} onChange={e => setEditForm({...editForm, name: e.target.value})} /> : asset.name}</td>
                     <td className="p-3 border-b text-sm text-gray-600">
@@ -378,6 +387,15 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                         </select>
                       ) : (
                         (assetTypeMap[asset.type] || asset.type)
+                      )}
+                    </td>
+                    <td className="p-3 border-b text-sm text-gray-600">
+                      {editingId === asset.id ? (
+                        <select className="w-full p-1 border rounded" value={editForm.member || '공동'} onChange={e => setEditForm({ ...editForm, member: e.target.value as Asset['member'] })}>
+                          {ASSET_MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}
+                        </select>
+                      ) : (
+                        asset.member || '공동'
                       )}
                     </td>
                     <td className="p-3 border-b font-bold" style={{ textAlign: 'right' }}>
@@ -440,6 +458,11 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                         <option value="bank">저축/예금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
                       </select>
                     </label>
+                    <label>구성원
+                      <select value={editForm.member || '공동'} onChange={(event) => setEditForm({ ...editForm, member: event.target.value as Asset['member'] })}>
+                        {ASSET_MEMBER_OPTIONS.map((member) => <option key={member} value={member}>{member}</option>)}
+                      </select>
+                    </label>
                     <label>잔액<input type="number" value={editForm.balance ?? 0} onChange={(event) => setEditForm({ ...editForm, balance: parseFloat(event.target.value) || 0 })} /></label>
                     <label className="mobile-asset-edit-wide">메모<input value={editForm.memo || ''} onChange={(event) => setEditForm({ ...editForm, memo: event.target.value })} /></label>
                   </div>
@@ -455,6 +478,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     <strong>{asset.balance.toLocaleString()}원</strong>
                   </div>
                   <div className="mobile-asset-name">{asset.name}</div>
+                  <div className="mobile-asset-meta">구성원: {asset.member || '공동'}</div>
                   {asset.memo && <div className="mobile-asset-note">{asset.memo}</div>}
                   <div className="mobile-asset-meta">수정: {asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</div>
                   {isAdmin && (

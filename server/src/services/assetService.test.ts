@@ -80,6 +80,7 @@ describe('AssetService - History Calculation', () => {
       name: 'Old',
       type: 'liability',
       balance: 1,
+      member: '공동',
       memo: '',
       createdAt: new Date('2026-05-06T00:00:00.000Z'),
       updatedAt: new Date('2026-05-06T00:00:00.000Z'),
@@ -102,6 +103,7 @@ describe('AssetService - History Calculation', () => {
       name: 'New',
       type: 'liability',
       balance: 15000000,
+      member: '효',
       memo: 'memo',
       createdAt: '2026-05-06T00:00:00.000Z',
       updatedAt: '2026-05-06T00:00:00.000Z',
@@ -114,6 +116,7 @@ describe('AssetService - History Calculation', () => {
         name: 'New',
         type: 'liability',
         balance: 15000000,
+        member: '효',
         memo: 'memo',
       },
     });

@@ -60,7 +60,7 @@ const getOriginalDateTime = (log: AuditLog) => {
 };
 
 const transactionFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'memo', 'member'];
-const assetFields = ['name', 'type', 'balance', 'memo'];
+const assetFields = ['name', 'type', 'balance', 'member', 'memo'];
 
 const fieldLabels: Record<string, string> = {
   date: '날짜',
