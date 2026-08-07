@@ -50,6 +50,15 @@ const getTransactionSummary = (log: AuditLog) => {
   return `${vendor}${amount ? ` / ${amount}` : ''}${category}`;
 };
 
+const getOriginalDateTime = (log: AuditLog) => {
+  if (log.entityType === 'asset') return '';
+
+  const data = log.afterData || log.beforeData || {};
+  return [data.date, data.time]
+    .filter((value) => value !== null && value !== undefined && value !== '')
+    .join(' ');
+};
+
 const transactionFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'memo', 'member'];
 const assetFields = ['name', 'type', 'balance', 'memo'];
 
@@ -239,6 +248,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
             const canRestore = isAdmin && log.isRestorable;
             const changedFields = getChangedFields(log);
             const deletedDetails = getDeletedDetails(log);
+            const originalDateTime = getOriginalDateTime(log);
 
             const isExpanded = expandedLogIds.has(log.id);
 
@@ -265,6 +275,11 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
                 <td>{entityLabels[log.entityType] || log.entityType}</td>
                 <td>
                   <div style={{ fontWeight: 600 }}>{getTransactionSummary(log)}</div>
+                  {originalDateTime && (
+                    <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '3px' }}>
+                      원본 일시: {originalDateTime}
+                    </div>
+                  )}
                   {log.action === 'update' && (
                     <div style={{ color: '#64748b', fontSize: '0.8rem', marginTop: '3px' }}>
                       {changedFields.length > 0 ? changedFields.map((field) => (
