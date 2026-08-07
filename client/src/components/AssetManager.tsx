@@ -15,6 +15,7 @@ interface AssetManagerProps {
 }
 
 const ASSET_MEMBER_OPTIONS: Asset['member'][] = ['효', '굥', '봉', '공동'];
+type AssetMemberFilter = 'all' | Asset['member'];
 
 const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
@@ -31,6 +32,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   const [mobileChartView, setMobileChartView] = useState<'composition' | 'trend'>('composition');
   const [expandedMobileAssetIds, setExpandedMobileAssetIds] = useState<Set<string>>(new Set());
   const [selectedAssetType, setSelectedAssetType] = useState<string | null>(null);
+  const [selectedAssetMember, setSelectedAssetMember] = useState<AssetMemberFilter>('all');
 
   const toggleMobileAssetDetails = (id: string) => {
     setExpandedMobileAssetIds((previous) => {
@@ -39,6 +41,11 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       else next.add(id);
       return next;
     });
+  };
+
+  const handleMemberFilterChange = (member: AssetMemberFilter) => {
+    setSelectedAssetMember(member);
+    setSelectedAssetType(null);
   };
 
   const fetchData = async () => {
@@ -156,8 +163,11 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     }
   };
 
-  const totalAssets = assets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
-  const totalLiabilities = assets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
+  const memberFilteredAssets = selectedAssetMember === 'all'
+    ? assets
+    : assets.filter((asset) => (asset.member || '공동') === selectedAssetMember);
+  const totalAssets = memberFilteredAssets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
+  const totalLiabilities = memberFilteredAssets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
   const isAdmin = userRole === 'admin';
 
@@ -167,7 +177,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     liability: '부채', other: '기타'
   };
 
-  const groupedAssets = assets.reduce((acc, a) => {
+  const groupedAssets = memberFilteredAssets.reduce((acc, a) => {
     const typeName = assetTypeMap[a.type] || '기타';
     acc[typeName] = (acc[typeName] || 0) + a.balance;
     return acc;
@@ -179,8 +189,8 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     .sort(([, a], [, b]) => b - a);
 
   const visibleAssets = selectedAssetType
-    ? assets.filter((asset) => (assetTypeMap[asset.type] || asset.type) === selectedAssetType)
-    : assets;
+    ? memberFilteredAssets.filter((asset) => (assetTypeMap[asset.type] || asset.type) === selectedAssetType)
+    : memberFilteredAssets;
 
   const lineData = {
     labels: history.map(h => h.yearMonth),
@@ -272,6 +282,15 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                         }                    }} 
                 />
             </div>
+        </div>
+      </div>
+
+      <div className="period-member-filter asset-member-filter" aria-label="자산 구성원 필터">
+        <div className="member-filter">
+          <button type="button" className={`btn ${selectedAssetMember === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange('all')}>전체</button>
+          {ASSET_MEMBER_OPTIONS.map((member) => (
+            <button type="button" key={member} className={`btn ${selectedAssetMember === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange(member)}>{member}</button>
+          ))}
         </div>
       </div>
 
