@@ -203,6 +203,15 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
 
   return (
     <div className="animate-fadeIn max-w-7xl mx-auto">
+      <div className="period-member-filter asset-member-filter" aria-label="자산 구성원 필터">
+        <div className="member-filter">
+          <button type="button" className={`btn ${selectedAssetMember === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange('all')}>전체</button>
+          {ASSET_MEMBER_OPTIONS.map((member) => (
+            <button type="button" key={member} className={`btn ${selectedAssetMember === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange(member)}>{member}</button>
+          ))}
+        </div>
+      </div>
+
       <div className="grid grid-cols-3 gap-6 mb-8 asset-summary-cards">
         <div className="card-summary income shadow-md">
             <div className="icon"><Landmark size={24}/></div>
@@ -282,15 +291,6 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                         }                    }} 
                 />
             </div>
-        </div>
-      </div>
-
-      <div className="period-member-filter asset-member-filter" aria-label="자산 구성원 필터">
-        <div className="member-filter">
-          <button type="button" className={`btn ${selectedAssetMember === 'all' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange('all')}>전체</button>
-          {ASSET_MEMBER_OPTIONS.map((member) => (
-            <button type="button" key={member} className={`btn ${selectedAssetMember === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => handleMemberFilterChange(member)}>{member}</button>
-          ))}
         </div>
       </div>
 
