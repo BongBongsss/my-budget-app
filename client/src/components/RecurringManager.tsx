@@ -6,8 +6,9 @@ import {
   ignoreRecurringCandidate, updateRecurring,
 } from '../api';
 
-type MemberFilter = 'all' | '효' | '굥' | '봉' | '공동';
-const members: MemberFilter[] = ['all', '효', '굥', '봉', '공동'];
+type MemberFilter = 'all' | '효' | '굥' | '봉' | '공동' | '미지정';
+const desktopMembers: MemberFilter[] = ['all', '효', '굥', '미지정'];
+const mobileMembers: MemberFilter[] = ['all', '효', '굥', '봉', '공동'];
 const labelMember = (member: MemberFilter) => member === 'all' ? '전체' : member;
 const money = (amount: number) => `${Math.round(amount).toLocaleString()}원`;
 
@@ -42,7 +43,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const activeItems = filteredList.filter((item) => item.isActive !== false);
   const verifiedCount = activeItems.filter(matchesForMonth).length;
   const dueTotal = activeItems.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
-  const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === 'all' ? '공동' : memberFilter, isVariable: false, isActive: true, memo: '' });
+  const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === 'all' || memberFilter === '미지정' ? '공동' : memberFilter, isVariable: false, isActive: true, memo: '' });
   const addFromCandidate = (candidate: RecurringCandidate) => openEditor({ vendor: candidate.vendor, amount: candidate.averageAmount, category: candidate.category, type: candidate.type, day_of_month: candidate.dayOfMonth, member: candidate.member, isVariable: candidate.isVariable, isActive: true });
 
   const save = async () => {
@@ -69,9 +70,14 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
       {canManage && <button type="button" className="btn btn-primary desktop-entry-button" onClick={() => openEditor()}><Plus size={18} /> 정기거래 등록</button>}
     </div>
     <div className="summary-filter-bar recurring-filter-bar">
-      <div className="member-filter">{members.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
+      <div className="recurring-mobile-switch recurring-filter-switch">
+        <button className={`btn ${activeList === 'candidates' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveList('candidates')}>추천 후보</button>
+        <button className={`btn ${activeList === 'registered' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveList('registered')}>등록된 거래</button>
+      </div>
+      <div className="member-filter recurring-desktop-members">{desktopMembers.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
+      <div className="member-filter recurring-mobile-members">{desktopMembers.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
     </div>
-    <div className="summary-cards recurring-summary-cards">
+    <div className="grid grid-cols-3 gap-6 summary-cards recurring-summary-cards">
       <div className="card-summary expense"><div className="details"><span>이번 달 예정 지출</span><h2>{money(dueTotal)}</h2></div></div>
       <div className="card-summary income"><div className="details"><span>확인 완료</span><h2>{verifiedCount}건</h2></div></div>
       <div className="card-summary balance"><div className="details"><span>미확인 예정</span><h2>{Math.max(activeItems.length - verifiedCount, 0)}건</h2></div></div>
@@ -107,7 +113,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         <label>구분<select className="edit-input" value={editing.type || 'expense'} onChange={(event) => setEditing({ ...editing, type: event.target.value as 'income' | 'expense' })}><option value="expense">지출</option><option value="income">수입</option></select></label>
         <label>대분류<select className="edit-input" value={editing.category || ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}</select></label>
         <label>예정일<input className="edit-input" type="number" min="1" max="28" value={editing.day_of_month || 1} onChange={(event) => setEditing({ ...editing, day_of_month: Number(event.target.value) })} /></label>
-        <label>구성원<select className="edit-input" value={editing.member || '공동'} onChange={(event) => setEditing({ ...editing, member: event.target.value })}>{members.slice(1).map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
+        <label>구성원<select className="edit-input" value={editing.member || '공동'} onChange={(event) => setEditing({ ...editing, member: event.target.value })}>{['효', '굥', '봉', '공동'].map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
         <label className="recurring-variable"><input type="checkbox" checked={Boolean(editing.isVariable)} onChange={(event) => setEditing({ ...editing, isVariable: event.target.checked })} /> 변동 금액</label>
         <label className="recurring-memo">메모<input className="edit-input" value={editing.memo || ''} onChange={(event) => setEditing({ ...editing, memo: event.target.value })} /></label>
         <div className="form-actions"><button className="btn btn-secondary" onClick={() => setEditing(null)}>취소</button><button className="btn btn-primary" disabled={isSaving} onClick={() => void save()}>저장</button></div>
