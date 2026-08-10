@@ -24,8 +24,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: activeTab === 'group' ? '1350px' : '650px' }}>
+    <div className="modal-overlay settings-modal-overlay">
+      <div className="modal-content settings-modal-content" style={{ maxWidth: activeTab === 'group' ? '1350px' : '650px' }}>
         <div className="modal-header">
           <h3>설정</h3>
           <button onClick={onClose} className="btn-icon"><X size={20} /></button>
