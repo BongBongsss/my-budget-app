@@ -1124,6 +1124,19 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .entry-modal-header { padding: 0.85rem 1rem; }
   .entry-form { padding: 1rem; }
 
+  .asset-type-add {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 0.4rem;
+    padding: 0.6rem;
+  }
+  .asset-type-add > input { width: 100%; min-width: 0; }
+  .asset-type-add label { gap: 0.2rem; font-size: 0.78rem; }
+  .asset-type-add > .btn { padding: 0.5rem 0.55rem; }
+
+  .category-group-settings-heading h4 { margin: 0 0 0.25rem; }
+  .category-group-settings-heading p { margin: 0; }
+
   .summary-cards,
   .asset-summary-cards {
     grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
