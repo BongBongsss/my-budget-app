@@ -41,11 +41,11 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
           type="text" 
           value={newName} 
           onChange={(e) => setNewName(e.target.value)}
-          placeholder="Enter new category..."
+          placeholder="새 대분류 입력"
           className="edit-input"
         />
         <button type="submit" className="btn btn-primary">
-          <Plus size={18} className="mr-1" /> Add
+          <Plus size={18} className="mr-1" /> 추가
         </button>
       </form>
 
@@ -53,22 +53,24 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
         <table className="category-table">
           <thead style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1 }}>
             <tr>
-              <th style={{ textAlign: 'left' }}>Category Name</th>
-              <th style={{ width: '80px', textAlign: 'center' }}>Actions</th>
+              <th style={{ textAlign: 'left' }}>대분류명</th>
             </tr>
           </thead>
           <tbody>
             {categories.map(cat => (
               <tr key={cat.id}>
-                <td>{cat.name}</td>
-                <td style={{ textAlign: 'center' }}>
+                <td>
+                  <div className="category-name-cell">
+                    <span>{cat.name}</span>
                   <button 
                     onClick={() => cat.id && handleDelete(cat.id)}
                     className="btn-icon delete"
-                    title="Delete"
+                    title="삭제"
+                    aria-label={`${cat.name} 삭제`}
                   >
                     <Trash2 size={16} />
                   </button>
+                  </div>
                 </td>
               </tr>
             ))}

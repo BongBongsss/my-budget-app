@@ -42,7 +42,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
     <div className="flex flex-column gap-6">
       <div className="mb-6">
         <h4 className="flex items-center gap-2 mb-4" style={{ margin: '0 0 15px 0' }}>
-          <ShieldCheck size={20} /> Change Password
+          <ShieldCheck size={20} /> 비밀번호 변경
         </h4>
         <form onSubmit={handleSubmit} className="flex flex-column gap-3">
           <div className="form-group" style={{ marginBottom: '10px' }}>
@@ -65,7 +65,7 @@ const ChangePassword: React.FC<ChangePasswordProps> = ({ onClose }) => {
               required 
             />
           </div>
-          <button type="submit" className="btn btn-primary w-full">Update Password</button>
+          <button type="submit" className="btn btn-primary w-full">비밀번호 적용</button>
         </form>
       </div>
 

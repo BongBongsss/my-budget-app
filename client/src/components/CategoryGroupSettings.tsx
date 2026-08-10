@@ -120,7 +120,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
       <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
         <div>
             <h4 className="flex items-center gap-2 mb-1">
-            <Folder size={20} className="text-blue-500" /> Category Grouping
+            <Folder size={20} className="text-blue-500" /> 대분류 그룹 관리
             </h4>
             <p className="text-sm text-gray-600">
             대분류 태그를 드래그하여 옮기거나, 이름을 수정할 수 있습니다.

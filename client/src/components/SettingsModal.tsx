@@ -28,17 +28,17 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
     <div className="modal-overlay">
       <div className="modal-content" style={{ maxWidth: activeTab === 'group' ? '1350px' : '650px' }}>
         <div className="modal-header">
-          <h3>Settings</h3>
+          <h3>설정</h3>
           <button onClick={onClose} className="btn-icon"><X size={20} /></button>
         </div>
         <div className="tabs mb-4 flex border-b overflow-x-auto">
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'category' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('category')}>Categories</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'group' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('group')}>Grouping</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>Rule Manager</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'ignored' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('ignored')}>Ignored Rules</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'exclusion' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('exclusion')}>Exclusion Rules</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'category' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('category')}>대분류 관리</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'group' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('group')}>상위 그룹 관리</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>자동 분류 규칙</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'ignored' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('ignored')}>추천 제외 목록</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'exclusion' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('exclusion')}>가맹점 제외 규칙</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'assetType' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('assetType')}>자산 유형</button>
-          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>보안 · 데이터 정리</button>
         </div>
         {activeTab === 'category' && <CategorySettings categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'group' && <CategoryGroupSettings categories={categories} onRefresh={onRefresh} />}

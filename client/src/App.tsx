@@ -501,7 +501,7 @@ function App() {
         <h1 className="app-title">효굥봉 가계부</h1>
         <button
           type="button"
-          className="mobile-header-menu-toggle"
+          className="header-menu-toggle"
           onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
           aria-label={isMobileMenuOpen ? '메뉴 닫기' : '메뉴 열기'}
           aria-expanded={isMobileMenuOpen}
@@ -542,7 +542,7 @@ function App() {
               setIsMobileMenuOpen(false);
               fileInputRef.current?.click();
             }}>
-                <Upload size={16} /> Import
+                <Upload size={16} /> 가져오기
             </button>
           )}
           {userRole === 'admin' && (
@@ -550,7 +550,7 @@ function App() {
               setIsMobileMenuOpen(false);
               handleExportBackup();
             }}>
-                <Download size={16} /> Export
+                <Download size={16} /> 내보내기
             </button>
           )}
           <input type="file" ref={fileInputRef} onChange={handleFileImport} style={{ display: 'none' }} accept=".csv,.xlsx" />
@@ -561,7 +561,7 @@ function App() {
               setIsMobileMenuOpen(false);
               setIsSettingsModalOpen(true);
             }}>
-                <Settings size={16} /> Settings
+                <Settings size={16} /> 설정
             </button>
           )}
           
@@ -569,7 +569,7 @@ function App() {
             setIsMobileMenuOpen(false);
             handleLogout();
           }}>
-            LogOut
+            로그아웃
           </button>
         </div>
       </header>
