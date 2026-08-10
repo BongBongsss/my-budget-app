@@ -84,6 +84,16 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   color: #475569;
 }
 
+@media (min-width: 769px) {
+  .app-nav {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .header-menu-toggle { margin-left: auto; }
+}
+
 /* Desktop trend view uses the same compact, axis-free layout as mobile. */
 .summary-chart-area .mobile-comparison-list {
   display: grid;
@@ -616,6 +626,19 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 }
 
 .category-name-cell .btn-icon { flex: 0 0 auto; }
+
+.settings-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  border-bottom: 0 !important;
+}
+
+.settings-tabs button {
+  width: 100%;
+  margin-right: 0 !important;
+  justify-content: center;
+}
 
 .header-action-btn {
   min-height: 30px;

@@ -13,7 +13,6 @@ import paymentRoutes from './routes/paymentRoutes';
 import assetRoutes from './routes/assetRoutes';
 import suggestionRoutes from './routes/suggestionRoutes';
 import ignoredRuleRoutes from './routes/ignoredRuleRoutes';
-import exclusionRuleRoutes from './routes/exclusionRuleRoutes';
 import auditLogRoutes from './routes/auditLogRoutes';
 import chartSettingsRoutes from './routes/chartSettingsRoutes';
 import assetTypeRoutes from './routes/assetTypeRoutes';
@@ -214,7 +213,6 @@ app.use('/api/assets', assetRoutes);
 app.use('/api/asset-types', assetTypeRoutes);
 app.use('/api/suggestions', suggestionRoutes);
 app.use('/api/ignored-rules', ignoredRuleRoutes);
-app.use('/api/exclusion-rules', exclusionRuleRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
 app.use('/api/chart-statistics-settings', chartSettingsRoutes);
 

@@ -155,6 +155,7 @@ model DeferredRuleSuggestion {
   @@index([deferredUntil])
 }
 
+// Retained only to preserve existing inactive records; no application feature uses this model.
 model ExclusionRule {
   id      String @id @default(uuid())
   keyword String @unique
