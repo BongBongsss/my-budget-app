@@ -26,3 +26,14 @@ This document outlines the architectural standards for the frontend (React) appl
 - **Component Size:** Keep individual component files under 200 lines of code.
 - **Refactoring:** If a component grows beyond this limit, decompose it into smaller, manageable sub-components.
 - **Feature Focused:** A component should do one thing well (e.g., a `TransactionForm` should only handle transaction creation/editing).
+
+## 6. Responsive UI and Overlay Boundaries
+- **Breakpoint Scope:** Keep desktop-only and mobile-only layout rules explicitly scoped to their media query. Do not reuse a compact mobile control style on desktop unless it is an intentional shared design.
+- **Inline Controls:** In narrow layouts, allow text inputs to shrink (`min-width: 0`) while action buttons retain a non-wrapping minimum size. Inputs and buttons must not force each other outside their container.
+- **Overlays:** Render modal dialogs and notice popups outside containers that may use `display: none`, clipping, transforms, or scroll containment. Use a portal to the document body when the trigger belongs to a collapsible menu.
+- **Layering:** A dropdown or popup must have a documented stacking level above sticky action bars and floating entry controls that can overlap it.
+
+## Revision History
+
+- **2026-08-10**: Added responsive layout and overlay-boundary implementation rules.
+  - **Reason**: Prevent clipped controls, hidden popups reopening through menus, and sticky-control overlap regressions.

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { CategoryRule, getRules, deleteRule, updateRule, CategoryItem } from '../api';
+import { CategoryRule, getRules, deleteRule, updateRule, CategoryItem, getRuleReviewCandidates, RuleReviewCandidate } from '../api';
 import { Trash2, Edit2, Check, X } from 'lucide-react';
 
 interface RuleManagerProps {
@@ -11,6 +11,7 @@ const RuleManager: React.FC<RuleManagerProps> = ({ categories, onRefresh }) => {
   const [rules, setRules] = useState<CategoryRule[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<CategoryRule>({ keyword: '', assigned_category: '' });
+  const [reviewCandidates, setReviewCandidates] = useState<RuleReviewCandidate[]>([]);
 
   useEffect(() => {
     fetchRules();
@@ -18,8 +19,9 @@ const RuleManager: React.FC<RuleManagerProps> = ({ categories, onRefresh }) => {
 
   const fetchRules = async () => {
     try {
-      const res = await getRules();
+      const [res, reviewRes] = await Promise.all([getRules(), getRuleReviewCandidates()]);
       setRules(res.data);
+      setReviewCandidates(reviewRes.data);
     } catch (err) {
       console.error(err);
     }
@@ -46,6 +48,14 @@ const RuleManager: React.FC<RuleManagerProps> = ({ categories, onRefresh }) => {
 
   return (
     <div className="rule-manager" style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      {reviewCandidates.length > 0 && <section className="rule-review-list">
+        <h4>규칙 재검토</h4>
+        {reviewCandidates.map((candidate) => <div className="rule-review-card" key={candidate.id}>
+          <strong>{candidate.keyword}</strong>
+          <p>현재 {candidate.assignedCategory} · 최근 수동 수정 {candidate.totalOccurrences}건 중 {candidate.occurrenceCount}건이 {candidate.suggestedCategory} ({candidate.confidence}%)</p>
+          <button className="btn btn-primary" onClick={() => void updateRule(candidate.id, { keyword: candidate.keyword, assigned_category: candidate.suggestedCategory }).then(fetchRules).then(onRefresh)}>규칙 변경</button>
+        </div>)}
+      </section>}
       <table className="w-full border-collapse text-sm">
         <thead style={{ position: 'sticky', top: 0, background: '#f9fafb', zIndex: 10 }}>
           <tr className="border-b">

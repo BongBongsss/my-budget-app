@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { approveRuleCandidate, getRuleCandidates } from '../services/suggestionService';
+import { approveRuleCandidate, getRuleCandidates, getRuleReviewCandidates } from '../services/suggestionService';
 import { deferRuleSuggestion } from '../services/suggestionDeferralService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
@@ -20,6 +20,10 @@ router.post('/approve', asyncHandler(async (req: Request, res: Response) => {
   }
   const newRule = await approveRuleCandidate(vendor, category);
   res.json(newRule);
+}));
+
+router.get('/rule-reviews', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getRuleReviewCandidates());
 }));
 
 router.post('/defer', asyncHandler(async (req: Request, res: Response) => {

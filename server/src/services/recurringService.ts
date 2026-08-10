@@ -1,72 +1,99 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
-import { buildAuditLogData } from './auditLogService';
+import { normalizeRuleText } from './ruleMatching';
 
-export const getAllRecurringTransactions = async () => {
-  return await prisma.recurringTransaction.findMany();
+const DEFER_DAYS = 30;
+
+type RecurringInput = {
+  vendor: string;
+  amount: number;
+  category: string;
+  type?: 'income' | 'expense';
+  day_of_month: number;
+  member?: string;
+  isVariable?: boolean;
+  memo?: string;
 };
 
-export const addRecurringTransaction = async (data: any) => {
-  return await prisma.recurringTransaction.create({
-    data: {
-      id: randomUUID(),
-      vendor: data.vendor,
-      amount: data.amount,
-      category: data.category,
-      type: data.type || 'expense',
-      day_of_month: data.day_of_month,
-    },
+const getDay = (date: string) => Number(date.slice(-2));
+const getMonthKey = (date: string) => date.slice(0, 7);
+const sameScheduledDay = (days: number[]) => Math.max(...days) - Math.min(...days) <= 5;
+
+export const getAllRecurringTransactions = async () => prisma.recurringTransaction.findMany({ orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] });
+
+export const addRecurringTransaction = async (data: RecurringInput) => prisma.recurringTransaction.create({
+  data: {
+    id: randomUUID(), vendor: data.vendor.trim(), amount: Math.abs(data.amount), category: data.category,
+    type: data.type || 'expense', day_of_month: data.day_of_month, member: data.member || 'shared',
+    isVariable: Boolean(data.isVariable), memo: data.memo?.trim() || null,
+  },
+});
+
+export const updateRecurringTransaction = async (id: string, data: Partial<RecurringInput & { isActive: boolean }>) => prisma.recurringTransaction.update({
+  where: { id },
+  data: {
+    ...(data.vendor !== undefined ? { vendor: data.vendor.trim() } : {}),
+    ...(data.amount !== undefined ? { amount: Math.abs(data.amount) } : {}),
+    ...(data.category !== undefined ? { category: data.category } : {}),
+    ...(data.type !== undefined ? { type: data.type } : {}),
+    ...(data.day_of_month !== undefined ? { day_of_month: data.day_of_month } : {}),
+    ...(data.member !== undefined ? { member: data.member } : {}),
+    ...(data.isVariable !== undefined ? { isVariable: data.isVariable } : {}),
+    ...(data.isActive !== undefined ? { isActive: data.isActive } : {}),
+    ...(data.memo !== undefined ? { memo: data.memo?.trim() || null } : {}),
+  },
+});
+
+export const deleteRecurringTransaction = async (id: string) => prisma.recurringTransaction.delete({ where: { id } });
+
+export const getRecurringCandidates = async () => {
+  const [transactions, existing, ignored, deferred] = await Promise.all([
+    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: { in: ['income', 'expense'] }, source: { not: 'recurring' } }, select: { vendor: true, category: true, type: true, amount: true, date: true, member: true } }),
+    prisma.recurringTransaction.findMany({ select: { vendor: true } }),
+    prisma.ignoredRecurringSuggestion.findMany({ select: { vendorKey: true } }),
+    prisma.deferredRecurringSuggestion.findMany({ where: { deferredUntil: { gt: new Date() } }, select: { vendorKey: true } }),
+  ]);
+  const excluded = new Set([...existing.map((item) => normalizeRuleText(item.vendor)), ...ignored.map((item) => item.vendorKey), ...deferred.map((item) => item.vendorKey)]);
+  const groups = new Map<string, typeof transactions>();
+  transactions.forEach((transaction) => {
+    const key = `${normalizeRuleText(transaction.vendor)}|${transaction.type}|${transaction.member}`;
+    if (!normalizeRuleText(transaction.vendor)) return;
+    const list = groups.get(key) || [];
+    list.push(transaction);
+    groups.set(key, list);
   });
+  return [...groups.values()].flatMap((list) => {
+    const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
+    const vendorKey = normalizeRuleText(sorted[0].vendor);
+    if (excluded.has(vendorKey)) return [];
+    const months = new Set(sorted.map((item) => getMonthKey(item.date)));
+    const days = sorted.map((item) => getDay(item.date));
+    if (months.size < 3 || !sameScheduledDay(days)) return [];
+    const amount = sorted.reduce((sum, item) => sum + item.amount, 0) / sorted.length;
+    const maxDifference = Math.max(...sorted.map((item) => Math.abs(item.amount - amount)));
+    const categoryCounts = new Map<string, number>();
+    sorted.forEach((item) => categoryCounts.set(item.category, (categoryCounts.get(item.category) || 0) + 1));
+    const category = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
+    return [{
+      id: vendorKey, vendor: sorted[sorted.length - 1].vendor, type: sorted[0].type, member: sorted[0].member,
+      category, occurrenceCount: sorted.length, monthCount: months.size,
+      averageAmount: Math.round(amount), minAmount: Math.min(...sorted.map((item) => item.amount)), maxAmount: Math.max(...sorted.map((item) => item.amount)),
+      dayOfMonth: Math.round(days.reduce((sum, day) => sum + day, 0) / days.length),
+      isVariable: maxDifference > amount * 0.15, lastUsedAt: sorted[sorted.length - 1].date,
+    }];
+  }).sort((a, b) => b.monthCount - a.monthCount || b.occurrenceCount - a.occurrenceCount);
 };
 
-export const deleteRecurringTransaction = async (id: string) => {
-  return await prisma.recurringTransaction.delete({
-    where: { id },
-  });
+export const deferRecurringCandidate = async (vendor: string) => {
+  const vendorKey = normalizeRuleText(vendor);
+  const deferredUntil = new Date(); deferredUntil.setDate(deferredUntil.getDate() + DEFER_DAYS);
+  return prisma.deferredRecurringSuggestion.upsert({ where: { vendorKey }, update: { deferredUntil }, create: { id: randomUUID(), vendorKey, deferredUntil } });
 };
 
-export const processRecurringTransactions = async () => {
-  const recurring = await prisma.recurringTransaction.findMany();
-  const today = new Date();
-  const day = today.getDate();
-  const dateStr = today.toISOString().split('T')[0];
-
-  for (const item of recurring) {
-    if (item.day_of_month === day) {
-      await prisma.$transaction(async (tx) => {
-        const existing = await tx.transaction.findFirst({
-          where: {
-            date: dateStr,
-            vendor: item.vendor,
-            source: 'recurring',
-            isDeleted: false,
-          },
-        });
-
-        if (existing) return;
-        const created = await tx.transaction.create({
-          data: {
-            id: randomUUID(),
-            date: dateStr,
-            amount: item.amount,
-            vendor: item.vendor,
-            category: item.category,
-            type: item.type,
-            source: 'recurring',
-            isDeleted: false,
-            isVerified: true
-          },
-        });
-        await tx.auditLog.create({
-          data: buildAuditLogData({
-            entityType: 'transaction',
-            entityId: created.id,
-            action: 'create',
-            afterData: created,
-            actor: { role: 'system' },
-          }),
-        });
-      });
-    }
-  }
+export const ignoreRecurringCandidate = async (vendor: string) => {
+  const vendorKey = normalizeRuleText(vendor);
+  return prisma.ignoredRecurringSuggestion.upsert({ where: { vendorKey }, update: {}, create: { id: randomUUID(), vendorKey } });
 };
+
+// Registered recurring items are planning records. Actual imports are matched in the UI/service; do not create duplicate transactions automatically.
+export const processRecurringTransactions = async () => undefined;

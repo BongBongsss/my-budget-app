@@ -115,6 +115,39 @@ export interface RecurringTransaction {
   category: string;
   type: 'income' | 'expense' | 'recurring' | 'exclude';
   day_of_month: number;
+  member?: string;
+  isActive?: boolean;
+  isVariable?: boolean;
+  memo?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface RecurringCandidate {
+  id: string;
+  vendor: string;
+  type: 'income' | 'expense';
+  member: string;
+  category: string;
+  occurrenceCount: number;
+  monthCount: number;
+  averageAmount: number;
+  minAmount: number;
+  maxAmount: number;
+  dayOfMonth: number;
+  isVariable: boolean;
+  lastUsedAt: string;
+}
+
+export interface RuleReviewCandidate {
+  id: string;
+  keyword: string;
+  assignedCategory: string;
+  suggestedCategory: string;
+  occurrenceCount: number;
+  totalOccurrences: number;
+  confidence: number;
+  lastUsedAt: string;
 }
 
 export interface Asset {
@@ -241,6 +274,7 @@ export const approveRuleSuggestion = (vendor: string, category: string) =>
   instance.post<CategoryRule>('/suggestions/approve', { vendor, category });
 export const deferRuleSuggestion = (vendor: string) => instance.post('/suggestions/defer', { vendor });
 export const ignoreRuleSuggestion = (vendor: string) => instance.post('/ignored-rules', { keyword: vendor });
+export const getRuleReviewCandidates = () => instance.get<RuleReviewCandidate[]>('/suggestions/rule-reviews');
 export const getRules = () => instance.get<CategoryRule[]>('/rules');
 export const addRule = (rule: Partial<CategoryRule>) => instance.post<CategoryRule>('/rules', rule);
 export const updateRule = (id: string, rule: Partial<CategoryRule>) => instance.put(`/rules/${id}`, rule);
@@ -264,7 +298,11 @@ export const saveChartStatisticsSettings = (settings: { income: string[]; expens
 // Recurring
 export const getRecurring = () => instance.get<RecurringTransaction[]>('/recurring');
 export const addRecurring = (rec: Partial<RecurringTransaction>) => instance.post<RecurringTransaction>('/recurring', rec);
+export const updateRecurring = (id: string, rec: Partial<RecurringTransaction>) => instance.put<RecurringTransaction>(`/recurring/${id}`, rec);
 export const deleteRecurring = (id: string) => instance.delete(`/recurring/${id}`);
+export const getRecurringCandidates = () => instance.get<RecurringCandidate[]>('/recurring/candidates');
+export const deferRecurringCandidate = (vendor: string) => instance.post('/recurring/candidates/defer', { vendor });
+export const ignoreRecurringCandidate = (vendor: string) => instance.post('/recurring/candidates/ignore', { vendor });
 
 // Assets
 export const getAssets = () => instance.get<Asset[]>('/assets');

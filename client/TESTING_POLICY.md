@@ -25,3 +25,14 @@ To ensure a seamless user experience and robust interface, this project follows 
 2. **Setup:** Create a test environment (using tools like Vitest, React Testing Library, or Playwright).
 3. **Execute:** Run tests to confirm the component or flow is stable.
 4. **Iterate:** After UI changes, update tests to reflect new requirements and ensure no regressions (e.g., breaking a button's functionality).
+
+## 5. Responsive and Overlay Verification
+- **Reported Viewport First:** Reproduce layout reports at the actual reported viewport before deciding whether the affected rule is desktop or mobile.
+- **Breakpoint Coverage:** For a responsive layout change, verify at least one desktop width and one narrow mobile width unless the user explicitly limited the scope to one breakpoint.
+- **Control Fit:** Check that form inputs, labels, icons, and action buttons remain inside their container and that action labels do not wrap unexpectedly.
+- **Overlay Interactions:** Verify dropdowns and modals against sticky headers, sticky action bars, and floating controls. Opening a collapsible menu must not reveal a previously hidden modal.
+
+## Revision History
+
+- **2026-08-10**: Added responsive layout and overlay verification requirements.
+  - **Reason**: Make screenshot-driven UI regressions reproducible before release.

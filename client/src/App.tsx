@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
+import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import ErrorBoundary from './components/ErrorBoundary';
 import Summary from './components/Summary';
@@ -12,6 +12,7 @@ import AssetManager from './components/AssetManager';
 import EntryModal from './components/EntryModal';
 import AuditLogView from './components/AuditLogView';
 import NoticeCenter from './components/NoticeCenter';
+import RecurringManager from './components/RecurringManager';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
@@ -52,10 +53,11 @@ function App() {
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
+  const [recurringCandidateCount, setRecurringCandidateCount] = useState(0);
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
-  const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'logs'>('budget');
+  const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'recurring' | 'logs'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
@@ -232,14 +234,16 @@ function App() {
       setIsAuthenticated(true);
 
       // 2. 데이터 조회
-      const [txRes, catRes, assetRes] = await Promise.all([
+      const [txRes, catRes, assetRes, recurringCandidatesRes] = await Promise.all([
         getTransactions(),
         getCategories(),
-        getAssets()
+        getAssets(),
+        getRecurringCandidates(),
       ]);
       setTransactions(txRes.data);
       setCategories(catRes.data);
       setAssets(assetRes.data);
+      setRecurringCandidateCount(recurringCandidatesRes.data.length);
     } catch (err: any) {
       if (err.response && err.response.status === 401) {
         setIsAuthenticated(false);
@@ -545,6 +549,12 @@ function App() {
                 <Upload size={16} /> 가져오기
             </button>
           )}
+          <button className="btn btn-secondary header-action-btn" onClick={() => {
+            setIsMobileMenuOpen(false);
+            setCurrentView('recurring');
+          }}>
+            <History size={16} /> 정기 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
+          </button>
           {userRole === 'admin' && (
             <button className="btn btn-secondary header-action-btn" onClick={() => {
               setIsMobileMenuOpen(false);
@@ -741,13 +751,17 @@ function App() {
             <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} />
           </ErrorBoundary>
         </div>
+      ) : currentView === 'recurring' ? (
+        <ErrorBoundary title="정기 관리 정보를 불러오지 못했습니다.">
+          <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} />
+        </ErrorBoundary>
       ) : (
           <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
             <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
           </ErrorBoundary>
       )}
 
-      {userRole === 'admin' && currentView !== 'logs' && (
+      {userRole === 'admin' && (currentView === 'budget' || currentView === 'assets') && (
         <button
           ref={entryButtonRef}
           type="button"

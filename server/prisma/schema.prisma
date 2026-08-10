@@ -23,6 +23,7 @@ model Transaction {
   isVerified   Boolean @default(true)
   isDuplicate  Boolean @default(false)
   isDeleted    Boolean @default(false)
+  isManualCategory Boolean @default(false)
   member              String       @default("효")
 }
 
@@ -55,6 +56,7 @@ model ImportRow {
   memo                String?
   member              String       @default("미지정")
   rawData             Json?
+  isManualCategory    Boolean      @default(false)
   committedAt         DateTime?
   transactionId       String?
   createdAt           DateTime     @default(now())
@@ -106,6 +108,12 @@ model RecurringTransaction {
   category     String
   type         String @default("expense")
   day_of_month Int
+  member       String @default("shared")
+  isActive     Boolean @default(true)
+  isVariable   Boolean @default(false)
+  memo         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Asset {
@@ -146,6 +154,22 @@ model IgnoredRule {
 }
 
 model DeferredRuleSuggestion {
+  id            String   @id @default(uuid())
+  vendorKey     String   @unique
+  deferredUntil DateTime
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([deferredUntil])
+}
+
+model IgnoredRecurringSuggestion {
+  id        String   @id @default(uuid())
+  vendorKey String   @unique
+  createdAt DateTime @default(now())
+}
+
+model DeferredRecurringSuggestion {
   id            String   @id @default(uuid())
   vendorKey     String   @unique
   deferredUntil DateTime

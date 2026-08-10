@@ -26,6 +26,9 @@ Before making non-trivial changes, check the relevant project documents:
   3. summarize the cause, proposed changes, affected screens, and data/behavior impact for the user;
   4. obtain the user's confirmation before implementing, unless the user has already explicitly authorized the identified change.
 - Do not make repeated speculative UI tweaks. If a prior adjustment did not resolve the issue, stop and re-check the active rule, selector specificity, layout constraints, and deployed output before changing code again.
+- Treat the reported viewport as part of the defect. Do not infer that a screenshot is mobile or desktop; identify the active breakpoint and confirm the fix at the same viewport before changing adjacent layouts.
+- Keep a requested PC-only or mobile-only UI change scoped to that breakpoint unless the user explicitly asks for both. State any intentional cross-breakpoint impact before editing.
+- For screenshot-driven UI fixes, verify overlays, fixed/sticky controls, and their stacking order in addition to the changed component itself.
 - Do not refactor adjacent code unless it is required to complete the task safely.
 - Match existing project patterns before introducing new abstractions.
 - Explain assumptions and tradeoffs when they affect behavior, deployment, or data.
@@ -135,5 +138,7 @@ Prefer English for technical body content. Korean is acceptable for revision his
   - **Reason**: Prevent repeated speculative adjustments and ensure the user can review the exact proposed change before implementation.
 - **2026-06-02**: Added pending local package-change note.
   - **사유**: `client/package.json`, `server/package.json`, `package-lock.json` 변경이 로그 기능과 별개로 남아 있어, Codex가 다음 작업에서 실수로 함께 커밋하지 않도록 기록함.
+- **2026-08-10**: Added responsive UI scope and screenshot verification rules.
+  - **Reason**: Prevent PC/mobile misclassification, unintended cross-breakpoint changes, and overlay regressions.
 - **2026-06-02**: Created Codex-specific guidance based on `GEMINI.md`.
   - **사유**: Codex 작업 시 프로젝트 문서 참조, Windows 로컬 환경, 배포 민감 파일, DB/감사 로그 검증 기준을 명확히 하기 위해 추가함.

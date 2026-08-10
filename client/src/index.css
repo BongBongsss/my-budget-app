@@ -277,6 +277,44 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   gap: 0.4rem;
 }
 
+.recurring-filter-bar { margin-bottom: 1rem; }
+.recurring-filter-bar .member-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.recurring-filter-bar .btn { padding: 0.3rem 0.7rem; }
+.recurring-summary-cards { margin-bottom: 1rem; }
+.recurring-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
+.recurring-panel { min-width: 0; padding: 1rem; border-radius: 12px; background: #fff; box-shadow: 0 4px 12px rgba(30, 41, 59, 0.1); }
+.recurring-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; }
+.recurring-panel-header h3 { display: flex; min-width: 0; align-items: center; gap: 0.4rem; margin: 0; font-size: 1.08rem; }
+.recurring-panel-header > span { flex: 0 0 auto; color: #64748b; font-size: 0.78rem; white-space: nowrap; }
+.count-badge { display: inline-flex; min-width: 20px; height: 20px; align-items: center; justify-content: center; padding: 0 5px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 0.72rem; }
+.recurring-card-list { display: grid; gap: 0.6rem; max-height: 570px; overflow-y: auto; padding-right: 0.2rem; }
+.recurring-card { min-width: 0; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
+.recurring-card-title { display: flex; min-width: 0; align-items: center; gap: 0.5rem; }
+.recurring-card-title strong { overflow: hidden; flex: 1 1 auto; color: #1e293b; text-overflow: ellipsis; white-space: nowrap; }
+.recurring-card-title span { flex: 0 0 auto; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
+.income-text { color: #15803d; }
+.expense-text { color: #dc2626; }
+.recurring-card p { overflow: hidden; margin: 0.2rem 0 0; color: #475569; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
+.recurring-card .recurring-evidence { color: #64748b; font-size: 0.75rem; }
+.recurring-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.65rem; }
+.recurring-actions .btn { min-width: 0; justify-content: center; padding: 0.4rem; white-space: nowrap; }
+.danger-action { color: #b91c1c; }
+.recurring-empty { margin: 0; padding: 1.5rem 0.5rem; text-align: center; color: #64748b; font-size: 0.9rem; }
+.recurring-mobile-switch, .recurring-mobile-add { display: none; }
+.recurring-editor { width: min(640px, 100%); }
+.recurring-editor-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; }
+.recurring-editor-form label { display: grid; min-width: 0; gap: 0.35rem; color: #475569; font-size: 0.82rem; font-weight: 600; }
+.recurring-editor-form .edit-input { min-width: 0; width: 100%; }
+.recurring-editor-form .recurring-variable { display: flex; align-items: center; align-self: end; min-height: 38px; gap: 0.45rem; white-space: nowrap; }
+.recurring-editor-form .recurring-memo, .recurring-editor-form .form-actions { grid-column: 1 / -1; }
+.recurring-editor-form .form-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 0.25rem; }
+.rule-review-list { display: grid; gap: 0.5rem; margin-bottom: 0.9rem; padding: 0.75rem; border: 1px solid #fde68a; border-radius: 9px; background: #fffbeb; }
+.rule-review-list h4 { margin: 0; color: #92400e; }
+.rule-review-card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0.35rem 0.75rem; align-items: center; padding: 0.55rem; border-radius: 7px; background: #fff; }
+.rule-review-card strong, .rule-review-card p { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rule-review-card p { grid-column: 1 / 2; margin: 0; color: #6b7280; font-size: 0.76rem; }
+.rule-review-card .btn { grid-column: 2; grid-row: 1 / 3; white-space: nowrap; }
+
 .entry-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1133,6 +1171,33 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .entry-form { padding: 1rem; }
   .settings-modal-overlay { padding: 1rem 0.75rem; }
   .settings-modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; }
+
+  .recurring-filter-bar { margin-bottom: 0.75rem; }
+  .recurring-filter-bar .member-filter { flex-wrap: nowrap; gap: 0.25rem; overflow-x: auto; padding-bottom: 0.1rem; }
+  .recurring-filter-bar .btn { flex: 0 0 auto; min-width: 0; padding: 0.25rem 0.55rem; font-size: 0.75rem; white-space: nowrap; }
+  .recurring-summary-cards { margin-bottom: 0.75rem !important; }
+  .recurring-layout { display: block; }
+  .recurring-panel { padding: 0.75rem; }
+  .recurring-panel.is-mobile-hidden { display: none; }
+  .recurring-panel-header { margin-bottom: 0.6rem; }
+  .recurring-panel-header h3 { font-size: 0.98rem; }
+  .recurring-card-list { max-height: none; overflow: visible; gap: 0.45rem; }
+  .recurring-card { padding: 0.65rem; }
+  .recurring-card p { font-size: 0.76rem; }
+  .recurring-actions { gap: 0.3rem; }
+  .recurring-actions .btn { min-height: 32px; padding: 0.35rem 0.2rem; font-size: 0.74rem; }
+  .recurring-mobile-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.4rem; margin: 0.75rem 0 4.5rem; }
+  .recurring-mobile-switch .btn { min-width: 0; justify-content: center; white-space: nowrap; }
+  .recurring-mobile-add { display: inline-flex; }
+  .recurring-editor { width: 100%; max-height: min(88dvh, 760px); border-radius: 18px 18px 0 0; }
+  .recurring-editor-form { grid-template-columns: 1fr; gap: 0.7rem; }
+  .recurring-editor-form .recurring-variable { grid-column: auto; }
+  .recurring-editor-form .recurring-memo, .recurring-editor-form .form-actions { grid-column: auto; }
+  .recurring-editor-form .form-actions { position: sticky; bottom: -1rem; z-index: 1; justify-content: stretch; padding: 0.75rem 0 0; background: #fff; }
+  .recurring-editor-form .form-actions .btn { flex: 1 1 0; justify-content: center; }
+  .rule-review-card { grid-template-columns: minmax(0, 1fr); }
+  .rule-review-card p { grid-column: auto; }
+  .rule-review-card .btn { grid-column: auto; grid-row: auto; width: 100%; justify-content: center; }
 
   .asset-type-add {
     display: grid;

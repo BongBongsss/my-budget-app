@@ -115,3 +115,34 @@ export const approveRuleCandidate = async (vendor: string, category: string) => 
   await clearDeferredRuleSuggestion(vendorKey);
   return rule;
 };
+
+/** Existing rules are reviewed from recent, explicitly corrected transactions. */
+export const getRuleReviewCandidates = async () => {
+  const [rules, transactions] = await Promise.all([
+    prisma.categoryRule.findMany(),
+    prisma.transaction.findMany({
+      where: { isVerified: true, isDeleted: false, isManualCategory: true },
+      select: { vendor: true, category: true, date: true },
+    }),
+  ]);
+
+  return rules.flatMap((rule) => {
+    const matched = transactions.filter((transaction) => isRuleMatch(transaction.vendor, rule.keyword));
+    if (matched.length < 3) return [];
+    const counts = new Map<string, number>();
+    matched.forEach((transaction) => counts.set(transaction.category, (counts.get(transaction.category) || 0) + 1));
+    const [suggestedCategory, occurrenceCount] = [...counts.entries()].sort((left, right) => right[1] - left[1])[0];
+    const confidence = occurrenceCount / matched.length;
+    if (suggestedCategory === rule.assigned_category || confidence < 0.8) return [];
+    return [{
+      id: rule.id,
+      keyword: rule.keyword,
+      assignedCategory: rule.assigned_category,
+      suggestedCategory,
+      occurrenceCount,
+      totalOccurrences: matched.length,
+      confidence: Math.round(confidence * 100),
+      lastUsedAt: matched.map((transaction) => transaction.date).sort().slice(-1)[0] || '',
+    }];
+  });
+};

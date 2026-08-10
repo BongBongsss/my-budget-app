@@ -47,6 +47,7 @@ const pickTransactionUpdateData = (updates: Partial<Transaction>) => {
     source: updates.source,
     memo: updates.memo,
     member: updates.member,
+    ...(updates.category !== undefined ? { isManualCategory: true } : {}),
   };
 
   return Object.fromEntries(
@@ -729,7 +730,8 @@ export const applyAutoRulesToExisting = async (actor?: AuditActor) => {
     where: {
       NOT: [{ category: '기타' }, { category: '' }],
       isVerified: true,
-      isDeleted: false
+      isDeleted: false,
+      isManualCategory: false,
     }
   });
 
@@ -741,6 +743,7 @@ export const applyAutoRulesToExisting = async (actor?: AuditActor) => {
         id: { in: transactions.map((transaction) => transaction.id) },
         isVerified: true,
         isDeleted: false,
+        isManualCategory: false,
       },
     });
     const changes: Array<{ before: Transaction; category: string }> = [];
