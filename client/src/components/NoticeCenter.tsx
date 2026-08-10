@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Bell, Trash2, X } from 'lucide-react';
 import { Notice, createNotice, deleteNotice, getNotices, markNoticeRead } from '../api';
 
@@ -77,7 +78,7 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChang
         )}
       </button>
 
-      {popupNotice && (
+      {popupNotice && createPortal(
         <div className="modal-overlay">
           <div className="notice-popup">
             <div className="notice-header">
@@ -96,9 +97,9 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChang
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
 
-      {isListOpen && (
+      {isListOpen && createPortal(
         <div className="modal-overlay">
           <div className="notice-list-modal">
             <div className="notice-header">
@@ -171,7 +172,7 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChang
             </div>
           </div>
         </div>
-      )}
+      , document.body)}
     </>
   );
 };

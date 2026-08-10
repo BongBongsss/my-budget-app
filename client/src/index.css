@@ -51,7 +51,7 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  z-index: 40;
+  z-index: 200;
   flex: 0 0 auto;
   width: min(220px, calc(100vw - 2rem));
   padding: 0.5rem;
