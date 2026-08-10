@@ -1,6 +1,7 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
 import { AuditActor, buildAuditLogData } from './auditLogService';
+import { getLiabilityTypeIds } from './assetTypeService';
 
 const pickAssetInput = (data: any) => {
   const input: any = {};
@@ -16,8 +17,9 @@ export const saveAssetHistory = async () => {
   const assets = await prisma.asset.findMany({
     where: { isDeleted: false }
   });
-  const totalAssets = assets.reduce((sum: number, a: any) => a.type !== 'liability' ? sum + a.balance : sum, 0);
-  const totalLiabilities = assets.reduce((sum: number, a: any) => a.type === 'liability' ? sum + a.balance : sum, 0);
+  const liabilityTypeIds = new Set(await getLiabilityTypeIds());
+  const totalAssets = assets.reduce((sum: number, a: any) => !liabilityTypeIds.has(a.type) ? sum + a.balance : sum, 0);
+  const totalLiabilities = assets.reduce((sum: number, a: any) => liabilityTypeIds.has(a.type) ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
   const yearMonth = new Date().toISOString().substring(0, 7);
 

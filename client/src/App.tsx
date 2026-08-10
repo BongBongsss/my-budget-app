@@ -48,6 +48,7 @@ function App() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<CategoryItem[]>([]);
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [assetTypesVersion, setAssetTypesVersion] = useState(0);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
@@ -71,6 +72,7 @@ function App() {
   });
   const [isEntryButtonDragging, setIsEntryButtonDragging] = useState(false);
   const [isEntryButtonExpanded, setIsEntryButtonExpanded] = useState(false);
+  const [entryButtonExpandedOffset, setEntryButtonExpandedOffset] = useState(0);
   const [statisticsExclusions, setStatisticsExclusions] = useState<StatisticsExclusions>(() => {
     try { return JSON.parse(window.localStorage.getItem('statistics-exclusions') || '') || { income: [], expense: [] }; }
     catch { return { income: [], expense: [] }; }
@@ -85,6 +87,7 @@ function App() {
   const entryButtonHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryButtonExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryButtonDragRef = useRef<FloatingButtonDrag | null>(null);
+  const entryButtonRef = useRef<HTMLButtonElement>(null);
   const suppressEntryButtonClickRef = useRef(false);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
@@ -122,6 +125,19 @@ function App() {
     clearEntryButtonHoldTimer();
     clearEntryButtonExpandTimer();
   }, []);
+
+  useEffect(() => {
+    if (!isEntryButtonExpanded || !entryButtonPosition) {
+      setEntryButtonExpandedOffset(0);
+      return;
+    }
+    const frame = window.requestAnimationFrame(() => {
+      const rect = entryButtonRef.current?.getBoundingClientRect();
+      if (!rect) return;
+      setEntryButtonExpandedOffset(Math.max(0, rect.right - window.innerWidth + 8));
+    });
+    return () => window.cancelAnimationFrame(frame);
+  }, [isEntryButtonExpanded, entryButtonPosition, currentView]);
 
   useEffect(() => {
     try {
@@ -199,7 +215,7 @@ function App() {
   };
 
   const entryButtonStyle: CSSProperties | undefined = entryButtonPosition
-    ? { left: `${entryButtonPosition.left}px`, top: `${entryButtonPosition.top}px`, right: 'auto', bottom: 'auto' }
+    ? { left: `${entryButtonPosition.left}px`, top: `${entryButtonPosition.top}px`, right: 'auto', bottom: 'auto', transform: entryButtonExpandedOffset ? `translateX(-${entryButtonExpandedOffset}px)` : undefined }
     : undefined;
 
   const fetchData = async () => {
@@ -478,6 +494,7 @@ function App() {
       <header className="header app-header">
         <h1 className="app-title">효굥봉 가계부</h1>
         <button
+          ref={entryButtonRef}
           type="button"
           className="mobile-header-menu-toggle"
           onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
@@ -716,7 +733,7 @@ function App() {
             </button>}
           </div>
           <ErrorBoundary title="자산 관리를 불러오지 못했습니다.">
-            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} />
+            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} />
           </ErrorBoundary>
         </div>
       ) : (
@@ -807,6 +824,7 @@ function App() {
         onClose={() => setIsSettingsModalOpen(false)}
         categories={categories}
         onRefresh={fetchData}
+        onAssetTypesChanged={() => setAssetTypesVersion((version) => version + 1)}
       />
 
       {showUndo && userRole === 'admin' && lastUndoAction && (

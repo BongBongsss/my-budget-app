@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
-import { getAssets, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset } from '../api';
+import { getAssets, getAssetTypes, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset, AssetType } from '../api';
 import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale, Title, PointElement, LineElement } from 'chart.js';
 import { Line } from 'react-chartjs-2';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
@@ -12,14 +12,16 @@ interface AssetManagerProps {
   userRole?: 'admin' | 'viewer';
   isAddOpen?: boolean;
   onCloseAdd?: () => void;
+  assetTypesVersion?: number;
 }
 
 const ASSET_MEMBER_OPTIONS: Asset['member'][] = ['효', '굥', '봉', '공동'];
 type AssetMemberFilter = 'all' | Asset['member'];
 
-const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd }) => {
+const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd, assetTypesVersion = 0 }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
+  const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc' | 'default'>('default');
   const [balanceSortOrder, setBalanceSortOrder] = useState<'asc' | 'desc' | 'default'>('default');
@@ -50,17 +52,18 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
 
   const fetchData = async () => {
     try {
-      const [res, histRes] = await Promise.all([getAssets(), getAssetHistory()]);
+      const [res, histRes, typesRes] = await Promise.all([getAssets(), getAssetHistory(), getAssetTypes()]);
       setAssets(res.data);
       originalAssets.current = res.data;
       setHistory(histRes.data);
+      setAssetTypes(typesRes.data);
     } catch (err: any) { 
       console.error('Failed to fetch assets:', err); 
       alert(`데이터를 가져오는 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [assetTypesVersion]);
 
   const handleSort = () => {
     let nextOrder: 'asc' | 'desc' | 'default';
@@ -166,16 +169,14 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
   const memberFilteredAssets = selectedAssetMember === 'all'
     ? assets
     : assets.filter((asset) => (asset.member || '공동') === selectedAssetMember);
-  const totalAssets = memberFilteredAssets.reduce((sum, a) => a.type !== 'liability' ? sum + a.balance : sum, 0);
-  const totalLiabilities = memberFilteredAssets.reduce((sum, a) => a.type === 'liability' ? sum + a.balance : sum, 0);
+  const assetTypeMap: Record<string, string> = Object.fromEntries(assetTypes.map((type) => [type.id, type.name]));
+  const liabilityTypeIds = new Set(assetTypes.filter((type) => type.isLiability).map((type) => type.id));
+  const totalAssets = memberFilteredAssets.reduce((sum, a) => !liabilityTypeIds.has(a.type) ? sum + a.balance : sum, 0);
+  const totalLiabilities = memberFilteredAssets.reduce((sum, a) => liabilityTypeIds.has(a.type) ? sum + a.balance : sum, 0);
   const netAssets = totalAssets - totalLiabilities;
   const isAdmin = userRole === 'admin';
 
-  const assetTypeMap: Record<string, string> = {
-    bank: '예적금', cash: '현금', stock: '주식', 
-    realestate: '부동산', pension: '연금', insurance: '보험',
-    liability: '부채', other: '기타'
-  };
+  const assetTypeOptions = assetTypes.length > 0 ? assetTypes : [{ id: 'bank', name: '예적금', isLiability: false }];
 
   const groupedAssets = memberFilteredAssets.reduce((acc, a) => {
     const typeName = assetTypeMap[a.type] || '기타';
@@ -358,7 +359,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                 <div className="form-group">
                     <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 유형</label>
                     <select className="w-full p-1.5 border rounded text-sm" value={newAsset.type} onChange={e => setNewAsset({...newAsset, type: e.target.value as any})}>
-                        <option value="bank">예적금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
+                        {assetTypeOptions.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
                     </select>
                 </div>
                 <div className="form-group">
@@ -402,7 +403,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     <td className="p-3 border-b text-sm text-gray-600">
                       {editingId === asset.id ? (
                         <select className="w-full p-1 border rounded" value={editForm.type} onChange={e => setEditForm({...editForm, type: e.target.value as any})}>
-                          <option value="bank">예적금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
+                          {assetTypeOptions.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
                         </select>
                       ) : (
                         (assetTypeMap[asset.type] || asset.type)
@@ -474,7 +475,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     <label>자산명<input value={editForm.name || ''} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
                     <label>유형
                       <select value={editForm.type} onChange={(event) => setEditForm({ ...editForm, type: event.target.value as Asset['type'] })}>
-                        <option value="bank">저축/예금</option><option value="cash">현금</option><option value="stock">주식</option><option value="realestate">부동산</option><option value="pension">연금</option><option value="insurance">보험</option><option value="liability">부채</option><option value="other">기타</option>
+                        {assetTypeOptions.map((type) => <option key={type.id} value={type.id}>{type.name}</option>)}
                       </select>
                     </label>
                     <label>구성원

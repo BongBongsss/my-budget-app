@@ -109,6 +109,24 @@ export const initDb = async () => {
 
   await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "ChartStatisticsSettings" ("id" text PRIMARY KEY, "excludedGroups" jsonb NOT NULL DEFAULT '{"income":[],"expense":[]}', "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);`);
 
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "AssetType" (
+      "id" text PRIMARY KEY,
+      "name" text NOT NULL UNIQUE,
+      "isLiability" boolean NOT NULL DEFAULT false,
+      "isDeleted" boolean NOT NULL DEFAULT false,
+      "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  await prisma.$executeRawUnsafe(`
+    INSERT INTO "AssetType" ("id", "name", "isLiability") VALUES
+      ('bank', '예적금', false), ('cash', '현금', false), ('stock', '주식', false),
+      ('realestate', '부동산', false), ('pension', '연금', false), ('insurance', '보험', false),
+      ('liability', '부채', true), ('other', '기타', false)
+    ON CONFLICT ("id") DO NOTHING;
+  `);
+
   // Import staging table check/creation and legacy unverified transaction migration
   try {
     await prisma.$executeRawUnsafe(`

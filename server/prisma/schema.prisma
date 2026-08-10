@@ -120,6 +120,15 @@ model Asset {
   updatedAt DateTime @default(now()) @updatedAt
 }
 
+model AssetType {
+  id          String   @id
+  name        String   @unique
+  isLiability Boolean  @default(false)
+  isDeleted   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now()) @updatedAt
+}
+
 model AssetHistory {
   id        String   @id @default(uuid())
   yearMonth String   // "2026-05" 형식

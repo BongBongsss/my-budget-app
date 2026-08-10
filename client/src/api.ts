@@ -120,7 +120,7 @@ export interface RecurringTransaction {
 export interface Asset {
   id?: string;
   name: string;
-  type: 'cash' | 'bank' | 'stock' | 'realestate' | 'pension' | 'insurance' | 'liability' | 'other';
+  type: string;
   balance: number;
   member: '효' | '굥' | '봉' | '공동';
   memo?: string;
@@ -133,6 +133,8 @@ export interface PaymentRule {
   paymentType: 'card' | 'transfer';
   keyword: string;
 }
+
+export interface AssetType { id: string; name: string; isLiability: boolean; isDeleted?: boolean; }
 
 export interface RuleSuggestion {
   id: string;
@@ -266,6 +268,10 @@ export const deleteRecurring = (id: string) => instance.delete(`/recurring/${id}
 
 // Assets
 export const getAssets = () => instance.get<Asset[]>('/assets');
+export const getAssetTypes = () => instance.get<AssetType[]>('/asset-types');
+export const addAssetType = (name: string, isLiability: boolean) => instance.post<AssetType>('/asset-types', { name, isLiability });
+export const updateAssetType = (id: string, name: string, isLiability: boolean) => instance.put<AssetType>(`/asset-types/${id}`, { name, isLiability });
+export const deleteAssetType = (id: string) => instance.delete(`/asset-types/${id}`);
 export const getAssetHistory = () => instance.get<any[]>('/assets/history');
 export const saveAssetHistory = () => instance.post('/assets/history/save');
 export const addAsset = (asset: Partial<Asset>) => instance.post<Asset>('/assets', asset);

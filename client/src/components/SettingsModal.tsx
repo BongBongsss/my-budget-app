@@ -4,7 +4,7 @@ import CategorySettings from './CategorySettings';
 import ChangePassword from './ChangePassword';
 import CategoryGroupSettings from './CategoryGroupSettings';
 import PaymentRuleSettings from './PaymentRuleSettings';
-import AssetSettings from './AssetSettings';
+import AssetTypeSettings from './AssetTypeSettings';
 import RecurringSettings from './RecurringSettings';
 import RuleManager from './RuleManager';
 import IgnoredRulesManager from './IgnoredRulesManager';
@@ -16,10 +16,11 @@ interface SettingsModalProps {
   onClose: () => void;
   categories: CategoryItem[];
   onRefresh: () => void;
+  onAssetTypesChanged?: () => void;
 }
 
-const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh }) => {
-  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'rule' | 'ignored' | 'exclusion' | 'password'>('category');
+const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categories, onRefresh, onAssetTypesChanged }) => {
+  const [activeTab, setActiveTab] = useState<'category' | 'group' | 'rule' | 'ignored' | 'exclusion' | 'assetType' | 'password'>('category');
 
   if (!isOpen) return null;
 
@@ -36,6 +37,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'rule' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('rule')}>Rule Manager</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'ignored' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('ignored')}>Ignored Rules</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'exclusion' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('exclusion')}>Exclusion Rules</button>
+          <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'assetType' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('assetType')}>자산 유형</button>
           <button className={`px-4 py-2 whitespace-nowrap ${activeTab === 'password' ? 'border-b-2 border-blue-500 font-bold' : ''}`} onClick={() => setActiveTab('password')}>Security</button>
         </div>
         {activeTab === 'category' && <CategorySettings categories={categories} onRefresh={onRefresh} />}
@@ -43,6 +45,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, categori
         {activeTab === 'rule' && <RuleManager categories={categories} onRefresh={onRefresh} />}
         {activeTab === 'ignored' && <IgnoredRulesManager />}
         {activeTab === 'exclusion' && <ExclusionRulesManager />}
+        {activeTab === 'assetType' && <AssetTypeSettings onChanged={() => { onAssetTypesChanged?.(); onRefresh(); }} />}
         {activeTab === 'password' && <ChangePassword onClose={onClose} />}
       </div>
     </div>
