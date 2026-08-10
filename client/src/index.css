@@ -380,6 +380,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .asset-type-add { padding: 0.75rem; border-radius: 8px; background: #f8fafc; }
 .asset-type-add > input, .asset-type-row > input { flex: 1; min-width: 0; padding: 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; }
 .asset-type-add label, .asset-type-row label { display: inline-flex; align-items: center; gap: 0.25rem; white-space: nowrap; color: #475569; font-size: 0.85rem; }
+.asset-type-add > .btn { flex: 0 0 auto; white-space: nowrap; }
 .asset-type-list { display: grid; gap: 0.35rem; }
 .asset-type-row { padding: 0.6rem 0.7rem; border: 1px solid #e2e8f0; border-radius: 7px; }
 .asset-type-row strong { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -626,6 +627,19 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 }
 
 .category-name-cell .btn-icon { flex: 0 0 auto; }
+
+.category-settings > form .edit-input {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.category-settings > form .btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.category-group-settings-heading { min-width: 0; }
+.category-group-add-button { flex: 0 0 auto; white-space: nowrap; }
 
 .settings-tabs {
   display: grid;

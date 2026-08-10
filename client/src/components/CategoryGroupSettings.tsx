@@ -117,8 +117,8 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
 
   return (
     <div className="category-group-settings" style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      <div style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
+      <div className="category-group-settings-header" style={{ marginBottom: '15px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="category-group-settings-heading">
             <h4 className="flex items-center gap-2 mb-1">
             <Folder size={20} className="text-blue-500" /> 대분류 그룹 관리
             </h4>
@@ -128,7 +128,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
         </div>
         <button 
             onClick={() => setIsAddingNewGroup(true)}
-            className="btn btn-primary"
+            className="btn btn-primary category-group-add-button"
             style={{ fontSize: '0.8rem', padding: '6px 12px' }}
         >
             <Plus size={16} style={{ marginRight: '4px' }} /> 새 그룹 추가
