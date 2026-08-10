@@ -45,6 +45,12 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     });
   };
 
+  const startMobileAssetEdit = (asset: Asset) => {
+    setEditingId(asset.id!);
+    setEditForm(asset);
+    setExpandedMobileAssetIds((previous) => new Set(previous).add(asset.id!));
+  };
+
   const handleMemberFilterChange = (member: AssetMemberFilter) => {
     setSelectedAssetMember(member);
     setSelectedAssetType(null);
@@ -470,7 +476,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
               onClick={() => editingId !== asset.id && toggleMobileAssetDetails(asset.id!)}
             >
               {editingId === asset.id ? (
-                <>
+                <div className="mobile-asset-edit-form">
                   <div className="mobile-asset-edit-grid">
                     <label>자산명<input value={editForm.name || ''} onChange={(event) => setEditForm({ ...editForm, name: event.target.value })} /></label>
                     <label>유형
@@ -487,10 +493,10 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                     <label className="mobile-asset-edit-wide">메모<input value={editForm.memo || ''} onChange={(event) => setEditForm({ ...editForm, memo: event.target.value })} /></label>
                   </div>
                   <div className="mobile-asset-actions">
-                    <button className="btn btn-primary" onClick={() => handleUpdate(asset.id!)}><Check size={16} /> 저장</button>
-                    <button className="btn btn-secondary" onClick={() => setEditingId(null)}><X size={16} /> 취소</button>
+                    <button className="btn btn-primary" onClick={(event) => { event.stopPropagation(); handleUpdate(asset.id!); }}><Check size={16} /> 저장</button>
+                    <button className="btn btn-secondary" onClick={(event) => { event.stopPropagation(); setEditingId(null); }}><X size={16} /> 취소</button>
                   </div>
-                </>
+                </div>
               ) : (
                 <>
                   <div className="mobile-asset-topline">
@@ -503,7 +509,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
                   <div className="mobile-asset-meta">수정: {asset.updatedAt ? new Date(asset.updatedAt).toLocaleDateString() : '-'}</div>
                   {isAdmin && (
                     <div className="mobile-asset-actions">
-                      <button className="btn btn-secondary" onClick={() => { setEditingId(asset.id!); setEditForm(asset); }}><Edit2 size={16} /> 수정</button>
+                      <button className="btn btn-secondary" onClick={(event) => { event.stopPropagation(); startMobileAssetEdit(asset); }}><Edit2 size={16} /> 수정</button>
                       <button className="btn btn-danger" onClick={() => handleDelete(asset.id!)}><Trash2 size={16} /> 삭제</button>
                     </div>
                   )}

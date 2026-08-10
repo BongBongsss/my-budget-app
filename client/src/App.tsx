@@ -127,17 +127,23 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (!isEntryButtonExpanded || !entryButtonPosition) {
+    if (!isEntryButtonExpanded) {
       setEntryButtonExpandedOffset(0);
       return;
     }
-    const frame = window.requestAnimationFrame(() => {
+    const updateExpandedOffset = () => {
       const rect = entryButtonRef.current?.getBoundingClientRect();
       if (!rect) return;
-      setEntryButtonExpandedOffset(Math.max(0, rect.right - window.innerWidth + 8));
-    });
-    return () => window.cancelAnimationFrame(frame);
-  }, [isEntryButtonExpanded, entryButtonPosition, currentView]);
+      // 현재 적용된 이동값을 더해 원래 저장 위치 기준의 오른쪽 넘침을 계산한다.
+      setEntryButtonExpandedOffset(Math.max(0, rect.right + entryButtonExpandedOffset - window.innerWidth + 8));
+    };
+    const frame = window.requestAnimationFrame(updateExpandedOffset);
+    const transitionTimer = window.setTimeout(updateExpandedOffset, 220);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.clearTimeout(transitionTimer);
+    };
+  }, [isEntryButtonExpanded, entryButtonPosition, entryButtonExpandedOffset, currentView]);
 
   useEffect(() => {
     try {
@@ -216,7 +222,7 @@ function App() {
 
   const entryButtonStyle: CSSProperties | undefined = entryButtonPosition
     ? { left: `${entryButtonPosition.left}px`, top: `${entryButtonPosition.top}px`, right: 'auto', bottom: 'auto', transform: entryButtonExpandedOffset ? `translateX(-${entryButtonExpandedOffset}px)` : undefined }
-    : undefined;
+    : entryButtonExpandedOffset ? { transform: `translateX(-${entryButtonExpandedOffset}px)` } : undefined;
 
   const fetchData = async () => {
     try {
@@ -494,7 +500,6 @@ function App() {
       <header className="header app-header">
         <h1 className="app-title">효굥봉 가계부</h1>
         <button
-          ref={entryButtonRef}
           type="button"
           className="mobile-header-menu-toggle"
           onClick={() => setIsMobileMenuOpen((isOpen) => !isOpen)}
@@ -744,6 +749,7 @@ function App() {
 
       {userRole === 'admin' && currentView !== 'logs' && (
         <button
+          ref={entryButtonRef}
           type="button"
           className="mobile-entry-fab"
           style={entryButtonStyle}
