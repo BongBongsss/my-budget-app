@@ -82,7 +82,8 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         {filteredCandidates.length === 0 ? <p className="recurring-empty">새 정기거래 후보가 없습니다.</p> : <div className="recurring-card-list">{filteredCandidates.map((candidate) => <article className="recurring-card" key={candidate.id}>
           <div className="recurring-card-title"><strong title={candidate.vendor}>{candidate.vendor}</strong><span className={candidate.type === 'income' ? 'income-text' : 'expense-text'}>{candidate.type === 'income' ? '수입' : '지출'}</span></div>
           <p>매월 {candidate.dayOfMonth}일 전후 · {candidate.isVariable ? '변동 금액' : '고정 금액'}</p>
-          <p>{money(candidate.averageAmount)} · 최근 {candidate.monthCount}개월 {candidate.occurrenceCount}회</p>
+          <p>평균 {money(candidate.averageAmount)}{candidate.isVariable ? ` · 범위 ${money(candidate.minAmount)}~${money(candidate.maxAmount)}` : ''}</p>
+          <p>최근 {candidate.monthCount}개월 {candidate.occurrenceCount}회</p>
           <p className="recurring-evidence">최근 {candidate.lastUsedAt} · {candidate.category}</p>
           {canManage && <div className="recurring-actions"><button className="btn btn-primary" onClick={() => addFromCandidate(candidate)}>추가</button><button className="btn btn-secondary" onClick={() => void handleCandidate('defer', candidate)}>나중에</button><button className="btn btn-secondary" onClick={() => void handleCandidate('ignore', candidate)}>제외</button></div>}
         </article>)}</div>}

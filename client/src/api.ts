@@ -139,6 +139,10 @@ export interface RecurringCandidate {
   lastUsedAt: string;
 }
 
+export interface MissingRecurringTransaction extends RecurringTransaction {
+  scheduledDate: string;
+}
+
 export interface RuleReviewCandidate {
   id: string;
   keyword: string;
@@ -303,6 +307,8 @@ export const deleteRecurring = (id: string) => instance.delete(`/recurring/${id}
 export const getRecurringCandidates = () => instance.get<RecurringCandidate[]>('/recurring/candidates');
 export const deferRecurringCandidate = (vendor: string) => instance.post('/recurring/candidates/defer', { vendor });
 export const ignoreRecurringCandidate = (vendor: string) => instance.post('/recurring/candidates/ignore', { vendor });
+export const getMissingRecurring = (yearMonth?: string) => instance.get<MissingRecurringTransaction[]>('/recurring/missing', { params: yearMonth ? { yearMonth } : undefined });
+export const addMissingRecurring = (id: string, yearMonth?: string) => instance.post<Transaction>(`/recurring/${id}/add-missing`, { yearMonth });
 
 // Assets
 export const getAssets = () => instance.get<Asset[]>('/assets');

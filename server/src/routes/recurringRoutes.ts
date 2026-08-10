@@ -7,6 +7,8 @@ import {
   getRecurringCandidates,
   deferRecurringCandidate,
   ignoreRecurringCandidate,
+  getMissingRecurringTransactions,
+  addMissingRecurringTransaction,
 } from '../services/recurringService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
@@ -29,6 +31,16 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
 
 router.get('/candidates', asyncHandler(async (_req: Request, res: Response) => {
   res.json(await getRecurringCandidates());
+}));
+
+router.get('/missing', asyncHandler(async (req: Request, res: Response) => {
+  const yearMonth = typeof req.query.yearMonth === 'string' ? req.query.yearMonth : undefined;
+  res.json(await getMissingRecurringTransactions(yearMonth));
+}));
+
+router.post('/:id/add-missing', asyncHandler(async (req: Request, res: Response) => {
+  const yearMonth = typeof req.body?.yearMonth === 'string' ? req.body.yearMonth : undefined;
+  res.status(201).json(await addMissingRecurringTransaction(req.params.id as string, yearMonth, { role: (req as any).session?.role || 'admin', ipAddress: req.ip }));
 }));
 
 router.post('/candidates/defer', asyncHandler(async (req: Request, res: Response) => {

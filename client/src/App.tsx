@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
+import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import ErrorBoundary from './components/ErrorBoundary';
 import Summary from './components/Summary';
@@ -13,10 +13,11 @@ import EntryModal from './components/EntryModal';
 import AuditLogView from './components/AuditLogView';
 import NoticeCenter from './components/NoticeCenter';
 import RecurringManager from './components/RecurringManager';
+import RecurringMissingModal from './components/RecurringMissingModal';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -54,6 +55,7 @@ function App() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
   const [recurringCandidateCount, setRecurringCandidateCount] = useState(0);
+  const [missingRecurringItems, setMissingRecurringItems] = useState<MissingRecurringTransaction[] | null>(null);
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
@@ -430,6 +432,8 @@ function App() {
     try {
       await verifyTransactions(ids);
       await fetchData();
+      const missingRecurring = await getMissingRecurring();
+      if (missingRecurring.data.length > 0) setMissingRecurringItems(missingRecurring.data);
       setActiveTab('all');
     } catch (err) {
       alert('승인 중 오류가 발생했습니다.');
@@ -536,6 +540,12 @@ function App() {
           >
             <History size={18} /> 활동 로그
           </button>
+          <button
+            className={`nav-item ${currentView === 'recurring' ? 'active' : ''}`}
+            onClick={() => setCurrentView('recurring')}
+          >
+            <CalendarClock size={18} /> 정기 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
+          </button>
         </nav>
         <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
           <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} />
@@ -549,12 +559,6 @@ function App() {
                 <Upload size={16} /> 가져오기
             </button>
           )}
-          <button className="btn btn-secondary header-action-btn" onClick={() => {
-            setIsMobileMenuOpen(false);
-            setCurrentView('recurring');
-          }}>
-            <History size={16} /> 정기 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
-          </button>
           {userRole === 'admin' && (
             <button className="btn btn-secondary header-action-btn" onClick={() => {
               setIsMobileMenuOpen(false);
@@ -790,6 +794,12 @@ function App() {
           <span>{currentView === 'budget' ? '거래 입력' : '자산 등록'}</span>
         </button>
       )}
+
+      {missingRecurringItems && <RecurringMissingModal
+        items={missingRecurringItems}
+        onClose={() => setMissingRecurringItems(null)}
+        onAdded={fetchData}
+      />}
 
       {importSummary && (
         <div className="modal-overlay">

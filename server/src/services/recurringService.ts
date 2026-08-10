@@ -1,6 +1,7 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
 import { normalizeRuleText } from './ruleMatching';
+import { buildAuditLogData, AuditActor } from './auditLogService';
 
 const DEFER_DAYS = 30;
 
@@ -18,6 +19,13 @@ type RecurringInput = {
 const getDay = (date: string) => Number(date.slice(-2));
 const getMonthKey = (date: string) => date.slice(0, 7);
 const sameScheduledDay = (days: number[]) => Math.max(...days) - Math.min(...days) <= 5;
+const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
+const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_month: number }, transactions: Array<{ vendor: string; type: string; date: string }>) => {
+  const itemVendor = normalizeRuleText(item.vendor);
+  return transactions.some((transaction) => transaction.type === item.type && Math.abs(getDay(transaction.date) - item.day_of_month) <= 5 && (
+    normalizeRuleText(transaction.vendor).includes(itemVendor) || itemVendor.includes(normalizeRuleText(transaction.vendor))
+  ));
+};
 
 export const getAllRecurringTransactions = async () => prisma.recurringTransaction.findMany({ orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] });
 
@@ -93,6 +101,39 @@ export const deferRecurringCandidate = async (vendor: string) => {
 export const ignoreRecurringCandidate = async (vendor: string) => {
   const vendorKey = normalizeRuleText(vendor);
   return prisma.ignoredRecurringSuggestion.upsert({ where: { vendorKey }, update: {}, create: { id: randomUUID(), vendorKey } });
+};
+
+export const getMissingRecurringTransactions = async (yearMonth = getCurrentYearMonth()) => {
+  const [items, transactions] = await Promise.all([
+    prisma.recurringTransaction.findMany({ where: { isActive: true }, orderBy: { day_of_month: 'asc' } }),
+    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, date: { startsWith: yearMonth } }, select: { vendor: true, type: true, date: true } }),
+  ]);
+  const today = new Date();
+  const isCurrentMonth = yearMonth === getCurrentYearMonth();
+  return items.filter((item) => (!isCurrentMonth || item.day_of_month <= today.getDate()) && !hasMatchingTransaction(item, transactions)).map((item) => ({
+    ...item,
+    scheduledDate: `${yearMonth}-${String(item.day_of_month).padStart(2, '0')}`,
+  }));
+};
+
+export const addMissingRecurringTransaction = async (id: string, yearMonth = getCurrentYearMonth(), actor?: AuditActor) => {
+  const item = await prisma.recurringTransaction.findUnique({ where: { id } });
+  if (!item || !item.isActive) throw new Error('Recurring transaction is not available');
+  const scheduledDate = `${yearMonth}-${String(item.day_of_month).padStart(2, '0')}`;
+  const transactions = await prisma.transaction.findMany({
+    where: { isVerified: true, isDeleted: false, date: { startsWith: yearMonth } },
+    select: { vendor: true, type: true, date: true },
+  });
+  if (hasMatchingTransaction(item, transactions)) throw new Error('A matching transaction already exists');
+  return prisma.$transaction(async (tx) => {
+    const created = await tx.transaction.create({ data: {
+      id: randomUUID(), date: scheduledDate, time: '', type: item.type, category: item.category, vendor: item.vendor,
+      amount: item.amount, currency: 'KRW', source: 'recurring_manual', memo: item.memo || '정기거래 미확인 항목 추가',
+      member: item.member, isVerified: true, isDuplicate: false, isDeleted: false, isManualCategory: true, hash: randomUUID(),
+    } });
+    await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'transaction', entityId: created.id, action: 'create', afterData: created, actor }) });
+    return created;
+  });
 };
 
 // Registered recurring items are planning records. Actual imports are matched in the UI/service; do not create duplicate transactions automatically.
