@@ -70,6 +70,7 @@ function App() {
     }
   });
   const [isEntryButtonDragging, setIsEntryButtonDragging] = useState(false);
+  const [isEntryButtonExpanded, setIsEntryButtonExpanded] = useState(false);
   const [statisticsExclusions, setStatisticsExclusions] = useState<StatisticsExclusions>(() => {
     try { return JSON.parse(window.localStorage.getItem('statistics-exclusions') || '') || { income: [], expense: [] }; }
     catch { return { income: [], expense: [] }; }
@@ -82,6 +83,7 @@ function App() {
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const verifyingRef = useRef(false);
   const entryButtonHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const entryButtonExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryButtonDragRef = useRef<FloatingButtonDrag | null>(null);
   const suppressEntryButtonClickRef = useRef(false);
 
@@ -100,7 +102,26 @@ function App() {
     }
   };
 
-  useEffect(() => () => clearEntryButtonHoldTimer(), []);
+  const clearEntryButtonExpandTimer = () => {
+    if (entryButtonExpandTimerRef.current) {
+      clearTimeout(entryButtonExpandTimerRef.current);
+      entryButtonExpandTimerRef.current = null;
+    }
+  };
+
+  const expandEntryButton = () => {
+    setIsEntryButtonExpanded(true);
+    clearEntryButtonExpandTimer();
+    entryButtonExpandTimerRef.current = setTimeout(() => {
+      setIsEntryButtonExpanded(false);
+      entryButtonExpandTimerRef.current = null;
+    }, 3000);
+  };
+
+  useEffect(() => () => {
+    clearEntryButtonHoldTimer();
+    clearEntryButtonExpandTimer();
+  }, []);
 
   useEffect(() => {
     try {
@@ -138,6 +159,8 @@ function App() {
       if (!drag || drag.pointerId !== event.pointerId) return;
       drag.isDragging = true;
       suppressEntryButtonClickRef.current = true;
+      clearEntryButtonExpandTimer();
+      setIsEntryButtonExpanded(false);
       setIsEntryButtonDragging(true);
     }, 350);
   };
@@ -324,7 +347,7 @@ function App() {
     undoTimerRef.current = setTimeout(() => {
       setShowUndo(false);
       setLastUndoAction(null);
-    }, 30000);
+    }, 10000);
   };
 
   const dismissUndo = () => {
@@ -713,9 +736,16 @@ function App() {
           onPointerCancel={finishEntryButtonDrag}
           onClick={() => {
             if (suppressEntryButtonClickRef.current) return;
+            if (!isEntryButtonExpanded) {
+              expandEntryButton();
+              return;
+            }
+            clearEntryButtonExpandTimer();
+            setIsEntryButtonExpanded(false);
             currentView === 'budget' ? setIsTransactionFormOpen(true) : setIsAssetFormOpen(true);
           }}
           data-dragging={isEntryButtonDragging}
+          data-expanded={isEntryButtonExpanded}
           aria-label={currentView === 'budget' ? '거래 입력' : '자산 등록'}
           title={currentView === 'budget' ? '거래 입력' : '자산 등록'}
         >

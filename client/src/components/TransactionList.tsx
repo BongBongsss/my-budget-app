@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   CategoryItem,
   ReviewRequest,
@@ -73,6 +73,18 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewBody, setReviewBody] = useState('');
   const [expandedMobileTransactionIds, setExpandedMobileTransactionIds] = useState<Set<string>>(new Set());
+  const [mobileFilterTarget, setMobileFilterTarget] = useState<Transaction | null>(null);
+  const mobileLongPressTimerRef = useRef<number | null>(null);
+  const didTriggerMobileLongPressRef = useRef(false);
+
+  const clearMobileLongPress = () => {
+    if (mobileLongPressTimerRef.current !== null) {
+      window.clearTimeout(mobileLongPressTimerRef.current);
+      mobileLongPressTimerRef.current = null;
+    }
+  };
+
+  useEffect(() => () => clearMobileLongPress(), []);
 
   const toggleMobileTransactionDetails = (id: string) => {
     setExpandedMobileTransactionIds((previous) => {
@@ -174,6 +186,19 @@ const TransactionList: React.FC<TransactionListProps> = ({
     setEndDate('');
     setExactFilter(true);
     setCurrentPage(1);
+  };
+
+  const startMobileLongPress = (event: React.PointerEvent<HTMLElement>, tx: Transaction, isEditing: boolean) => {
+    if (isEditing || event.pointerType === 'mouse') return;
+    if ((event.target as HTMLElement).closest('button, input, select, textarea, label')) return;
+
+    didTriggerMobileLongPressRef.current = false;
+    clearMobileLongPress();
+    mobileLongPressTimerRef.current = window.setTimeout(() => {
+      didTriggerMobileLongPressRef.current = true;
+      setMobileFilterTarget(tx);
+      mobileLongPressTimerRef.current = null;
+    }, 550);
   };
 
   const filteredTransactions = transactions.filter(tx => {
@@ -685,7 +710,18 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <article
               className={`mobile-transaction-card ${expandedMobileTransactionIds.has(tx.id!) ? 'is-expanded' : ''}`}
               key={`mobile-${tx.id}`}
-              onClick={() => !isEditing && toggleMobileTransactionDetails(tx.id!)}
+              onPointerDown={(event) => startMobileLongPress(event, tx, isEditing)}
+              onPointerUp={clearMobileLongPress}
+              onPointerCancel={clearMobileLongPress}
+              onPointerLeave={clearMobileLongPress}
+              onContextMenu={(event) => event.preventDefault()}
+              onClick={() => {
+                if (didTriggerMobileLongPressRef.current) {
+                  didTriggerMobileLongPressRef.current = false;
+                  return;
+                }
+                if (!isEditing) toggleMobileTransactionDetails(tx.id!);
+              }}
             >
               {isEditing ? (
                 <div className="mobile-edit-form">
@@ -740,6 +776,37 @@ const TransactionList: React.FC<TransactionListProps> = ({
         {renderPagination()}
         <button className="btn btn-secondary" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>다음</button>
       </div>
+
+      {mobileFilterTarget && (
+        <div className="mobile-filter-sheet-backdrop" role="presentation" onClick={() => setMobileFilterTarget(null)}>
+          <section className="mobile-filter-sheet" role="dialog" aria-modal="true" aria-labelledby="mobile-filter-sheet-title" onClick={(event) => event.stopPropagation()}>
+            <h3 id="mobile-filter-sheet-title">같은 항목 보기</h3>
+            <p>선택한 값과 같은 거래만 표시합니다.</p>
+            <div className="mobile-filter-sheet-options">
+              {[
+                { type: 'vendor' as const, label: '내용', value: mobileFilterTarget.vendor || '' },
+                { type: 'amount' as const, label: '금액', value: String(mobileFilterTarget.amount), displayValue: `${mobileFilterTarget.amount.toLocaleString()}원` },
+                { type: 'source' as const, label: '결제수단', value: mobileFilterTarget.source || '' },
+                { type: 'memo' as const, label: '메모', value: mobileFilterTarget.memo || '' },
+              ].filter(({ value }) => value.trim()).map(({ type, label, value, displayValue }) => (
+                <button
+                  type="button"
+                  key={type}
+                  className="mobile-filter-sheet-option"
+                  onClick={() => {
+                    applyCellFilter(type, value);
+                    setMobileFilterTarget(null);
+                  }}
+                >
+                  <span>{label}</span>
+                  <strong title={displayValue || value}>{displayValue || value}</strong>
+                </button>
+              ))}
+            </div>
+            <button type="button" className="btn btn-secondary mobile-filter-sheet-close" onClick={() => setMobileFilterTarget(null)}>닫기</button>
+          </section>
+        </div>
+      )}
 
       {reviewTarget && (
         <div style={{
