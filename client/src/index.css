@@ -1198,8 +1198,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-desktop-members { display: flex !important; }
   .recurring-mobile-members { display: none !important; }
   .recurring-filter-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; }
-  .recurring-filter-bar .member-filter { order: 1; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; gap: 0.25rem; overflow: hidden; padding-bottom: 0; }
-  .recurring-filter-bar .member-filter .btn { flex: 1 1 0; min-width: 0; }
+  .recurring-filter-bar .member-filter { order: 1; flex: 0 0 auto; min-width: 0; flex-wrap: nowrap; gap: 0.25rem; overflow: visible; padding-bottom: 0; }
+  .recurring-filter-bar .member-filter .btn { flex: 0 0 auto; min-width: 0; }
   .recurring-filter-bar .btn { min-width: 0; padding: 0.25rem 0.4rem; font-size: 0.72rem; white-space: nowrap; }
   .recurring-summary-cards { margin-bottom: 0.75rem !important; }
   .recurring-layout { display: block; }
@@ -1219,7 +1219,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-ignored-card .recurring-actions { grid-template-columns: minmax(0, 1fr); }
   .recurring-mobile-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; }
   .recurring-mobile-switch .btn { min-width: 0; justify-content: center; white-space: nowrap; }
-  .recurring-filter-switch { order: 2; flex: 0 0 auto; margin: 0; }
+  .recurring-filter-switch { order: 2; flex: 0 0 auto; margin-left: auto; }
   .recurring-mobile-switch:not(.recurring-filter-switch) { display: none !important; }
   .recurring-mobile-add { display: inline-flex; }
   .recurring-editor { width: 100%; max-height: min(88dvh, 760px); border-radius: 18px 18px 0 0; }
