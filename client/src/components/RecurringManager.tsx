@@ -211,6 +211,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         ) : visibleRegisteredList.length === 0 ? <p className="recurring-empty">등록된 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{visibleRegisteredList.map((item) => <article className="recurring-card" key={item.id}>
           <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
           <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
+          {item.memo && <p className="recurring-card-memo" title={item.memo}>메모: {item.memo}</p>}
           {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
         </article>)}</div>}
       </section>
