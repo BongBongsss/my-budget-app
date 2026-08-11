@@ -20,9 +20,18 @@ const getDay = (date: string) => Number(date.slice(-2));
 const getMonthKey = (date: string) => date.slice(0, 7);
 const sameScheduledDay = (days: number[]) => Math.max(...days) - Math.min(...days) <= 5;
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
-// Card statements often append a changing approval/reference number (e.g. DB손해보험03406).
+// Card statements often append a changing month/reference suffix (e.g. 새마을07-030, DB손해보험03406).
 // Keep the stable merchant part for recurring-candidate grouping while leaving transaction data untouched.
-const getRecurringVendorLabel = (value: string) => value.replace(/\s+/g, ' ').trim().replace(/(?:[\s_-]*\d{4,})$/, '').trim();
+export const getRecurringVendorLabel = (value: string) => {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+
+  // A number-only description is the only available merchant identifier, not a suffix.
+  if (/^\d+$/.test(normalized)) return normalized;
+
+  return normalized
+    .replace(/(?:\d{2}[-_]\d{3,}|[\s_-]+\d{3,}|\d{4,})$/, '')
+    .trim();
+};
 const getRecurringVendorKey = (value: string) => normalizeRuleText(getRecurringVendorLabel(value));
 const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_month: number }, transactions: Array<{ vendor: string; type: string; date: string }>) => {
   const itemVendor = normalizeRuleText(item.vendor);
