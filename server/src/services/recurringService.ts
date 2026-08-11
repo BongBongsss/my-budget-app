@@ -20,6 +20,10 @@ const getDay = (date: string) => Number(date.slice(-2));
 const getMonthKey = (date: string) => date.slice(0, 7);
 const sameScheduledDay = (days: number[]) => Math.max(...days) - Math.min(...days) <= 5;
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
+// Card statements often append a changing approval/reference number (e.g. DB손해보험03406).
+// Keep the stable merchant part for recurring-candidate grouping while leaving transaction data untouched.
+const getRecurringVendorLabel = (value: string) => value.replace(/\s+/g, ' ').trim().replace(/(?:[\s_-]*\d{4,})$/, '').trim();
+const getRecurringVendorKey = (value: string) => normalizeRuleText(getRecurringVendorLabel(value));
 const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_month: number }, transactions: Array<{ vendor: string; type: string; date: string }>) => {
   const itemVendor = normalizeRuleText(item.vendor);
   return transactions.some((transaction) => transaction.type === item.type && Math.abs(getDay(transaction.date) - item.day_of_month) <= 5 && (
@@ -64,18 +68,19 @@ export const getRecurringCandidates = async () => {
     prisma.ignoredRecurringSuggestion.findMany({ select: { vendorKey: true } }),
     prisma.deferredRecurringSuggestion.findMany({ where: { deferredUntil: { gt: new Date() } }, select: { vendorKey: true } }),
   ]);
-  const excluded = new Set([...existing.map((item) => normalizeRuleText(item.vendor)), ...ignored.map((item) => item.vendorKey), ...deferred.map((item) => item.vendorKey)]);
+  const excluded = new Set([...existing.map((item) => getRecurringVendorKey(item.vendor)), ...ignored.map((item) => item.vendorKey), ...deferred.map((item) => item.vendorKey)]);
   const groups = new Map<string, typeof transactions>();
   transactions.forEach((transaction) => {
-    const key = `${normalizeRuleText(transaction.vendor)}|${transaction.type}|${transaction.member}`;
-    if (!normalizeRuleText(transaction.vendor)) return;
+    const vendorKey = getRecurringVendorKey(transaction.vendor);
+    const key = `${vendorKey}|${transaction.type}|${transaction.member}`;
+    if (!vendorKey) return;
     const list = groups.get(key) || [];
     list.push(transaction);
     groups.set(key, list);
   });
   return [...groups.values()].flatMap((list) => {
     const sorted = [...list].sort((a, b) => a.date.localeCompare(b.date));
-    const vendorKey = normalizeRuleText(sorted[0].vendor);
+    const vendorKey = getRecurringVendorKey(sorted[0].vendor);
     if (excluded.has(vendorKey)) return [];
     const months = new Set(sorted.map((item) => getMonthKey(item.date)));
     const days = sorted.map((item) => getDay(item.date));
@@ -86,7 +91,7 @@ export const getRecurringCandidates = async () => {
     sorted.forEach((item) => categoryCounts.set(item.category, (categoryCounts.get(item.category) || 0) + 1));
     const category = [...categoryCounts.entries()].sort((a, b) => b[1] - a[1])[0][0];
     return [{
-      id: vendorKey, vendor: sorted[sorted.length - 1].vendor, type: sorted[0].type, member: sorted[0].member,
+      id: vendorKey, vendor: getRecurringVendorLabel(sorted[sorted.length - 1].vendor), type: sorted[0].type, member: sorted[0].member,
       category, occurrenceCount: sorted.length, monthCount: months.size,
       averageAmount: Math.round(amount), minAmount: Math.min(...sorted.map((item) => item.amount)), maxAmount: Math.max(...sorted.map((item) => item.amount)),
       dayOfMonth: Math.round(days.reduce((sum, day) => sum + day, 0) / days.length),
@@ -96,13 +101,13 @@ export const getRecurringCandidates = async () => {
 };
 
 export const deferRecurringCandidate = async (vendor: string) => {
-  const vendorKey = normalizeRuleText(vendor);
+  const vendorKey = getRecurringVendorKey(vendor);
   const deferredUntil = new Date(); deferredUntil.setDate(deferredUntil.getDate() + DEFER_DAYS);
   return prisma.deferredRecurringSuggestion.upsert({ where: { vendorKey }, update: { deferredUntil }, create: { id: randomUUID(), vendorKey, deferredUntil } });
 };
 
 export const ignoreRecurringCandidate = async (vendor: string) => {
-  const vendorKey = normalizeRuleText(vendor);
+  const vendorKey = getRecurringVendorKey(vendor);
   return prisma.ignoredRecurringSuggestion.upsert({ where: { vendorKey }, update: {}, create: { id: randomUUID(), vendorKey } });
 };
 
