@@ -544,7 +544,7 @@ function App() {
             className={`nav-item ${currentView === 'recurring' ? 'active' : ''}`}
             onClick={() => setCurrentView('recurring')}
           >
-            <CalendarClock size={18} /> 정기 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
+            <CalendarClock size={18} /> 고정비 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
           </button>
         </nav>
         <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
@@ -756,7 +756,7 @@ function App() {
           </ErrorBoundary>
         </div>
       ) : currentView === 'recurring' ? (
-        <ErrorBoundary title="정기 관리 정보를 불러오지 못했습니다.">
+        <ErrorBoundary title="고정비 관리 정보를 불러오지 못했습니다.">
           <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} />
         </ErrorBoundary>
       ) : (
