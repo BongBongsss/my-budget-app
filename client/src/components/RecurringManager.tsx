@@ -25,6 +25,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const [activeList, setActiveList] = useState<'candidates' | 'registered'>('candidates');
   const [candidatePane, setCandidatePane] = useState<'candidates' | 'ignored'>('candidates');
   const [ignoredCandidates, setIgnoredCandidates] = useState<IgnoredRecurringSuggestion[]>([]);
+  const [isCandidatePaneLoading, setIsCandidatePaneLoading] = useState(false);
   const [registeredPane, setRegisteredPane] = useState<'registered' | 'missing'>('registered');
   const [missingItems, setMissingItems] = useState<MissingRecurringTransaction[]>([]);
   const [missingEditingId, setMissingEditingId] = useState<string | null>(null);
@@ -67,10 +68,17 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     await load();
   };
   const toggleCandidatePane = async () => {
+    if (isCandidatePaneLoading) return;
     if (candidatePane === 'candidates') {
-      const response = await getIgnoredRecurringCandidates();
-      setIgnoredCandidates(response.data);
       setCandidatePane('ignored');
+      setIgnoredCandidates([]);
+      setIsCandidatePaneLoading(true);
+      try {
+        const response = await getIgnoredRecurringCandidates();
+        setIgnoredCandidates(response.data);
+      } finally {
+        setIsCandidatePaneLoading(false);
+      }
       return;
     }
     setCandidatePane('candidates');
@@ -110,7 +118,6 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         <button className={`btn ${activeList === 'registered' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveList('registered')}>등록된 거래</button>
       </div>
       <div className="member-filter recurring-desktop-members">{desktopMembers.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
-      <div className="member-filter recurring-mobile-members">{desktopMembers.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
     </div>
     <div className="grid grid-cols-3 gap-6 summary-cards recurring-summary-cards">
       <div className="card-summary expense"><div className="details"><span>이번 달 예정 지출</span><h2>{money(dueTotal)}</h2></div></div>
@@ -119,9 +126,9 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     </div>
     <div className="recurring-layout">
       <section className={`recurring-panel ${activeList !== 'candidates' ? 'is-mobile-hidden' : ''}`}>
-        <div className="recurring-panel-header"><h3><CalendarClock size={20} /> {candidatePane === 'candidates' ? <>추천 후보 {candidateSummary > 0 && <span className="count-badge">{candidateSummary}</span>}</> : '추천 제외 목록'}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleCandidatePane()}>{candidatePane === 'candidates' ? '추천 제외 목록' : '추천 후보'}</button></div>
+        <div className="recurring-panel-header"><h3><CalendarClock size={20} /> {candidatePane === 'candidates' ? <>추천 후보 {candidateSummary > 0 && <span className="count-badge">{candidateSummary}</span>}</> : '추천 제외 목록'}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" disabled={isCandidatePaneLoading} onClick={() => void toggleCandidatePane()}>{candidatePane === 'candidates' ? '추천 제외 목록' : '추천 후보'}</button></div>
         {candidatePane === 'ignored' ? (
-          ignoredCandidates.length === 0 ? <p className="recurring-empty">추천 제외 항목이 없습니다.</p> : <div className="recurring-card-list">{ignoredCandidates.map((item) => <article className="recurring-card recurring-ignored-card" key={item.id}>
+          isCandidatePaneLoading ? <p className="recurring-empty">추천 제외 목록을 불러오는 중입니다.</p> : ignoredCandidates.length === 0 ? <p className="recurring-empty">추천 제외 항목이 없습니다.</p> : <div className="recurring-card-list">{ignoredCandidates.map((item) => <article className="recurring-card recurring-ignored-card" key={item.id}>
             <div className="recurring-card-title"><strong title={item.vendorKey}>{item.vendorKey}</strong></div>
             <p>추천 제외됨 · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</p>
             {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => void restoreCandidate(item.vendorKey)}>다시 추천받기</button></div>}
