@@ -50,6 +50,23 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     transaction.isVerified !== false && transaction.type === item.type && transaction.vendor.trim().toLowerCase().includes(item.vendor.trim().toLowerCase()) &&
     transaction.date.startsWith(currentMonth) && Math.abs(Number(transaction.date.slice(-2)) - item.day_of_month) <= 5,
   );
+  const getCardMemo = (item: RecurringTransaction) => {
+    const savedMemo = item.memo?.trim();
+    if (savedMemo) return savedMemo;
+
+    const itemVendor = item.vendor.trim().toLowerCase().replace(/\s+/g, ' ');
+    return [...transactions]
+      .filter((transaction) => {
+        const transactionVendor = transaction.vendor.trim().toLowerCase().replace(/\s+/g, ' ');
+        return transaction.isVerified !== false
+          && transaction.type === item.type
+          && transaction.source !== 'recurring_manual'
+          && (!item.member || transaction.member === item.member)
+          && (transactionVendor.includes(itemVendor) || itemVendor.includes(transactionVendor))
+          && Boolean(transaction.memo?.trim());
+      })
+      .sort((left, right) => right.date.localeCompare(left.date))[0]?.memo?.trim();
+  };
   const filteredList = list.filter((item) => item.type === 'expense' && (memberFilter === 'all' || item.member === memberFilter));
   const visibleRegisteredList = selectedCompositionGroup
     ? filteredList.filter((item) => getGroupName(item.category, categories) === selectedCompositionGroup)
@@ -203,17 +220,24 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
       <section className={`recurring-panel ${activeList !== 'registered' ? 'is-mobile-hidden' : ''}`}>
         <div className="recurring-panel-header"><h3><CheckCircle2 size={20} /> {registeredPane === 'registered' ? `등록된 고정비 항목 (${visibleRegisteredList.length}건)` : `미반영 고정비 항목 (${missingItems.length}건)`}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleRegisteredPane()}>{registeredPane === 'registered' ? '미반영 고정비 항목' : '등록된 고정비 항목'}</button></div>
         {registeredPane === 'missing' ? (
-          missingItems.length === 0 ? <p className="recurring-empty">미반영 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{missingItems.map((item) => <article className="recurring-card recurring-missing-card" key={item.id}>
-            <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{item.scheduledDate}</span></div>
-            <p>{item.category} · {item.member} · 예상 {money(item.amount)}</p>
-            {canManage && (missingEditingId === item.id ? <div className="recurring-missing-inline-edit"><input className="edit-input" type="number" min="1" value={missingAmount} onChange={(event) => setMissingAmount(event.target.value)} aria-label={`${item.vendor} 실제 금액`} /><button className="btn btn-primary" disabled={Number(missingAmount) <= 0} onClick={() => void addMissingItem(item)}>추가</button><button className="btn btn-secondary" onClick={() => setMissingEditingId(null)}>취소</button></div> : <div className="recurring-actions"><button className="btn btn-primary" onClick={() => { setMissingEditingId(item.id!); setMissingAmount(String(Math.round(item.amount))); }}>거래에 추가</button></div>)}
-          </article>)}</div>
-        ) : visibleRegisteredList.length === 0 ? <p className="recurring-empty">등록된 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{visibleRegisteredList.map((item) => <article className="recurring-card" key={item.id}>
-          <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
-          <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
-          {item.memo && <p className="recurring-card-memo" title={item.memo}>메모: {item.memo}</p>}
-          {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
-        </article>)}</div>}
+          missingItems.length === 0 ? <p className="recurring-empty">미반영 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{missingItems.map((item) => {
+            const cardMemo = getCardMemo(item);
+            return <article className="recurring-card recurring-missing-card" key={item.id}>
+              <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{item.scheduledDate}</span></div>
+              <p>{item.category} · {item.member} · 예상 {money(item.amount)}</p>
+              {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
+              {canManage && (missingEditingId === item.id ? <div className="recurring-missing-inline-edit"><input className="edit-input" type="number" min="1" value={missingAmount} onChange={(event) => setMissingAmount(event.target.value)} aria-label={`${item.vendor} 실제 금액`} /><button className="btn btn-primary" disabled={Number(missingAmount) <= 0} onClick={() => void addMissingItem(item)}>추가</button><button className="btn btn-secondary" onClick={() => setMissingEditingId(null)}>취소</button></div> : <div className="recurring-actions"><button className="btn btn-primary" onClick={() => { setMissingEditingId(item.id!); setMissingAmount(String(Math.round(item.amount))); }}>거래에 추가</button></div>)}
+            </article>;
+          })}</div>
+        ) : visibleRegisteredList.length === 0 ? <p className="recurring-empty">등록된 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{visibleRegisteredList.map((item) => {
+          const cardMemo = getCardMemo(item);
+          return <article className="recurring-card" key={item.id}>
+            <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
+            <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
+            {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
+            {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
+          </article>;
+        })}</div>}
       </section>
     </div>
     <div className="recurring-mobile-switch"><button className={`btn ${activeList === 'registered' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveList('registered')}>등록된 항목</button><button className={`btn ${activeList === 'candidates' ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveList('candidates')}>추천 후보</button></div>
