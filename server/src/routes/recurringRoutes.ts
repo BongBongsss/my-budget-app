@@ -7,6 +7,8 @@ import {
   getRecurringCandidates,
   deferRecurringCandidate,
   ignoreRecurringCandidate,
+  getIgnoredRecurringCandidates,
+  restoreIgnoredRecurringCandidate,
   getMissingRecurringTransactions,
   addMissingRecurringTransaction,
 } from '../services/recurringService';
@@ -40,7 +42,11 @@ router.get('/missing', asyncHandler(async (req: Request, res: Response) => {
 
 router.post('/:id/add-missing', asyncHandler(async (req: Request, res: Response) => {
   const yearMonth = typeof req.body?.yearMonth === 'string' ? req.body.yearMonth : undefined;
-  res.status(201).json(await addMissingRecurringTransaction(req.params.id as string, yearMonth, { role: (req as any).session?.role || 'admin', ipAddress: req.ip }));
+  const actualAmount = req.body?.amount === undefined ? undefined : Number(req.body.amount);
+  if (actualAmount !== undefined && (!Number.isFinite(actualAmount) || actualAmount <= 0)) {
+    throw new BadRequestError('Amount must be greater than zero');
+  }
+  res.status(201).json(await addMissingRecurringTransaction(req.params.id as string, yearMonth, { role: (req as any).session?.role || 'admin', ipAddress: req.ip }, actualAmount));
 }));
 
 router.post('/candidates/defer', asyncHandler(async (req: Request, res: Response) => {
@@ -52,6 +58,15 @@ router.post('/candidates/defer', asyncHandler(async (req: Request, res: Response
 router.post('/candidates/ignore', asyncHandler(async (req: Request, res: Response) => {
   if (!req.body?.vendor) throw new BadRequestError('Vendor is required');
   await ignoreRecurringCandidate(req.body.vendor);
+  res.json({ success: true });
+}));
+
+router.get('/candidates/ignored', asyncHandler(async (_req: Request, res: Response) => {
+  res.json(await getIgnoredRecurringCandidates());
+}));
+
+router.delete('/candidates/ignored/:vendorKey', asyncHandler(async (req: Request, res: Response) => {
+  await restoreIgnoredRecurringCandidate(decodeURIComponent(req.params.vendorKey as string));
   res.json({ success: true });
 }));
 

@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { CalendarClock, CheckCircle2, Plus, Trash2, X } from 'lucide-react';
 import {
-  CategoryItem, RecurringCandidate, RecurringTransaction, Transaction,
+  CategoryItem, IgnoredRecurringSuggestion, MissingRecurringTransaction, RecurringCandidate, RecurringTransaction, Transaction,
   addRecurring, deferRecurringCandidate, deleteRecurring, getRecurring, getRecurringCandidates,
-  ignoreRecurringCandidate, updateRecurring,
+  addMissingRecurring, getIgnoredRecurringCandidates, getMissingRecurring, ignoreRecurringCandidate, restoreIgnoredRecurringCandidate, updateRecurring,
 } from '../api';
 
 type MemberFilter = 'all' | '효' | '굥' | '봉' | '공동' | '미지정';
@@ -23,6 +23,12 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const [candidates, setCandidates] = useState<RecurringCandidate[]>([]);
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all');
   const [activeList, setActiveList] = useState<'candidates' | 'registered'>('candidates');
+  const [candidatePane, setCandidatePane] = useState<'candidates' | 'ignored'>('candidates');
+  const [ignoredCandidates, setIgnoredCandidates] = useState<IgnoredRecurringSuggestion[]>([]);
+  const [registeredPane, setRegisteredPane] = useState<'registered' | 'missing'>('registered');
+  const [missingItems, setMissingItems] = useState<MissingRecurringTransaction[]>([]);
+  const [missingEditingId, setMissingEditingId] = useState<string | null>(null);
+  const [missingAmount, setMissingAmount] = useState('');
   const [editing, setEditing] = useState<Partial<RecurringTransaction> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -60,6 +66,35 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     else await ignoreRecurringCandidate(candidate.vendor);
     await load();
   };
+  const toggleCandidatePane = async () => {
+    if (candidatePane === 'candidates') {
+      const response = await getIgnoredRecurringCandidates();
+      setIgnoredCandidates(response.data);
+      setCandidatePane('ignored');
+      return;
+    }
+    setCandidatePane('candidates');
+  };
+  const restoreCandidate = async (vendorKey: string) => {
+    await restoreIgnoredRecurringCandidate(vendorKey);
+    setIgnoredCandidates((previous) => previous.filter((item) => item.vendorKey !== vendorKey));
+    await load();
+  };
+  const toggleRegisteredPane = async () => {
+    if (registeredPane === 'registered') {
+      const response = await getMissingRecurring();
+      setMissingItems(response.data.filter((item) => memberFilter === 'all' || item.member === memberFilter));
+      setRegisteredPane('missing');
+      return;
+    }
+    setRegisteredPane('registered');
+  };
+  const addMissingItem = async (item: MissingRecurringTransaction) => {
+    await addMissingRecurring(item.id!, item.scheduledDate.slice(0, 7), Number(missingAmount));
+    setMissingItems((previous) => previous.filter((current) => current.id !== item.id));
+    setMissingEditingId(null);
+    await load();
+  };
 
   const status = (item: RecurringTransaction) => !item.isActive ? '중지됨' : matchesForMonth(item) ? '확인됨' : `매월 ${item.day_of_month}일`;
   const candidateSummary = useMemo(() => candidates.length, [candidates]);
@@ -84,8 +119,14 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     </div>
     <div className="recurring-layout">
       <section className={`recurring-panel ${activeList !== 'candidates' ? 'is-mobile-hidden' : ''}`}>
-        <div className="recurring-panel-header"><h3><CalendarClock size={20} /> 추천 후보 {candidateSummary > 0 && <span className="count-badge">{candidateSummary}</span>}</h3><span>반복 거래 분석</span></div>
-        {filteredCandidates.length === 0 ? <p className="recurring-empty">새 정기거래 후보가 없습니다.</p> : <div className="recurring-card-list">{filteredCandidates.map((candidate) => <article className="recurring-card" key={candidate.id}>
+        <div className="recurring-panel-header"><h3><CalendarClock size={20} /> {candidatePane === 'candidates' ? <>추천 후보 {candidateSummary > 0 && <span className="count-badge">{candidateSummary}</span>}</> : '추천 제외 목록'}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleCandidatePane()}>{candidatePane === 'candidates' ? '추천 제외 목록' : '추천 후보'}</button></div>
+        {candidatePane === 'ignored' ? (
+          ignoredCandidates.length === 0 ? <p className="recurring-empty">추천 제외 항목이 없습니다.</p> : <div className="recurring-card-list">{ignoredCandidates.map((item) => <article className="recurring-card recurring-ignored-card" key={item.id}>
+            <div className="recurring-card-title"><strong title={item.vendorKey}>{item.vendorKey}</strong></div>
+            <p>추천 제외됨 · {new Date(item.createdAt).toLocaleDateString('ko-KR')}</p>
+            {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => void restoreCandidate(item.vendorKey)}>다시 추천받기</button></div>}
+          </article>)}</div>
+        ) : filteredCandidates.length === 0 ? <p className="recurring-empty">새 정기거래 후보가 없습니다.</p> : <div className="recurring-card-list">{filteredCandidates.map((candidate) => <article className="recurring-card" key={candidate.id}>
           <div className="recurring-card-title"><strong title={candidate.vendor}>{candidate.vendor}</strong><span className={candidate.type === 'income' ? 'income-text' : 'expense-text'}>{candidate.type === 'income' ? '수입' : '지출'}</span></div>
           <p>매월 {candidate.dayOfMonth}일 전후 · {candidate.isVariable ? '변동 금액' : '고정 금액'}</p>
           <p>평균 {money(candidate.averageAmount)}{candidate.isVariable ? ` · 범위 ${money(candidate.minAmount)}~${money(candidate.maxAmount)}` : ''}</p>
@@ -95,8 +136,14 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         </article>)}</div>}
       </section>
       <section className={`recurring-panel ${activeList !== 'registered' ? 'is-mobile-hidden' : ''}`}>
-        <div className="recurring-panel-header"><h3><CheckCircle2 size={20} /> 등록된 정기거래</h3><span>{filteredList.length}건</span></div>
-        {filteredList.length === 0 ? <p className="recurring-empty">등록된 정기거래가 없습니다.</p> : <div className="recurring-card-list">{filteredList.map((item) => <article className="recurring-card" key={item.id}>
+        <div className="recurring-panel-header"><h3><CheckCircle2 size={20} /> {registeredPane === 'registered' ? `등록된 정기거래 (${filteredList.length}건)` : `미반영 정기거래 (${missingItems.length}건)`}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleRegisteredPane()}>{registeredPane === 'registered' ? '미반영 정기거래' : '등록된 정기거래'}</button></div>
+        {registeredPane === 'missing' ? (
+          missingItems.length === 0 ? <p className="recurring-empty">미반영 정기거래가 없습니다.</p> : <div className="recurring-card-list">{missingItems.map((item) => <article className="recurring-card recurring-missing-card" key={item.id}>
+            <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{item.scheduledDate}</span></div>
+            <p>{item.category} · {item.member} · 예상 {money(item.amount)}</p>
+            {canManage && (missingEditingId === item.id ? <div className="recurring-missing-inline-edit"><input className="edit-input" type="number" min="1" value={missingAmount} onChange={(event) => setMissingAmount(event.target.value)} aria-label={`${item.vendor} 실제 금액`} /><button className="btn btn-primary" disabled={Number(missingAmount) <= 0} onClick={() => void addMissingItem(item)}>추가</button><button className="btn btn-secondary" onClick={() => setMissingEditingId(null)}>취소</button></div> : <div className="recurring-actions"><button className="btn btn-primary" onClick={() => { setMissingEditingId(item.id!); setMissingAmount(String(Math.round(item.amount))); }}>거래에 추가</button></div>)}
+          </article>)}</div>
+        ) : filteredList.length === 0 ? <p className="recurring-empty">등록된 정기거래가 없습니다.</p> : <div className="recurring-card-list">{filteredList.map((item) => <article className="recurring-card" key={item.id}>
           <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
           <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
           {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}

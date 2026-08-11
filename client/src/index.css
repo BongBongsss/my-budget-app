@@ -292,6 +292,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; }
 .recurring-panel-header h3 { display: flex; min-width: 0; align-items: center; gap: 0.4rem; margin: 0; font-size: 1.08rem; }
 .recurring-panel-header > span { flex: 0 0 auto; color: #64748b; font-size: 0.78rem; white-space: nowrap; }
+.recurring-pane-toggle { flex: 0 0 auto; min-width: 0; padding: 0.35rem 0.55rem; font-size: 0.78rem; white-space: nowrap; }
 .count-badge { display: inline-flex; min-width: 20px; height: 20px; align-items: center; justify-content: center; padding: 0 5px; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 0.72rem; }
 .recurring-card-list { display: grid; gap: 0.6rem; max-height: 570px; overflow-y: auto; padding-right: 0.2rem; }
 .recurring-card { min-width: 0; padding: 0.75rem; border: 1px solid #e2e8f0; border-radius: 9px; background: #f8fafc; }
@@ -304,6 +305,9 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-card .recurring-evidence { color: #64748b; font-size: 0.75rem; }
 .recurring-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.65rem; }
 .recurring-actions .btn { min-width: 0; justify-content: center; padding: 0.4rem; white-space: nowrap; }
+.recurring-missing-inline-edit { display: flex; gap: 0.4rem; margin-top: 0.65rem; }
+.recurring-missing-inline-edit .edit-input { min-width: 0; flex: 1 1 auto; }
+.recurring-missing-inline-edit .btn { flex: 0 0 auto; white-space: nowrap; }
 .danger-action { color: #b91c1c; }
 .recurring-empty { margin: 0; padding: 1.5rem 0.5rem; text-align: center; color: #64748b; font-size: 0.9rem; }
 .recurring-mobile-switch, .recurring-mobile-add { display: none; }
@@ -322,6 +326,9 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-missing-item strong { display: block; overflow: hidden; color: #1e293b; text-overflow: ellipsis; white-space: nowrap; }
 .recurring-missing-item p { display: flex; overflow: hidden; align-items: center; gap: 0.3rem; margin: 0.2rem 0 0; color: #64748b; font-size: 0.78rem; text-overflow: ellipsis; white-space: nowrap; }
 .recurring-missing-item .btn { flex: 0 0 auto; white-space: nowrap; }
+.recurring-missing-edit { display: flex; flex: 0 0 auto; align-items: center; gap: 0.35rem; }
+.recurring-missing-edit .edit-input { width: 110px; min-width: 0; }
+.recurring-missing-edit .btn { padding: 0.4rem 0.55rem; }
 .recurring-missing-actions { display: flex; justify-content: flex-end; padding: 0 1rem 1rem; }
 .rule-review-list { display: grid; gap: 0.5rem; margin-bottom: 0.9rem; padding: 0.75rem; border: 1px solid #fde68a; border-radius: 9px; background: #fffbeb; }
 .rule-review-list h4 { margin: 0; color: #92400e; }
@@ -1188,8 +1195,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .settings-modal-content { max-height: calc(100dvh - 2rem); overflow-y: auto; }
 
   .recurring-filter-bar { margin-bottom: 0.75rem; }
-  .recurring-desktop-members { display: none !important; }
-  .recurring-mobile-members { display: flex !important; }
+  .recurring-desktop-members { display: flex !important; }
+  .recurring-mobile-members { display: none !important; }
   .recurring-filter-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; }
   .recurring-filter-bar .member-filter { order: 1; flex: 1 1 auto; min-width: 0; flex-wrap: nowrap; gap: 0.25rem; overflow: hidden; padding-bottom: 0; }
   .recurring-filter-bar .member-filter .btn { flex: 1 1 0; min-width: 0; }
@@ -1200,11 +1207,16 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-panel.is-mobile-hidden { display: none; }
   .recurring-panel-header { margin-bottom: 0.6rem; }
   .recurring-panel-header h3 { font-size: 0.98rem; }
+  .recurring-pane-toggle { padding: 0.3rem 0.45rem; font-size: 0.72rem; }
   .recurring-card-list { max-height: none; overflow: visible; gap: 0.45rem; }
   .recurring-card { padding: 0.65rem; }
   .recurring-card p { font-size: 0.76rem; }
   .recurring-actions { gap: 0.3rem; }
   .recurring-actions .btn { min-height: 32px; padding: 0.35rem 0.2rem; font-size: 0.74rem; }
+  .recurring-missing-inline-edit { flex-wrap: wrap; }
+  .recurring-missing-inline-edit .edit-input { flex: 1 1 100%; width: 100%; }
+  .recurring-missing-inline-edit .btn { flex: 1 1 0; }
+  .recurring-ignored-card .recurring-actions { grid-template-columns: minmax(0, 1fr); }
   .recurring-mobile-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.25rem; }
   .recurring-mobile-switch .btn { min-width: 0; justify-content: center; white-space: nowrap; }
   .recurring-filter-switch { order: 2; flex: 0 0 auto; margin: 0; }
@@ -1220,6 +1232,9 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-missing-list { max-height: 56dvh; overflow-y: auto; padding: 0.75rem; }
   .recurring-missing-item { align-items: stretch; flex-direction: column; gap: 0.55rem; }
   .recurring-missing-item .btn { width: 100%; justify-content: center; }
+  .recurring-missing-edit { width: 100%; flex-wrap: wrap; }
+  .recurring-missing-edit .edit-input { width: 100%; }
+  .recurring-missing-edit .btn { flex: 1 1 0; width: auto; }
   .recurring-missing-actions { padding: 0 0.75rem 0.75rem; }
   .rule-review-card { grid-template-columns: minmax(0, 1fr); }
   .rule-review-card p { grid-column: auto; }

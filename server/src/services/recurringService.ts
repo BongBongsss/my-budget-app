@@ -103,6 +103,10 @@ export const ignoreRecurringCandidate = async (vendor: string) => {
   return prisma.ignoredRecurringSuggestion.upsert({ where: { vendorKey }, update: {}, create: { id: randomUUID(), vendorKey } });
 };
 
+export const getIgnoredRecurringCandidates = async () => prisma.ignoredRecurringSuggestion.findMany({ orderBy: { createdAt: 'desc' } });
+
+export const restoreIgnoredRecurringCandidate = async (vendorKey: string) => prisma.ignoredRecurringSuggestion.delete({ where: { vendorKey } });
+
 export const getMissingRecurringTransactions = async (yearMonth = getCurrentYearMonth()) => {
   const [items, transactions] = await Promise.all([
     prisma.recurringTransaction.findMany({ where: { isActive: true }, orderBy: { day_of_month: 'asc' } }),
@@ -116,7 +120,7 @@ export const getMissingRecurringTransactions = async (yearMonth = getCurrentYear
   }));
 };
 
-export const addMissingRecurringTransaction = async (id: string, yearMonth = getCurrentYearMonth(), actor?: AuditActor) => {
+export const addMissingRecurringTransaction = async (id: string, yearMonth = getCurrentYearMonth(), actor?: AuditActor, actualAmount?: number) => {
   const item = await prisma.recurringTransaction.findUnique({ where: { id } });
   if (!item || !item.isActive) throw new Error('Recurring transaction is not available');
   const scheduledDate = `${yearMonth}-${String(item.day_of_month).padStart(2, '0')}`;
@@ -128,7 +132,7 @@ export const addMissingRecurringTransaction = async (id: string, yearMonth = get
   return prisma.$transaction(async (tx) => {
     const created = await tx.transaction.create({ data: {
       id: randomUUID(), date: scheduledDate, time: '', type: item.type, category: item.category, vendor: item.vendor,
-      amount: item.amount, currency: 'KRW', source: 'recurring_manual', memo: item.memo || '정기거래 미확인 항목 추가',
+      amount: actualAmount !== undefined ? Math.abs(actualAmount) : item.amount, currency: 'KRW', source: 'recurring_manual', memo: item.memo || '정기거래 미확인 항목 추가',
       member: item.member, isVerified: true, isDuplicate: false, isDeleted: false, isManualCategory: true, hash: randomUUID(),
     } });
     await tx.auditLog.create({ data: buildAuditLogData({ entityType: 'transaction', entityId: created.id, action: 'create', afterData: created, actor }) });
