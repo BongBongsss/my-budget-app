@@ -5,6 +5,7 @@ import {
   addRecurring, deferRecurringCandidate, deleteRecurring, getRecurring, getRecurringCandidates,
   addMissingRecurring, getIgnoredRecurringCandidates, getMissingRecurring, ignoreRecurringCandidate, restoreIgnoredRecurringCandidate, updateRecurring,
 } from '../api';
+import { getGroupName } from '../utils/categoryUtils';
 
 type MemberFilter = 'all' | '효' | '굥' | '봉' | '공동' | '미지정';
 const desktopMembers: MemberFilter[] = ['all', '효', '굥', '미지정'];
@@ -32,6 +33,8 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const [missingAmount, setMissingAmount] = useState('');
   const [editing, setEditing] = useState<Partial<RecurringTransaction> | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [compositionView, setCompositionView] = useState<'group' | 'category'>('group');
+  const [isCompositionExpanded, setIsCompositionExpanded] = useState(false);
 
   const load = async () => {
     const [recurring, suggested] = await Promise.all([getRecurring(), getRecurringCandidates()]);
@@ -50,6 +53,20 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const activeItems = filteredList.filter((item) => item.isActive !== false);
   const verifiedCount = activeItems.filter(matchesForMonth).length;
   const dueTotal = activeItems.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
+  const recurringExpenseGroups = useMemo(() => {
+    const grouped = activeItems.reduce<Record<string, number>>((result, item) => {
+      const key = compositionView === 'group' ? getGroupName(item.category, categories) : item.category || '미지정';
+      result[key] = (result[key] || 0) + item.amount;
+      return result;
+    }, {});
+    const entries = Object.entries(grouped).sort(([, left], [, right]) => right - left);
+    return { entries, total: entries.reduce((sum, [, amount]) => sum + amount, 0) };
+  }, [activeItems, categories, compositionView]);
+  const hiddenRecurringGroups = recurringExpenseGroups.entries.slice(9);
+  const visibleRecurringExpenseGroups = !isCompositionExpanded
+    ? recurringExpenseGroups.entries.slice(0, 9)
+    : recurringExpenseGroups.entries;
+  const hiddenRecurringGroupAmount = hiddenRecurringGroups.reduce((sum, [, amount]) => sum + amount, 0);
   const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === 'all' || memberFilter === '미지정' ? '공동' : memberFilter, isVariable: false, isActive: true, memo: '' });
   const addFromCandidate = (candidate: RecurringCandidate) => openEditor({ vendor: candidate.vendor, amount: candidate.averageAmount, category: candidate.category, type: 'expense', day_of_month: candidate.dayOfMonth, member: candidate.member, isVariable: candidate.isVariable, isActive: true });
 
@@ -124,6 +141,22 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
       <div className="card-summary income"><div className="details"><span>확인 완료</span><h2>{verifiedCount}건</h2></div></div>
       <div className="card-summary balance"><div className="details"><span>미확인 예정</span><h2>{Math.max(activeItems.length - verifiedCount, 0)}건</h2></div></div>
     </div>
+    <section className="recurring-composition-card" aria-label="정기 지출 구성">
+      <div className="recurring-composition-header"><h3>정기 지출 구성</h3><button type="button" className="btn btn-secondary recurring-composition-toggle" onClick={() => { setCompositionView((view) => view === 'group' ? 'category' : 'group'); setIsCompositionExpanded(false); }}>{compositionView === 'group' ? '대분류별' : '상위그룹별'}</button></div>
+      {recurringExpenseGroups.entries.length === 0 ? <p className="recurring-empty">등록된 정기 지출이 없습니다.</p> : <div className={`recurring-composition-list ${isCompositionExpanded ? 'is-expanded' : ''}`}>
+        {visibleRecurringExpenseGroups.map(([groupName, amount], index) => {
+          const percentage = recurringExpenseGroups.total ? (amount / recurringExpenseGroups.total) * 100 : 0;
+          return <div className="recurring-composition-bar" key={groupName}>
+            <span className="recurring-composition-fill" style={{ width: `${Math.max(percentage, 2)}%`, backgroundColor: ['#e99494', '#f0b16c', '#f3d36b', '#dc93ca', '#b6a3f6', '#8fc5ed'][index % 6] }} />
+            <span className="recurring-composition-content"><span>{groupName} ({percentage.toFixed(1)}%)</span><span>{money(amount)}</span></span>
+          </div>;
+        })}
+        {hiddenRecurringGroups.length > 0 && <button type="button" className="recurring-composition-bar recurring-composition-more" aria-expanded={isCompositionExpanded} onClick={() => setIsCompositionExpanded((expanded) => !expanded)}>
+          <span className="recurring-composition-fill" style={{ width: `${Math.max(recurringExpenseGroups.total ? (hiddenRecurringGroupAmount / recurringExpenseGroups.total) * 100 : 0, 2)}%` }} />
+          <span className="recurring-composition-content"><span>{isCompositionExpanded ? '상위 9개만 보기' : `그 외 ${hiddenRecurringGroups.length}개`} ({recurringExpenseGroups.total ? ((hiddenRecurringGroupAmount / recurringExpenseGroups.total) * 100).toFixed(1) : '0.0'}%)</span><span>{money(hiddenRecurringGroupAmount)}</span></span>
+        </button>}
+      </div>}
+    </section>
     <div className="recurring-layout">
       <section className={`recurring-panel ${activeList !== 'candidates' ? 'is-mobile-hidden' : ''}`}>
         <div className="recurring-panel-header"><h3><CalendarClock size={20} /> {candidatePane === 'candidates' ? <>추천 후보 {candidateSummary > 0 && <span className="count-badge">{candidateSummary}</span>}</> : '추천 제외 목록'}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" disabled={isCandidatePaneLoading} onClick={() => void toggleCandidatePane()}>{candidatePane === 'candidates' ? '추천 제외 목록' : '추천 후보'}</button></div>
