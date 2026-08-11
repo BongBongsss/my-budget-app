@@ -27,12 +27,15 @@ const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_mon
   ));
 };
 
-export const getAllRecurringTransactions = async () => prisma.recurringTransaction.findMany({ orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] });
+export const getAllRecurringTransactions = async () => prisma.recurringTransaction.findMany({
+  where: { type: 'expense' },
+  orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }],
+});
 
 export const addRecurringTransaction = async (data: RecurringInput) => prisma.recurringTransaction.create({
   data: {
     id: randomUUID(), vendor: data.vendor.trim(), amount: Math.abs(data.amount), category: data.category,
-    type: data.type || 'expense', day_of_month: data.day_of_month, member: data.member || 'shared',
+    type: 'expense', day_of_month: data.day_of_month, member: data.member || 'shared',
     isVariable: Boolean(data.isVariable), memo: data.memo?.trim() || null,
   },
 });
@@ -43,7 +46,7 @@ export const updateRecurringTransaction = async (id: string, data: Partial<Recur
     ...(data.vendor !== undefined ? { vendor: data.vendor.trim() } : {}),
     ...(data.amount !== undefined ? { amount: Math.abs(data.amount) } : {}),
     ...(data.category !== undefined ? { category: data.category } : {}),
-    ...(data.type !== undefined ? { type: data.type } : {}),
+    ...(data.type !== undefined ? { type: 'expense' } : {}),
     ...(data.day_of_month !== undefined ? { day_of_month: data.day_of_month } : {}),
     ...(data.member !== undefined ? { member: data.member } : {}),
     ...(data.isVariable !== undefined ? { isVariable: data.isVariable } : {}),
@@ -56,7 +59,7 @@ export const deleteRecurringTransaction = async (id: string) => prisma.recurring
 
 export const getRecurringCandidates = async () => {
   const [transactions, existing, ignored, deferred] = await Promise.all([
-    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: { in: ['income', 'expense'] }, source: { not: 'recurring' } }, select: { vendor: true, category: true, type: true, amount: true, date: true, member: true } }),
+    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', source: { not: 'recurring' } }, select: { vendor: true, category: true, type: true, amount: true, date: true, member: true } }),
     prisma.recurringTransaction.findMany({ select: { vendor: true } }),
     prisma.ignoredRecurringSuggestion.findMany({ select: { vendorKey: true } }),
     prisma.deferredRecurringSuggestion.findMany({ where: { deferredUntil: { gt: new Date() } }, select: { vendorKey: true } }),
@@ -109,7 +112,7 @@ export const restoreIgnoredRecurringCandidate = async (vendorKey: string) => pri
 
 export const getMissingRecurringTransactions = async (yearMonth = getCurrentYearMonth()) => {
   const [items, transactions] = await Promise.all([
-    prisma.recurringTransaction.findMany({ where: { isActive: true }, orderBy: { day_of_month: 'asc' } }),
+    prisma.recurringTransaction.findMany({ where: { isActive: true, type: 'expense' }, orderBy: { day_of_month: 'asc' } }),
     prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, date: { startsWith: yearMonth } }, select: { vendor: true, type: true, date: true } }),
   ]);
   const today = new Date();
@@ -122,7 +125,7 @@ export const getMissingRecurringTransactions = async (yearMonth = getCurrentYear
 
 export const addMissingRecurringTransaction = async (id: string, yearMonth = getCurrentYearMonth(), actor?: AuditActor, actualAmount?: number) => {
   const item = await prisma.recurringTransaction.findUnique({ where: { id } });
-  if (!item || !item.isActive) throw new Error('Recurring transaction is not available');
+  if (!item || !item.isActive || item.type !== 'expense') throw new Error('Recurring transaction is not available');
   const scheduledDate = `${yearMonth}-${String(item.day_of_month).padStart(2, '0')}`;
   const transactions = await prisma.transaction.findMany({
     where: { isVerified: true, isDeleted: false, date: { startsWith: yearMonth } },

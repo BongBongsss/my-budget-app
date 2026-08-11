@@ -45,13 +45,13 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     transaction.isVerified !== false && transaction.type === item.type && transaction.vendor.trim().toLowerCase().includes(item.vendor.trim().toLowerCase()) &&
     transaction.date.startsWith(currentMonth) && Math.abs(Number(transaction.date.slice(-2)) - item.day_of_month) <= 5,
   );
-  const filteredList = list.filter((item) => memberFilter === 'all' || item.member === memberFilter);
+  const filteredList = list.filter((item) => item.type === 'expense' && (memberFilter === 'all' || item.member === memberFilter));
   const filteredCandidates = candidates.filter((item) => memberFilter === 'all' || item.member === memberFilter);
   const activeItems = filteredList.filter((item) => item.isActive !== false);
   const verifiedCount = activeItems.filter(matchesForMonth).length;
   const dueTotal = activeItems.filter((item) => item.type === 'expense').reduce((sum, item) => sum + item.amount, 0);
   const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === 'all' || memberFilter === '미지정' ? '공동' : memberFilter, isVariable: false, isActive: true, memo: '' });
-  const addFromCandidate = (candidate: RecurringCandidate) => openEditor({ vendor: candidate.vendor, amount: candidate.averageAmount, category: candidate.category, type: candidate.type, day_of_month: candidate.dayOfMonth, member: candidate.member, isVariable: candidate.isVariable, isActive: true });
+  const addFromCandidate = (candidate: RecurringCandidate) => openEditor({ vendor: candidate.vendor, amount: candidate.averageAmount, category: candidate.category, type: 'expense', day_of_month: candidate.dayOfMonth, member: candidate.member, isVariable: candidate.isVariable, isActive: true });
 
   const save = async () => {
     if (!editing?.vendor?.trim() || !editing.category || !editing.amount || !editing.day_of_month) return;
@@ -134,7 +134,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
             {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => void restoreCandidate(item.vendorKey)}>다시 추천받기</button></div>}
           </article>)}</div>
         ) : filteredCandidates.length === 0 ? <p className="recurring-empty">새 정기거래 후보가 없습니다.</p> : <div className="recurring-card-list">{filteredCandidates.map((candidate) => <article className="recurring-card" key={candidate.id}>
-          <div className="recurring-card-title"><strong title={candidate.vendor}>{candidate.vendor}</strong><span className={candidate.type === 'income' ? 'income-text' : 'expense-text'}>{candidate.type === 'income' ? '수입' : '지출'}</span></div>
+          <div className="recurring-card-title"><strong title={candidate.vendor}>{candidate.vendor}</strong><span className="expense-text">지출</span></div>
           <p>매월 {candidate.dayOfMonth}일 전후 · {candidate.isVariable ? '변동 금액' : '고정 금액'}</p>
           <p>평균 {money(candidate.averageAmount)}{candidate.isVariable ? ` · 범위 ${money(candidate.minAmount)}~${money(candidate.maxAmount)}` : ''}</p>
           <p>최근 {candidate.monthCount}개월 {candidate.occurrenceCount}회</p>
@@ -164,7 +164,6 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
       <div className="entry-form recurring-editor-form">
         <label>내용<input className="edit-input" value={editing.vendor || ''} onChange={(event) => setEditing({ ...editing, vendor: event.target.value })} /></label>
         <label>예상 금액<input className="edit-input" type="number" min="0" value={editing.amount || ''} onChange={(event) => setEditing({ ...editing, amount: Number(event.target.value) })} /></label>
-        <label>구분<select className="edit-input" value={editing.type || 'expense'} onChange={(event) => setEditing({ ...editing, type: event.target.value as 'income' | 'expense' })}><option value="expense">지출</option><option value="income">수입</option></select></label>
         <label>대분류<select className="edit-input" value={editing.category || ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}</select></label>
         <label>예정일<input className="edit-input" type="number" min="1" max="28" value={editing.day_of_month || 1} onChange={(event) => setEditing({ ...editing, day_of_month: Number(event.target.value) })} /></label>
         <label>구성원<select className="edit-input" value={editing.member || '공동'} onChange={(event) => setEditing({ ...editing, member: event.target.value })}>{['효', '굥', '봉', '공동'].map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
