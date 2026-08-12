@@ -7,6 +7,9 @@ vi.mock('../db', () => ({
     asset: {
       findMany: vi.fn(),
     },
+    assetType: {
+      findMany: vi.fn(),
+    },
     assetHistory: {
       upsert: vi.fn(),
     },
@@ -20,6 +23,9 @@ describe('AssetService - History Calculation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     (prisma.assetHistory.upsert as any).mockResolvedValue({});
+    (prisma.assetType.findMany as any).mockImplementation(({ where }: any) => Promise.resolve(
+      where?.isLiability ? [{ id: 'liability' }] : []
+    ));
   });
 
   it('자산과 부채를 합산하여 순자산을 정확히 계산하고 저장해야 한다', async () => {

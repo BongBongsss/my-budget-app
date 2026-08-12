@@ -4,6 +4,7 @@ import {
   CategoryItem, IgnoredRecurringSuggestion, MissingRecurringTransaction, RecurringCandidate, RecurringTransaction, Transaction,
   addRecurring, deferRecurringCandidate, deleteRecurring, getRecurring, getRecurringCandidates,
   addMissingRecurring, getIgnoredRecurringCandidates, getMissingRecurring, ignoreRecurringCandidate, restoreIgnoredRecurringCandidate, updateRecurring,
+  confirmRecurringMatch,
 } from '../api';
 import { getGroupName } from '../utils/categoryUtils';
 
@@ -37,6 +38,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const [compositionView, setCompositionView] = useState<'group' | 'category'>('group');
   const [isCompositionExpanded, setIsCompositionExpanded] = useState(false);
   const [selectedCompositionGroup, setSelectedCompositionGroup] = useState<string | null>(null);
+  const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
 
   const load = async () => {
     const [recurring, suggested] = await Promise.all([getRecurring(), getRecurringCandidates()]);
@@ -160,14 +162,22 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     setMissingEditingId(null);
     await load();
   };
+  const confirmMatch = async (item: RecurringTransaction, transactionId: string) => {
+    if (!item.id || !item.matchYearMonth) return;
+    await confirmRecurringMatch(item.id, transactionId, item.matchYearMonth);
+    setExpandedMatchId(null);
+    await load();
+  };
 
   const status = (item: RecurringTransaction) => {
     if (!item.isActive) return '중지됨';
+    if (item.matchStatus === 'confirmed') return '확인 완료';
     if (item.matchStatus === 'auto_matched') return '자동 연결';
     if (item.matchStatus === 'review_required') return '확인 필요';
     if (item.matchStatus === 'duplicate_suspected') return '중복 의심';
     return matchesForMonth(item) ? '확인됨' : `매월 ${item.day_of_month}일`;
   };
+  const canExpandMatch = (item: RecurringTransaction) => item.matchStatus === 'review_required' || item.matchStatus === 'duplicate_suspected';
   const candidateSummary = useMemo(() => candidates.length, [candidates]);
 
   return <div className="recurring-view animate-fadeIn">
@@ -244,9 +254,16 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         ) : visibleRegisteredList.length === 0 ? <p className="recurring-empty">등록된 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{visibleRegisteredList.map((item) => {
           const cardMemo = getCardMemo(item);
           return <article className="recurring-card" key={item.id}>
-            <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
+            <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong>{canExpandMatch(item) ? <button type="button" className={item.type === 'income' ? 'income-text recurring-match-toggle' : 'expense-text recurring-match-toggle'} aria-expanded={expandedMatchId === item.id} onClick={() => setExpandedMatchId((current) => current === item.id ? null : item.id || null)}>{status(item)}</button> : <span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span>}</div>
             <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
             {item.isActive && item.matchStatus && item.matchStatus !== 'missing' && <p className="recurring-evidence">매칭 {item.matchScore}점 · {item.matchReasons?.join(' · ')}</p>}
+            {canExpandMatch(item) && expandedMatchId === item.id && <div className="recurring-match-details">
+              <strong>{item.matchStatus === 'duplicate_suspected' ? '중복 후보 거래' : '확인할 후보 거래'}</strong>
+              {item.matchCandidates?.map((candidate) => <div className="recurring-match-candidate" key={candidate.id}>
+                <span>{candidate.date.slice(5)} · {candidate.vendor}</span><span>{money(candidate.amount)} · {candidate.category}</span><span>{candidate.score}점 · {candidate.reasons.join(' · ')}</span>
+                {canManage && <button type="button" className="btn btn-primary recurring-match-confirm" onClick={() => void confirmMatch(item, candidate.id)}>이 거래로 확인</button>}
+              </div>)}
+            </div>}
             {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
             {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
           </article>;

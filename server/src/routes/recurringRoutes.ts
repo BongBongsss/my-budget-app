@@ -11,6 +11,7 @@ import {
   restoreIgnoredRecurringCandidate,
   getMissingRecurringTransactions,
   addMissingRecurringTransaction,
+  confirmRecurringMatch,
 } from '../services/recurringService';
 import { asyncHandler } from '../utils/asyncHandler';
 import { BadRequestError } from '../utils/errors';
@@ -47,6 +48,12 @@ router.post('/:id/add-missing', asyncHandler(async (req: Request, res: Response)
     throw new BadRequestError('Amount must be greater than zero');
   }
   res.status(201).json(await addMissingRecurringTransaction(req.params.id as string, yearMonth, { role: (req as any).session?.role || 'admin', ipAddress: req.ip }, actualAmount));
+}));
+
+router.post('/:id/confirm-match', asyncHandler(async (req: Request, res: Response) => {
+  const { transactionId, yearMonth } = req.body || {};
+  if (typeof transactionId !== 'string' || typeof yearMonth !== 'string' || !/^\d{4}-\d{2}$/.test(yearMonth)) throw new BadRequestError('transactionId and yearMonth are required');
+  res.json(await confirmRecurringMatch(req.params.id as string, transactionId, yearMonth));
 }));
 
 router.post('/candidates/defer', asyncHandler(async (req: Request, res: Response) => {

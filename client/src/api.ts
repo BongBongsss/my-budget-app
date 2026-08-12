@@ -121,10 +121,19 @@ export interface RecurringTransaction {
   memo?: string;
   createdAt?: string;
   updatedAt?: string;
-  matchStatus?: 'inactive' | 'missing' | 'auto_matched' | 'review_required' | 'duplicate_suspected';
+  matchStatus?: 'inactive' | 'missing' | 'auto_matched' | 'confirmed' | 'review_required' | 'duplicate_suspected';
   matchScore?: number;
   matchReasons?: string[];
   matchYearMonth?: string;
+  matchCandidates?: Array<{
+    id: string;
+    date: string;
+    vendor: string;
+    amount: number;
+    category: string;
+    score: number;
+    reasons: string[];
+  }>;
 }
 
 export interface RecurringCandidate {
@@ -323,6 +332,7 @@ export const getIgnoredRecurringCandidates = () => instance.get<IgnoredRecurring
 export const restoreIgnoredRecurringCandidate = (vendorKey: string) => instance.delete(`/recurring/candidates/ignored/${encodeURIComponent(vendorKey)}`);
 export const getMissingRecurring = (yearMonth?: string) => instance.get<MissingRecurringTransaction[]>('/recurring/missing', { params: yearMonth ? { yearMonth } : undefined });
 export const addMissingRecurring = (id: string, yearMonth?: string, amount?: number) => instance.post<Transaction>(`/recurring/${id}/add-missing`, { yearMonth, amount });
+export const confirmRecurringMatch = (id: string, transactionId: string, yearMonth: string) => instance.post(`/recurring/${id}/confirm-match`, { transactionId, yearMonth });
 
 // Assets
 export const getAssets = () => instance.get<Asset[]>('/assets');

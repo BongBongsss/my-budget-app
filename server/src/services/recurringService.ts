@@ -41,11 +41,12 @@ export const getRecurringVendorLabel = (value: string) => {
     .trim();
 };
 const getRecurringVendorKey = (value: string) => normalizeRuleText(getRecurringVendorLabel(value));
-export const getRecurringMatchScore = (item: { vendor: string; amount: number; category: string; member: string; day_of_month: number; isVariable: boolean }, transaction: { vendor: string; amount: number; category: string; member: string; date: string }) => {
+export const getRecurringMatchScore = (item: { vendor: string; amount: number; category: string; member: string; day_of_month: number; isVariable: boolean }, transaction: { vendor: string; amount: number; category: string; member: string; date: string }, aliases: string[] = []) => {
   if (item.member !== transaction.member) return { score: 0, reasons: [] };
   const itemVendor = getRecurringVendorKey(item.vendor);
   const transactionVendor = getRecurringVendorKey(transaction.vendor);
-  const vendor = itemVendor === transactionVendor ? 35 : (itemVendor.includes(transactionVendor) || transactionVendor.includes(itemVendor)) ? 25 : 0;
+  const isLearnedAlias = aliases.includes(transactionVendor);
+  const vendor = itemVendor === transactionVendor || isLearnedAlias ? 35 : (itemVendor.includes(transactionVendor) || transactionVendor.includes(itemVendor)) ? 25 : 0;
   const dayDifference = Math.abs(getDay(transaction.date) - item.day_of_month);
   const scheduledDay = dayDifference <= 2 ? 15 : dayDifference <= 5 ? 10 : dayDifference <= 8 ? 4 : 0;
   const amountDifference = Math.abs(item.amount - transaction.amount) / Math.max(item.amount, 1);
@@ -53,7 +54,7 @@ export const getRecurringMatchScore = (item: { vendor: string; amount: number; c
   const amount = amountDifference <= 0.03 ? 20 : amountDifference <= allowedDifference ? 14 : amountDifference <= allowedDifference * 2 ? 6 : 0;
   const member = 10;
   const category = item.category === transaction.category ? 10 : 0;
-  const reasons = [vendor === 35 ? '거래처 일치' : vendor ? '거래처 유사' : null, scheduledDay >= 10 ? '결제일 일치' : scheduledDay ? '결제일 근접' : null, amount >= 14 ? '금액 일치' : amount ? '금액 범위 내' : null, member === 10 ? '구성원 일치' : null, category ? '카테고리 일치' : null].filter(Boolean) as string[];
+  const reasons = [isLearnedAlias ? '학습 거래처 일치' : vendor === 35 ? '거래처 일치' : vendor ? '거래처 유사' : null, scheduledDay >= 10 ? '결제일 일치' : scheduledDay ? '결제일 근접' : null, amount >= 14 ? '금액 일치' : amount ? '금액 범위 내' : null, member === 10 ? '구성원 일치' : null, category ? '카테고리 일치' : null].filter(Boolean) as string[];
   return { score: vendor + scheduledDay + amount + member + category, reasons };
 };
 const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_month: number }, transactions: Array<{ vendor: string; type: string; date: string }>) => {
@@ -65,17 +66,67 @@ const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_mon
 
 export const getAllRecurringTransactions = async () => {
   const yearMonth = await getLatestTransactionYearMonth();
-  const [items, transactions] = await Promise.all([
+  const [items, transactions, confirmations, aliases] = await Promise.all([
     prisma.recurringTransaction.findMany({ where: { type: 'expense' }, orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] }),
-    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', date: { startsWith: yearMonth } }, select: { vendor: true, amount: true, category: true, member: true, date: true } }),
+    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', date: { startsWith: yearMonth } }, select: { id: true, vendor: true, amount: true, category: true, member: true, date: true } }),
+    prisma.$queryRawUnsafe<Array<{ recurringId: string; transactionId: string }>>('SELECT "recurringId", "transactionId" FROM "RecurringMatchConfirmation" WHERE "yearMonth" = $1', yearMonth),
+    prisma.$queryRawUnsafe<Array<{ recurringId: string; vendorKey: string }>>('SELECT "recurringId", "vendorKey" FROM "RecurringAlias"'),
   ]);
-  return items.map((item) => {
-    const matches = transactions.map((transaction) => ({ ...getRecurringMatchScore(item, transaction) })).sort((a, b) => b.score - a.score);
-    const best = matches[0];
-    const likelyMatches = matches.filter((match) => match.score >= 60).length;
-    const matchStatus = !item.isActive ? 'inactive' : !best || best.score < 60 ? 'missing' : likelyMatches > 1 ? 'duplicate_suspected' : best.score >= 90 ? 'auto_matched' : 'review_required';
-    return { ...item, matchStatus, matchScore: best?.score || 0, matchReasons: best?.reasons || [], matchYearMonth: yearMonth };
+  const confirmedTransactionByRecurring = new Map(confirmations.map((item) => [item.recurringId, item.transactionId]));
+  const aliasesByRecurring = new Map<string, string[]>();
+  const aliasOwnerByKey = new Map<string, string>();
+  aliases.forEach((alias) => {
+    aliasesByRecurring.set(alias.recurringId, [...(aliasesByRecurring.get(alias.recurringId) || []), alias.vendorKey]);
+    aliasOwnerByKey.set(alias.vendorKey, alias.recurringId);
   });
+  return items.map((item) => {
+    const matches = transactions
+      .filter((transaction) => {
+        const owner = aliasOwnerByKey.get(getRecurringVendorKey(transaction.vendor));
+        return !owner || owner === item.id;
+      })
+      .map((transaction) => ({ transaction, ...getRecurringMatchScore(item, transaction, aliasesByRecurring.get(item.id) || []) }))
+      .sort((a, b) => b.score - a.score);
+    const best = matches[0];
+    const likelyMatches = matches.filter((match) => match.score >= 60);
+    const confirmedTransactionId = confirmedTransactionByRecurring.get(item.id);
+    const confirmedMatch = matches.find((match) => match.transaction.id === confirmedTransactionId);
+    const matchStatus = !item.isActive ? 'inactive' : confirmedMatch ? 'confirmed' : !best || best.score < 60 ? 'missing' : likelyMatches.length > 1 ? 'duplicate_suspected' : best.score >= 90 ? 'auto_matched' : 'review_required';
+    return {
+      ...item, matchStatus, matchScore: (confirmedMatch || best)?.score || 0, matchReasons: (confirmedMatch || best)?.reasons || [], matchYearMonth: yearMonth,
+      matchCandidates: likelyMatches.slice(0, 3).map((match) => ({
+        id: match.transaction.id, date: match.transaction.date, vendor: match.transaction.vendor, amount: match.transaction.amount,
+        category: match.transaction.category, score: match.score, reasons: match.reasons,
+      })),
+    };
+  });
+};
+
+export const confirmRecurringMatch = async (recurringId: string, transactionId: string, yearMonth: string) => {
+  const [item, transaction] = await Promise.all([
+    prisma.recurringTransaction.findUnique({ where: { id: recurringId } }),
+    prisma.transaction.findUnique({ where: { id: transactionId } }),
+  ]);
+  if (!item || !item.isActive || item.type !== 'expense') throw new Error('Recurring item is not available');
+  if (!transaction || !transaction.isVerified || transaction.isDeleted || transaction.type !== 'expense' || !transaction.date.startsWith(yearMonth)) throw new Error('Transaction is not available for this month');
+  if (item.member !== transaction.member) throw new Error('Transaction member does not match the recurring item');
+  const transactionVendorKey = getRecurringVendorKey(transaction.vendor);
+  const aliasOwner = await prisma.$queryRawUnsafe<Array<{ recurringId: string }>>('SELECT "recurringId" FROM "RecurringAlias" WHERE "vendorKey" = $1', transactionVendorKey);
+  if (aliasOwner[0] && aliasOwner[0].recurringId !== recurringId) throw new Error('Transaction vendor is already assigned to another recurring item');
+  const ownAliases = await prisma.$queryRawUnsafe<Array<{ vendorKey: string }>>('SELECT "vendorKey" FROM "RecurringAlias" WHERE "recurringId" = $1', recurringId);
+  const match = getRecurringMatchScore(item, transaction, ownAliases.map((alias) => alias.vendorKey));
+  if (match.score < 60) throw new Error('Transaction does not meet the recurring match threshold');
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "RecurringMatchConfirmation" ("id", "recurringId", "transactionId", "yearMonth") VALUES ($1, $2, $3, $4)
+     ON CONFLICT ("recurringId", "yearMonth") DO UPDATE SET "transactionId" = EXCLUDED."transactionId", "createdAt" = CURRENT_TIMESTAMP`,
+    randomUUID(), recurringId, transactionId, yearMonth,
+  );
+  await prisma.$executeRawUnsafe(
+    `INSERT INTO "RecurringAlias" ("id", "recurringId", "vendorKey", "label") VALUES ($1, $2, $3, $4)
+     ON CONFLICT ("vendorKey") DO UPDATE SET "recurringId" = EXCLUDED."recurringId", "label" = EXCLUDED."label", "updatedAt" = CURRENT_TIMESTAMP`,
+    randomUUID(), recurringId, transactionVendorKey, getRecurringVendorLabel(transaction.vendor),
+  );
+  return { success: true };
 };
 
 export const addRecurringTransaction = async (data: RecurringInput) => prisma.recurringTransaction.create({

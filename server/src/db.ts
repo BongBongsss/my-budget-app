@@ -311,6 +311,28 @@ export const initDb = async () => {
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "IgnoredRecurringSuggestion" ("id" text NOT NULL PRIMARY KEY, "vendorKey" text NOT NULL UNIQUE, "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);`);
     await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "DeferredRecurringSuggestion" ("id" text NOT NULL PRIMARY KEY, "vendorKey" text NOT NULL UNIQUE, "deferredUntil" timestamp(3) NOT NULL, "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP);`);
     await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "DeferredRecurringSuggestion_deferredUntil_idx" ON "DeferredRecurringSuggestion" ("deferredUntil");`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "RecurringMatchConfirmation" (
+        "id" text NOT NULL PRIMARY KEY,
+        "recurringId" text NOT NULL,
+        "transactionId" text NOT NULL UNIQUE,
+        "yearMonth" text NOT NULL,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        UNIQUE ("recurringId", "yearMonth")
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RecurringMatchConfirmation_yearMonth_idx" ON "RecurringMatchConfirmation" ("yearMonth");`);
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "RecurringAlias" (
+        "id" text NOT NULL PRIMARY KEY,
+        "recurringId" text NOT NULL,
+        "vendorKey" text NOT NULL UNIQUE,
+        "label" text NOT NULL,
+        "createdAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" timestamp(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prisma.$executeRawUnsafe(`CREATE INDEX IF NOT EXISTS "RecurringAlias_recurringId_idx" ON "RecurringAlias" ("recurringId");`);
     console.log('Deferred rule suggestion table check/creation completed.');
   } catch (err) {
     console.error('Failed to initialize deferred rule suggestions:', err);

@@ -319,6 +319,13 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-card p { overflow: hidden; margin: 0.2rem 0 0; color: #475569; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .recurring-card .recurring-card-memo { color: #2563eb; font-style: normal; }
 .recurring-card .recurring-evidence { color: #64748b; font-size: 0.75rem; }
+.recurring-match-toggle { padding: 0; border: 0; background: transparent; font: inherit; cursor: pointer; }
+.recurring-match-toggle:hover { text-decoration: underline; }
+.recurring-match-details { display: grid; gap: 0.35rem; margin-top: 0.6rem; padding: 0.6rem; border-radius: 7px; background: #eef2ff; color: #334155; font-size: 0.75rem; }
+.recurring-match-details > strong { font-size: 0.78rem; }
+.recurring-match-candidate { display: grid; gap: 0.1rem; padding-top: 0.35rem; border-top: 1px solid #dbeafe; }
+.recurring-match-candidate span:first-child { overflow: hidden; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.recurring-match-confirm { justify-self: start; margin-top: 0.25rem; padding: 0.28rem 0.5rem; font-size: 0.72rem; }
 .recurring-actions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.4rem; margin-top: 0.65rem; }
 .recurring-actions .btn { min-width: 0; justify-content: center; padding: 0.4rem; white-space: nowrap; }
 .recurring-missing-inline-edit { display: flex; gap: 0.4rem; margin-top: 0.65rem; }
