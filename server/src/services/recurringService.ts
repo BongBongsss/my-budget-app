@@ -42,6 +42,7 @@ export const getRecurringVendorLabel = (value: string) => {
 };
 const getRecurringVendorKey = (value: string) => normalizeRuleText(getRecurringVendorLabel(value));
 export const getRecurringMatchScore = (item: { vendor: string; amount: number; category: string; member: string; day_of_month: number; isVariable: boolean }, transaction: { vendor: string; amount: number; category: string; member: string; date: string }) => {
+  if (item.member !== transaction.member) return { score: 0, reasons: [] };
   const itemVendor = getRecurringVendorKey(item.vendor);
   const transactionVendor = getRecurringVendorKey(transaction.vendor);
   const vendor = itemVendor === transactionVendor ? 35 : (itemVendor.includes(transactionVendor) || transactionVendor.includes(itemVendor)) ? 25 : 0;
@@ -50,7 +51,7 @@ export const getRecurringMatchScore = (item: { vendor: string; amount: number; c
   const amountDifference = Math.abs(item.amount - transaction.amount) / Math.max(item.amount, 1);
   const allowedDifference = item.isVariable ? 0.2 : 0.1;
   const amount = amountDifference <= 0.03 ? 20 : amountDifference <= allowedDifference ? 14 : amountDifference <= allowedDifference * 2 ? 6 : 0;
-  const member = item.member === transaction.member ? 10 : item.member === 'shared' || transaction.member === 'shared' ? 5 : 0;
+  const member = 10;
   const category = item.category === transaction.category ? 10 : 0;
   const reasons = [vendor === 35 ? '거래처 일치' : vendor ? '거래처 유사' : null, scheduledDay >= 10 ? '결제일 일치' : scheduledDay ? '결제일 근접' : null, amount >= 14 ? '금액 일치' : amount ? '금액 범위 내' : null, member === 10 ? '구성원 일치' : null, category ? '카테고리 일치' : null].filter(Boolean) as string[];
   return { score: vendor + scheduledDay + amount + member + category, reasons };

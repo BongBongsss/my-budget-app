@@ -22,13 +22,17 @@ describe('getRecurringVendorLabel', () => {
 });
 
 describe('getRecurringMatchScore', () => {
-  const recurring = { vendor: 'KT통신비', amount: 65000, category: '통신', member: 'shared', day_of_month: 25, isVariable: false };
+  const recurring = { vendor: 'KT통신비', amount: 65000, category: '통신', member: '효', day_of_month: 25, isVariable: false };
 
   it('scores an exact recurring transaction high enough for automatic matching', () => {
-    expect(getRecurringMatchScore(recurring, { vendor: 'KT통신비', amount: 65000, category: '통신', member: 'shared', date: '2026-08-25' }).score).toBe(90);
+    expect(getRecurringMatchScore(recurring, { vendor: 'KT통신비', amount: 65000, category: '통신', member: '효', date: '2026-08-25' }).score).toBe(90);
   });
 
   it('keeps an unrelated one-off transaction below the review threshold', () => {
-    expect(getRecurringMatchScore(recurring, { vendor: '전자랜드', amount: 65000, category: '쇼핑', member: 'shared', date: '2026-08-25' }).score).toBeLessThan(60);
+    expect(getRecurringMatchScore(recurring, { vendor: '전자랜드', amount: 65000, category: '쇼핑', member: '효', date: '2026-08-25' }).score).toBeLessThan(60);
+  });
+
+  it('excludes a transaction belonging to the other member before scoring', () => {
+    expect(getRecurringMatchScore(recurring, { vendor: 'KT통신비', amount: 65000, category: '통신', member: '굥', date: '2026-08-25' }).score).toBe(0);
   });
 });
