@@ -44,8 +44,13 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   };
   useEffect(() => { void load(); }, []);
 
-  const today = new Date();
-  const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
+  const latestTransactionMonth = [...transactions]
+    .filter((transaction) => transaction.isVerified !== false && transaction.type === 'expense')
+    .map((transaction) => transaction.date.slice(0, 7))
+    .sort()
+    .pop();
+  const currentMonth = latestTransactionMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const currentMonthLabel = `${Number(currentMonth.slice(5))}월`;
   const matchesForMonth = (item: RecurringTransaction) => transactions.some((transaction) =>
     transaction.isVerified !== false && transaction.type === item.type && transaction.vendor.trim().toLowerCase().includes(item.vendor.trim().toLowerCase()) &&
     transaction.date.startsWith(currentMonth) && Math.abs(Number(transaction.date.slice(-2)) - item.day_of_month) <= 5,
@@ -142,7 +147,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   };
   const toggleRegisteredPane = async () => {
     if (registeredPane === 'registered') {
-      const response = await getMissingRecurring();
+      const response = await getMissingRecurring(currentMonth);
       setMissingItems(response.data.filter((item) => memberFilter === 'all' || item.member === memberFilter));
       setRegisteredPane('missing');
       return;
@@ -178,9 +183,9 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
       <div className="member-filter recurring-desktop-members">{desktopMembers.map((member) => <button key={member} type="button" className={`btn ${memberFilter === member ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setMemberFilter(member)}>{labelMember(member)}</button>)}</div>
     </div>
     <div className="grid grid-cols-3 gap-6 summary-cards recurring-summary-cards">
-      <div className="card-summary expense"><div className="details"><span>이번 달 예정 지출</span><h2>{money(dueTotal)}</h2></div></div>
-      <div className="card-summary income"><div className="details"><span>확인 완료</span><h2>{verifiedCount}건</h2></div></div>
-      <div className="card-summary balance"><div className="details"><span>미확인 예정</span><h2>{Math.max(activeItems.length - verifiedCount, 0)}건</h2></div></div>
+      <div className="card-summary expense"><div className="details"><span>{currentMonthLabel} 예정 지출</span><h2>{money(dueTotal)}</h2></div></div>
+      <div className="card-summary income"><div className="details"><span>{currentMonthLabel} 확인 완료</span><h2>{verifiedCount}건</h2></div></div>
+      <div className="card-summary balance"><div className="details"><span>{currentMonthLabel} 미확인 예정</span><h2>{Math.max(activeItems.length - verifiedCount, 0)}건</h2></div></div>
     </div>
     <section className="recurring-composition-card" aria-label="고정비 항목 구성">
       <div className="recurring-composition-header"><h3>고정비 항목 구성</h3><button type="button" className="btn btn-secondary recurring-composition-toggle" onClick={() => { setCompositionView((view) => view === 'group' ? 'category' : 'group'); setIsCompositionExpanded(false); setSelectedCompositionGroup(null); }}>{compositionView === 'group' ? '대분류별' : '상위그룹별'}</button></div>

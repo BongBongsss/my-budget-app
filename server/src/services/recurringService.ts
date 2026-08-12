@@ -20,6 +20,14 @@ const getDay = (date: string) => Number(date.slice(-2));
 const getMonthKey = (date: string) => date.slice(0, 7);
 const sameScheduledDay = (days: number[]) => Math.max(...days) - Math.min(...days) <= 5;
 const getCurrentYearMonth = () => new Date().toISOString().slice(0, 7);
+const getLatestTransactionYearMonth = async () => {
+  const latest = await prisma.transaction.findFirst({
+    where: { isVerified: true, isDeleted: false, type: 'expense' },
+    orderBy: { date: 'desc' },
+    select: { date: true },
+  });
+  return latest ? getMonthKey(latest.date) : getCurrentYearMonth();
+};
 // Card statements often append a changing month/reference suffix (e.g. 새마을07-030, DB손해보험03406).
 // Keep the stable merchant part for recurring-candidate grouping while leaving transaction data untouched.
 export const getRecurringVendorLabel = (value: string) => {
@@ -55,16 +63,17 @@ const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_mon
 };
 
 export const getAllRecurringTransactions = async () => {
+  const yearMonth = await getLatestTransactionYearMonth();
   const [items, transactions] = await Promise.all([
     prisma.recurringTransaction.findMany({ where: { type: 'expense' }, orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] }),
-    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', date: { startsWith: getCurrentYearMonth() } }, select: { vendor: true, amount: true, category: true, member: true, date: true } }),
+    prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', date: { startsWith: yearMonth } }, select: { vendor: true, amount: true, category: true, member: true, date: true } }),
   ]);
   return items.map((item) => {
     const matches = transactions.map((transaction) => ({ ...getRecurringMatchScore(item, transaction) })).sort((a, b) => b.score - a.score);
     const best = matches[0];
     const likelyMatches = matches.filter((match) => match.score >= 60).length;
     const matchStatus = !item.isActive ? 'inactive' : !best || best.score < 60 ? 'missing' : likelyMatches > 1 ? 'duplicate_suspected' : best.score >= 90 ? 'auto_matched' : 'review_required';
-    return { ...item, matchStatus, matchScore: best?.score || 0, matchReasons: best?.reasons || [] };
+    return { ...item, matchStatus, matchScore: best?.score || 0, matchReasons: best?.reasons || [], matchYearMonth: yearMonth };
   });
 };
 

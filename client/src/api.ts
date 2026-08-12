@@ -124,6 +124,7 @@ export interface RecurringTransaction {
   matchStatus?: 'inactive' | 'missing' | 'auto_matched' | 'review_required' | 'duplicate_suspected';
   matchScore?: number;
   matchReasons?: string[];
+  matchYearMonth?: string;
 }
 
 export interface RecurringCandidate {
