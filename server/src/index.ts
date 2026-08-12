@@ -25,6 +25,7 @@ import { errorHandler } from './middleware/errorHandler';
 import { UnauthorizedError, BadRequestError, ForbiddenError } from './utils/errors';
 import { asyncHandler } from './utils/asyncHandler';
 import { assertStrongPassword, assertTrustedMutationOrigin, loginAttemptLimiter } from './security/authSecurity';
+import { createRememberSession, getRememberSessionRefresh } from './security/rememberSession';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -93,16 +94,28 @@ app.use(session({
     secure: process.env.NODE_ENV === 'production',
     sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     httpOnly: true,
-    maxAge: 7 * 24 * 60 * 60 * 1000
-  }
+  },
+  rolling: true,
 }));
 
 declare module 'express-session' {
   interface SessionData {
     authenticated: boolean;
     role: 'admin' | 'viewer';
+    rememberMe?: boolean;
+    rememberStartedAt?: number;
+    rememberExpiresAt?: number;
   }
 }
+
+app.use((req: any, res: any, next: any) => {
+  const refresh = getRememberSessionRefresh(req.session);
+  if (refresh.expired) {
+    return req.session.destroy(() => next(new UnauthorizedError('Remembered session expired. Please log in again.')));
+  }
+  if (refresh.active) req.session.cookie.maxAge = refresh.maxAge;
+  next();
+});
 
 const isAuthenticated = (req: any, res: any, next: any) => {
   if (req.session && req.session.authenticated) {
@@ -119,7 +132,7 @@ const isAdmin = (req: any, res: any, next: any) => {
 };
 
 app.post('/api/login', asyncHandler(async (req: any, res: any) => {
-  const { username, password } = req.body;
+  const { username, password, rememberMe } = req.body;
   const loginName = typeof username === 'string' ? username : '';
   const ipAddress = req.ip || 'unknown';
 
@@ -145,6 +158,16 @@ app.post('/api/login', asyncHandler(async (req: any, res: any) => {
     loginAttemptLimiter.clear(ipAddress, loginName);
     req.session.authenticated = true;
     req.session.role = username as 'admin' | 'viewer';
+    if (rememberMe === true) {
+      Object.assign(req.session, createRememberSession());
+      req.session.cookie.maxAge = getRememberSessionRefresh(req.session).maxAge;
+    } else {
+      req.session.rememberMe = false;
+      req.session.rememberStartedAt = undefined;
+      req.session.rememberExpiresAt = undefined;
+      req.session.cookie.expires = false;
+      req.session.cookie.maxAge = undefined;
+    }
     res.json({ success: true, role: username });
   } else {
     loginAttemptLimiter.recordFailure(ipAddress, loginName);

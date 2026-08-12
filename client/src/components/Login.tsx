@@ -9,11 +9,12 @@ interface LoginProps {
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [username, setUsername] = useState<'admin' | 'viewer'>('admin');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await api.post('/login', { username, password });
+      const res = await api.post('/login', { username, password, rememberMe });
       onLogin(res.data.role);
     } catch (err) {
       alert('아이디 또는 비밀번호가 틀렸습니다.');
@@ -44,6 +45,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <option value="viewer">Viewer (조회용)</option>
             </select>
           </div>
+          <label className="login-remember"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /> 자동 로그인 유지 <span>(개인 기기에서만)</span></label>
           <div className="form-group">
             <label className="flex items-center gap-1"><Lock size={14}/> Password</label>
             <input

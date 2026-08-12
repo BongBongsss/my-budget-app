@@ -24,6 +24,7 @@ describe('Login', () => {
     expect(postMock).toHaveBeenCalledWith('/login', {
       username: 'viewer',
       password: 'safe-password',
+      rememberMe: false,
     });
     expect(onLogin).toHaveBeenCalledWith('viewer');
   });
