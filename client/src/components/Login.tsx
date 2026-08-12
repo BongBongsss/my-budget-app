@@ -45,7 +45,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               <option value="viewer">Viewer (조회용)</option>
             </select>
           </div>
-          <label className="login-remember"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /> 자동 로그인 유지 <span>(개인 기기에서만)</span></label>
           <div className="form-group">
             <label className="flex items-center gap-1"><Lock size={14}/> Password</label>
             <input
@@ -60,6 +59,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <button type="submit" className="login-btn">
             로그인하기
           </button>
+          <label className="login-remember"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /> 자동 로그인</label>
         </form>
         
         <div style={{ marginTop: '2rem', fontSize: '0.75rem', color: '#94a3b8' }}>

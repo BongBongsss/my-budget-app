@@ -1041,9 +1041,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   from { opacity: 0; transform: translateY(-20px); }
   to { opacity: 1; transform: translateY(0); }
 }
-.login-remember { display: flex; align-items: center; gap: 0.4rem; margin: -0.55rem 0 0.8rem; color: #475569; font-size: 0.82rem; cursor: pointer; }
+.login-form .login-remember { display: flex; width: 100%; align-items: center; justify-content: flex-end; gap: 0.4rem; margin: 0.75rem 0 0; color: #475569; font-size: 0.82rem; font-weight: 400; cursor: pointer; }
 .login-remember input { width: 15px; height: 15px; accent-color: #3b82f6; }
-.login-remember span { color: #94a3b8; font-size: 0.72rem; }
 
 .notice-badge {
   position: absolute;
