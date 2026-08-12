@@ -121,6 +121,9 @@ export interface RecurringTransaction {
   memo?: string;
   createdAt?: string;
   updatedAt?: string;
+  matchStatus?: 'inactive' | 'missing' | 'auto_matched' | 'review_required' | 'duplicate_suspected';
+  matchScore?: number;
+  matchReasons?: string[];
 }
 
 export interface RecurringCandidate {
@@ -137,6 +140,8 @@ export interface RecurringCandidate {
   dayOfMonth: number;
   isVariable: boolean;
   lastUsedAt: string;
+  confidence: number;
+  reasons: string[];
 }
 
 export interface MissingRecurringTransaction extends RecurringTransaction {

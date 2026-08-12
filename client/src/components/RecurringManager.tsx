@@ -156,7 +156,13 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     await load();
   };
 
-  const status = (item: RecurringTransaction) => !item.isActive ? '중지됨' : matchesForMonth(item) ? '확인됨' : `매월 ${item.day_of_month}일`;
+  const status = (item: RecurringTransaction) => {
+    if (!item.isActive) return '중지됨';
+    if (item.matchStatus === 'auto_matched') return '자동 연결';
+    if (item.matchStatus === 'review_required') return '확인 필요';
+    if (item.matchStatus === 'duplicate_suspected') return '중복 의심';
+    return matchesForMonth(item) ? '확인됨' : `매월 ${item.day_of_month}일`;
+  };
   const candidateSummary = useMemo(() => candidates.length, [candidates]);
 
   return <div className="recurring-view animate-fadeIn">
@@ -214,6 +220,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
           <p>평균 {money(candidate.averageAmount)}{candidate.isVariable ? ` · 범위 ${money(candidate.minAmount)}~${money(candidate.maxAmount)}` : ''}</p>
           <p>최근 {candidate.monthCount}개월 {candidate.occurrenceCount}회</p>
           <p className="recurring-evidence">최근 {candidate.lastUsedAt} · {candidate.category}</p>
+          <p className="recurring-evidence">신뢰도 {candidate.confidence}점 · {candidate.reasons.join(' · ')}</p>
           {canManage && <div className="recurring-actions"><button className="btn btn-primary" onClick={() => addFromCandidate(candidate)}>추가</button><button className="btn btn-secondary" onClick={() => void handleCandidate('defer', candidate)}>나중에</button><button className="btn btn-secondary" onClick={() => void handleCandidate('ignore', candidate)}>제외</button></div>}
         </article>)}</div>}
       </section>
@@ -234,6 +241,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
           return <article className="recurring-card" key={item.id}>
             <div className="recurring-card-title"><strong title={item.vendor}>{item.vendor}</strong><span className={item.type === 'income' ? 'income-text' : 'expense-text'}>{status(item)}</span></div>
             <p>매월 {item.day_of_month}일 · {item.category} · {item.member || '공동'}</p><p>{item.isVariable ? '예상 ' : ''}{money(item.amount)}</p>
+            {item.isActive && item.matchStatus && item.matchStatus !== 'missing' && <p className="recurring-evidence">매칭 {item.matchScore}점 · {item.matchReasons?.join(' · ')}</p>}
             {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
             {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
           </article>;
