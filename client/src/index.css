@@ -316,6 +316,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-card-title span { flex: 0 0 auto; font-size: 0.78rem; font-weight: 700; white-space: nowrap; }
 .income-text { color: #15803d; }
 .expense-text { color: #dc2626; }
+.recurring-match-success { color: #15803d; }
 .recurring-card p { overflow: hidden; margin: 0.2rem 0 0; color: #475569; font-size: 0.82rem; text-overflow: ellipsis; white-space: nowrap; }
 .recurring-card .recurring-card-memo { color: #2563eb; font-style: normal; }
 .recurring-card .recurring-evidence { color: #64748b; font-size: 0.75rem; }
