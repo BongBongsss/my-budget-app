@@ -19,7 +19,8 @@ import { BadRequestError } from '../utils/errors';
 const router = Router();
 
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
-  const recurring = await getAllRecurringTransactions();
+  const yearMonth = typeof req.query.yearMonth === 'string' && /^\d{4}-\d{2}$/.test(req.query.yearMonth) ? req.query.yearMonth : undefined;
+  const recurring = await getAllRecurringTransactions(yearMonth);
   res.json(recurring);
 }));
 

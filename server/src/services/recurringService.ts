@@ -64,8 +64,8 @@ const hasMatchingTransaction = (item: { vendor: string; type: string; day_of_mon
   ));
 };
 
-export const getAllRecurringTransactions = async () => {
-  const yearMonth = await getLatestTransactionYearMonth();
+export const getAllRecurringTransactions = async (requestedYearMonth?: string) => {
+  const yearMonth = requestedYearMonth || await getLatestTransactionYearMonth();
   const [items, transactions, confirmations, aliases] = await Promise.all([
     prisma.recurringTransaction.findMany({ where: { type: 'expense' }, orderBy: [{ isActive: 'desc' }, { day_of_month: 'asc' }, { vendor: 'asc' }] }),
     prisma.transaction.findMany({ where: { isVerified: true, isDeleted: false, type: 'expense', date: { startsWith: yearMonth } }, select: { id: true, vendor: true, amount: true, category: true, member: true, date: true } }),

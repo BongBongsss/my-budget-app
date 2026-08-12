@@ -321,7 +321,7 @@ export const getChartStatisticsSettings = () => instance.get<{ income: string[];
 export const saveChartStatisticsSettings = (settings: { income: string[]; expense: string[] }) => instance.put('/chart-statistics-settings', settings);
 
 // Recurring
-export const getRecurring = () => instance.get<RecurringTransaction[]>('/recurring');
+export const getRecurring = (yearMonth?: string) => instance.get<RecurringTransaction[]>('/recurring', { params: yearMonth ? { yearMonth } : undefined });
 export const addRecurring = (rec: Partial<RecurringTransaction>) => instance.post<RecurringTransaction>('/recurring', rec);
 export const updateRecurring = (id: string, rec: Partial<RecurringTransaction>) => instance.put<RecurringTransaction>(`/recurring/${id}`, rec);
 export const deleteRecurring = (id: string) => instance.delete(`/recurring/${id}`);

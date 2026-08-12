@@ -283,6 +283,8 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 }
 
 .recurring-filter-bar { margin-bottom: 1rem; }
+.recurring-month-selector { display: inline-flex; align-items: center; gap: 0.4rem; color: #475569; font-size: 0.8rem; font-weight: 700; white-space: nowrap; }
+.recurring-month-selector select { min-width: 68px; padding: 0.3rem 0.45rem; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; color: #334155; font: inherit; }
 .recurring-filter-bar .member-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .recurring-filter-bar .btn { padding: 0.3rem 0.7rem; }
 .recurring-mobile-members { display: none !important; }
@@ -305,6 +307,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 .recurring-layout { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; align-items: start; }
 .recurring-panel { min-width: 0; padding: 1rem; border-radius: 12px; background: #fff; box-shadow: 0 4px 12px rgba(30, 41, 59, 0.1); }
 .recurring-panel-header { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 0.85rem; }
+.recurring-panel-controls { display: flex; flex: 0 0 auto; align-items: center; gap: 0.5rem; }
 .recurring-panel-header h3 { display: flex; min-width: 0; align-items: center; gap: 0.4rem; margin: 0; font-size: 1.08rem; }
 .recurring-panel-header > span { flex: 0 0 auto; color: #64748b; font-size: 0.78rem; white-space: nowrap; }
 .recurring-pane-toggle { flex: 0 0 auto; min-width: 0; padding: 0.35rem 0.55rem; font-size: 0.78rem; white-space: nowrap; }
@@ -1222,6 +1225,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-desktop-members { display: flex !important; }
   .recurring-mobile-members { display: none !important; }
   .recurring-filter-bar { display: flex; flex-wrap: nowrap; align-items: center; gap: 0.3rem; }
+  .recurring-month-selector { min-width: 0; gap: 0.25rem; font-size: 0.72rem; }
   .recurring-filter-bar .member-filter { order: 1; flex: 0 0 auto; min-width: 0; flex-wrap: nowrap; gap: 0.25rem; overflow: visible; padding-bottom: 0; }
   .recurring-filter-bar .member-filter .btn { flex: 0 0 auto; min-width: 0; }
   .recurring-filter-bar .btn { min-width: 0; padding: 0.25rem 0.4rem; font-size: 0.72rem; white-space: nowrap; }
@@ -1239,7 +1243,10 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   .recurring-layout { display: block; }
   .recurring-panel { padding: 0.75rem; }
   .recurring-panel.is-mobile-hidden { display: none; }
-  .recurring-panel-header { margin-bottom: 0.6rem; }
+  .recurring-panel-header { flex-wrap: wrap; margin-bottom: 0.6rem; }
+  .recurring-panel-controls { gap: 0.3rem; }
+  .recurring-panel-controls .recurring-month-selector { display: inline-flex; font-size: 0.68rem; }
+  .recurring-panel-controls .recurring-month-selector select { min-width: 58px; padding: 0.22rem; }
   .recurring-panel-header h3 { font-size: 0.98rem; }
   .recurring-pane-toggle { padding: 0.3rem 0.45rem; font-size: 0.72rem; }
   .recurring-card-list { max-height: none; overflow: visible; gap: 0.45rem; }

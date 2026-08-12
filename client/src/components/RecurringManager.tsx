@@ -39,19 +39,22 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
   const [isCompositionExpanded, setIsCompositionExpanded] = useState(false);
   const [selectedCompositionGroup, setSelectedCompositionGroup] = useState<string | null>(null);
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
+  const availableMonths = [...new Set(transactions
+    .filter((transaction) => transaction.isVerified !== false && transaction.type === 'expense')
+    .map((transaction) => transaction.date.slice(0, 7)))].sort().reverse();
+  const [selectedYearMonth, setSelectedYearMonth] = useState<string | null>(null);
+  const activeYearMonth = selectedYearMonth || availableMonths[0] || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const availableYears = [...new Set(availableMonths.map((yearMonth) => yearMonth.slice(0, 4)))].sort().reverse();
+  const activeYear = activeYearMonth.slice(0, 4);
+  const availableMonthNumbers = availableMonths.filter((yearMonth) => yearMonth.startsWith(`${activeYear}-`)).map((yearMonth) => yearMonth.slice(5));
 
   const load = async () => {
-    const [recurring, suggested] = await Promise.all([getRecurring(), getRecurringCandidates()]);
+    const [recurring, suggested] = await Promise.all([getRecurring(activeYearMonth), getRecurringCandidates()]);
     setList(recurring.data); setCandidates(suggested.data);
   };
-  useEffect(() => { void load(); }, []);
+  useEffect(() => { void load(); }, [activeYearMonth]);
 
-  const latestTransactionMonth = [...transactions]
-    .filter((transaction) => transaction.isVerified !== false && transaction.type === 'expense')
-    .map((transaction) => transaction.date.slice(0, 7))
-    .sort()
-    .pop();
-  const currentMonth = latestTransactionMonth || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const currentMonth = activeYearMonth;
   const currentMonthLabel = `${Number(currentMonth.slice(5))}월`;
   const matchesForMonth = (item: RecurringTransaction) => transactions.some((transaction) =>
     transaction.isVerified !== false && transaction.type === item.type && transaction.vendor.trim().toLowerCase().includes(item.vendor.trim().toLowerCase()) &&
@@ -156,6 +159,16 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     }
     setRegisteredPane('registered');
   };
+  const selectYearMonth = (value: string) => {
+    setExpandedMatchId(null);
+    setMissingItems([]);
+    setRegisteredPane('registered');
+    setSelectedYearMonth(value);
+  };
+  const selectYear = (year: string) => {
+    const firstMonth = availableMonths.find((yearMonth) => yearMonth.startsWith(`${year}-`));
+    if (firstMonth) selectYearMonth(firstMonth);
+  };
   const addMissingItem = async (item: MissingRecurringTransaction) => {
     await addMissingRecurring(item.id!, item.scheduledDate.slice(0, 7), Number(missingAmount));
     setMissingItems((previous) => previous.filter((current) => current.id !== item.id));
@@ -244,7 +257,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
         </article>)}</div>}
       </section>
       <section className={`recurring-panel ${activeList !== 'registered' ? 'is-mobile-hidden' : ''}`}>
-        <div className="recurring-panel-header"><h3><CheckCircle2 size={20} /> {registeredPane === 'registered' ? `등록된 고정비 항목 (${visibleRegisteredList.length}건)` : `미반영 고정비 항목 (${missingItems.length}건)`}</h3><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleRegisteredPane()}>{registeredPane === 'registered' ? '미반영 고정비 항목' : '등록된 고정비 항목'}</button></div>
+        <div className="recurring-panel-header"><h3><CheckCircle2 size={20} /> {registeredPane === 'registered' ? `등록된 고정비 항목 (${visibleRegisteredList.length}건)` : `미반영 고정비 항목 (${missingItems.length}건)`}</h3><div className="recurring-panel-controls"><span className="recurring-month-selector"><select value={activeYear} onChange={(event) => selectYear(event.target.value)} aria-label="검증 연도">{availableYears.map((year) => <option key={year} value={year}>{year}년</option>)}</select><select value={activeYearMonth.slice(5)} onChange={(event) => selectYearMonth(`${activeYear}-${event.target.value}`)} aria-label="검증 월">{availableMonthNumbers.map((month) => <option key={month} value={month}>{Number(month)}월</option>)}</select></span><button type="button" className="btn btn-secondary recurring-pane-toggle" onClick={() => void toggleRegisteredPane()}>{registeredPane === 'registered' ? '미반영 고정비 항목' : '등록된 고정비 항목'}</button></div></div>
         {registeredPane === 'missing' ? (
           missingItems.length === 0 ? <p className="recurring-empty">미반영 고정비 항목이 없습니다.</p> : <div className="recurring-card-list">{missingItems.map((item) => {
             const cardMemo = getCardMemo(item);
