@@ -26,7 +26,11 @@ table list, and every declared row count. It reads only the backup file.
 
 1. Create and verify a backup.
 2. Confirm `server/.env.local` points to local `budget_dev`.
-3. Restore only to the local database:
+3. Restore only to the local database. For a non-destructive drill, first copy
+   the local schema to a temporary database named `budget_recovery_drill_*`,
+   then set both `DATABASE_URL` to that database and
+   `ALLOW_RECOVERY_DRILL=true` before running the command. The script refuses
+   every other non-local database.
 
 ```powershell
 npm run restore:local --workspace=server -- server/backup/<backup-file>.json
@@ -35,8 +39,9 @@ npm run restore:local --workspace=server -- server/backup/<backup-file>.json
 4. Confirm the script reports matching row counts, then run the application
    locally and check login, transaction list, assets, and fixed-cost management.
 
-`restore:local` rejects remote hosts and any database other than local
-`budget_dev`. It is not a production restore command.
+`restore:local` rejects remote hosts and every database other than local
+`budget_dev` or an explicitly enabled `budget_recovery_drill_*` database. It
+is not a production restore command.
 
 ## Revision history
 

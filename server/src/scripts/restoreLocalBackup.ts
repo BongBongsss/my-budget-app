@@ -13,8 +13,14 @@ const quoteIdentifier = (value: string) => `"${value.replace(/"/g, '""')}"`;
 
 const restore = async () => {
   const databaseUrl = new URL(process.env.DATABASE_URL!);
-  if (!['localhost', '127.0.0.1'].includes(databaseUrl.hostname) || databaseUrl.pathname.replace(/^\//, '') !== 'budget_dev') {
-    throw new Error('Restore is allowed only for the local budget_dev database.');
+  const databaseName = databaseUrl.pathname.replace(/^\//, '');
+  const isLocalHost = ['localhost', '127.0.0.1'].includes(databaseUrl.hostname);
+  const isDevelopmentDatabase = databaseName === 'budget_dev';
+  const isRecoveryDrillDatabase = /^budget_recovery_drill_[a-z0-9_]+$/.test(databaseName);
+  const recoveryDrillEnabled = process.env.ALLOW_RECOVERY_DRILL === 'true';
+
+  if (!isLocalHost || (!isDevelopmentDatabase && !(isRecoveryDrillDatabase && recoveryDrillEnabled))) {
+    throw new Error('Restore is allowed only for local budget_dev, or an explicitly enabled budget_recovery_drill_* database.');
   }
 
   const filename = process.argv[2];
