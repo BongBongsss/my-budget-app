@@ -6,8 +6,11 @@
     "dev": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/index.ts",
     "dev:system-node": "ts-node src/index.ts",
     "backup:local": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/createLocalBackup.ts",
+    "backup:verify": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/verifyLocalBackup.ts",
+    "restore:local": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/restoreLocalBackup.ts",
     "test": "vitest",
-    "prisma:generate": "prisma generate"
+    "prisma:generate": "prisma generate",
+    "prisma:validate": "prisma validate --schema prisma/schema.prisma"
   },
   "dependencies": {
     "@prisma/client": "6.0.0",

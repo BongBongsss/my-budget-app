@@ -1,6 +1,7 @@
 import './env';
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
+import { ensureOperationalIndexes } from './database/operationalIndexes';
 
 const prisma = new PrismaClient({
   datasources: {
@@ -11,6 +12,8 @@ const prisma = new PrismaClient({
 });
 
 export const initDb = async () => {
+  await ensureOperationalIndexes(prisma);
+
   // Session table check/creation
   try {
     // 1. Create table

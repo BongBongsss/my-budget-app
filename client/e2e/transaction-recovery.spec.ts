@@ -39,13 +39,14 @@ const loginAsAdmin = async (page: Page) => {
   await page.route('**/api/assets', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/notices**', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/suggestions/candidates', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
+  await page.route('**/api/recurring/candidates', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/review-requests**', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
 
   await page.goto('/');
   await page.locator('select').selectOption('admin');
   await page.locator('input[type="password"]').fill('test-password');
   await page.locator('button[type="submit"]').click();
-  await expect(page.getByRole('button', { name: 'LogOut' })).toBeVisible();
+  await expect(page.getByRole('heading', { level: 1, name: '효굥봉 가계부' })).toBeVisible();
 };
 
 test('admin can undo a deleted transaction without creating a duplicate', async ({ page }) => {
@@ -57,7 +58,7 @@ test('admin can undo a deleted transaction without creating a duplicate', async 
   let transactions = [transaction];
   let restoreRequestIds: string[] = [];
 
-  await page.route('**/api/transactions', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(transactions) }));
+  await page.route('**/api/transactions**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(transactions) }));
   await page.route('**/api/transactions/transaction-1', async (route) => {
     expect(route.request().method()).toBe('DELETE');
     transactions = [];
@@ -93,7 +94,7 @@ test('admin can confirm an imported candidate and move it to confirmed transacti
   let transactions: TestTransaction[] = [];
   let verifiedIds: string[] = [];
 
-  await page.route('**/api/transactions', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(transactions) }));
+  await page.route('**/api/transactions**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(transactions) }));
   await page.route('**/api/transactions/import', async (route) => {
     expect(route.request().method()).toBe('POST');
     transactions = [candidate];

@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import '../env';
 import prisma from '../db';
+import { validateFullBackup } from './backupValidation';
 
 const createBackup = async () => {
   const exportedAt = new Date().toISOString();
@@ -24,14 +25,14 @@ const createBackup = async () => {
   const data = Object.fromEntries(tableData);
 
   const counts = Object.fromEntries(Object.entries(data).map(([name, rows]) => [name, rows.length]));
-  const backup = {
+  const backup = validateFullBackup({
     version: 1,
     type: 'budget-app-full-backup',
     exportedAt,
     excluded: ['session', '_prisma_migrations'],
     counts,
     data,
-  };
+  });
 
   const backupDirectory = path.resolve(process.cwd(), 'backup');
   await fs.mkdir(backupDirectory, { recursive: true });

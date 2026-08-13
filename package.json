@@ -12,6 +12,7 @@
     "server": "npm run dev --workspace=server",
     "client": "npm run dev --workspace=client",
     "dev": "npm run dev --workspace=server & npm run dev --workspace=client",
+    "verify": "npm run prisma:validate --workspace=server && npx tsc --noEmit -p server/tsconfig.json && npm test --workspace=server -- --run && npm test --workspace=client && npm run build --workspace=client",
     "electron": "electron .",
     "build": "electron-builder"
   },

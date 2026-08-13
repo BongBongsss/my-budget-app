@@ -41,4 +41,21 @@ describe('Login', () => {
 
     expect(alertMock).toHaveBeenCalledTimes(1);
   });
+
+  it('sends rememberMe when automatic login is selected', async () => {
+    const user = userEvent.setup();
+    postMock.mockResolvedValue({ data: { role: 'admin' } });
+
+    render(<Login onLogin={vi.fn()} />);
+
+    await user.click(screen.getByLabelText('자동 로그인'));
+    await user.type(document.querySelector('input[type="password"]')!, 'safe-password');
+    await user.click(document.querySelector('button[type="submit"]')!);
+
+    expect(postMock).toHaveBeenCalledWith('/login', {
+      username: 'admin',
+      password: 'safe-password',
+      rememberMe: true,
+    });
+  });
 });
