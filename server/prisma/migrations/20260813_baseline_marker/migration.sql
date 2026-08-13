@@ -1,0 +1,2 @@
+-- Baseline marker for databases bootstrapped from prisma/baseline/20260813_initial_schema.sql.
+-- The schema SQL is intentionally kept separate so legacy migration checksums remain unchanged.

@@ -8,6 +8,7 @@
     "backup:local": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/createLocalBackup.ts",
     "backup:verify": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/verifyLocalBackup.ts",
     "restore:local": "npx -y node@20 ../node_modules/ts-node/dist/bin.js src/scripts/restoreLocalBackup.ts",
+    "bootstrap:empty-local": "powershell -ExecutionPolicy Bypass -File scripts/bootstrapEmptyLocalDb.ps1",
     "test": "vitest",
     "prisma:generate": "prisma generate",
     "prisma:validate": "prisma validate --schema prisma/schema.prisma"

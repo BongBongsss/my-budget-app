@@ -8,23 +8,23 @@ datasource db {
 }
 
 model Transaction {
-  id           String  @id
-  date         String
-  time         String?
-  type         String
-  category     String
-  subcategory  String?
-  vendor       String
-  amount       Float
-  currency     String?
-  source       String?
-  memo         String?
-  hash         String? @unique
-  isVerified   Boolean @default(true)
-  isDuplicate  Boolean @default(false)
-  isDeleted    Boolean @default(false)
+  id               String  @id
+  date             String
+  amount           Float
+  vendor           String
+  category         String
+  type             String
+  source           String?
+  hash             String? @unique
+  memo             String?
+  currency         String?
+  subcategory      String?
+  time             String?
+  isVerified       Boolean @default(true)
+  isDuplicate      Boolean @default(false)
+  member           String  @default("효")
+  isDeleted        Boolean @default(false)
   isManualCategory Boolean @default(false)
-  member              String       @default("효")
 }
 
 model ImportBatch {
@@ -39,7 +39,6 @@ model ImportBatch {
 model ImportRow {
   id                  String       @id @default(uuid())
   batchId             String?
-  batch               ImportBatch? @relation(fields: [batchId], references: [id])
   rowNumber           Int?
   status              String
   invalidReason       String?
@@ -56,11 +55,12 @@ model ImportRow {
   memo                String?
   member              String       @default("미지정")
   rawData             Json?
-  isManualCategory    Boolean      @default(false)
   committedAt         DateTime?
   transactionId       String?
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @default(now()) @updatedAt
+  isManualCategory    Boolean      @default(false)
+  batch               ImportBatch? @relation(fields: [batchId], references: [id])
 
   @@index([status])
   @@index([batchId])
@@ -81,14 +81,14 @@ model Category {
 }
 
 model CategoryGroupRule {
-  id                String @id
-  categoryName      String @unique
-  assignedGroup     String
+  id            String @id
+  categoryName  String @unique
+  assignedGroup String
 }
 
 model PaymentRule {
   id          String @id
-  paymentType String // 'card' or 'transfer'
+  paymentType String
   keyword     String @unique
 }
 
@@ -102,30 +102,30 @@ model Session {
 }
 
 model RecurringTransaction {
-  id           String @id
+  id           String   @id
   vendor       String
   amount       Float
   category     String
-  type         String @default("expense")
+  type         String   @default("expense")
   day_of_month Int
-  member       String @default("shared")
-  isActive     Boolean @default(true)
-  isVariable   Boolean @default(false)
+  member       String   @default("shared")
+  isActive     Boolean  @default(true)
+  isVariable   Boolean  @default(false)
   memo         String?
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  updatedAt    DateTime @default(now()) @updatedAt
 }
 
 model Asset {
   id        String   @id
   name      String   @unique
-  type      String   // 'cash', 'bank', 'stock', 'realestate', 'liability', etc.
+  type      String
   balance   Float    @default(0)
-  member    String   @default("공동")
-  isDeleted Boolean  @default(false)
   memo      String?
-  createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
+  createdAt DateTime @default(now())
+  isDeleted Boolean  @default(false)
+  member    String   @default("공동")
 }
 
 model AssetType {
@@ -138,14 +138,12 @@ model AssetType {
 }
 
 model AssetHistory {
-  id        String   @id @default(uuid())
-  yearMonth String   // "2026-05" 형식
-  totalAssets Float
+  id               String   @id @default(uuid())
+  yearMonth        String   @unique
+  totalAssets      Float
   totalLiabilities Float
-  netAssets Float
-  createdAt DateTime @default(now())
-
-  @@unique([yearMonth])
+  netAssets        Float
+  createdAt        DateTime @default(now())
 }
 
 model IgnoredRule {
@@ -158,7 +156,7 @@ model DeferredRuleSuggestion {
   vendorKey     String   @unique
   deferredUntil DateTime
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime @default(now()) @updatedAt
 
   @@index([deferredUntil])
 }
@@ -174,12 +172,11 @@ model DeferredRecurringSuggestion {
   vendorKey     String   @unique
   deferredUntil DateTime
   createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  updatedAt     DateTime @default(now()) @updatedAt
 
   @@index([deferredUntil])
 }
 
-// Retained only to preserve existing inactive records; no application feature uses this model.
 model ExclusionRule {
   id      String @id @default(uuid())
   keyword String @unique
@@ -191,12 +188,12 @@ model DeletedHash {
 }
 
 model Auth {
-  role         String @id // 'admin' or 'viewer'
+  role         String @id
   passwordHash String
 }
 
 model AuditLog {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   entityType String
   entityId   String
   action     String
@@ -204,10 +201,10 @@ model AuditLog {
   afterData  Json?
   actorRole  String?
   ipAddress  String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @default(now()) @updatedAt
   batchId    String?
   restoredAt DateTime?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @default(now()) @updatedAt
 
   @@index([entityType, entityId])
   @@index([action])
@@ -246,4 +243,32 @@ model Notice {
 
   @@index([isActive])
   @@index([createdAt])
+}
+
+model ChartStatisticsSettings {
+  id             String   @id
+  excludedGroups Json     @default("{\"income\": [], \"expense\": []}")
+  updatedAt      DateTime @default(now())
+}
+
+model RecurringAlias {
+  id          String   @id
+  recurringId String
+  vendorKey   String   @unique
+  label       String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @default(now())
+
+  @@index([recurringId])
+}
+
+model RecurringMatchConfirmation {
+  id            String   @id
+  recurringId   String
+  transactionId String   @unique
+  yearMonth     String
+  createdAt     DateTime @default(now())
+
+  @@unique([recurringId, yearMonth])
+  @@index([yearMonth])
 }
