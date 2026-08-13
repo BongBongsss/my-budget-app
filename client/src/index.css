@@ -32,13 +32,13 @@ body {
 
 .app-auth-loading-card span {
   color: #34455f;
-  font-size: 2.25rem;
+  font-size: 1.8rem;
   font-weight: 600;
 }
 
 .app-auth-loading-card small {
   color: #718096;
-  font-size: 1.875rem;
+  font-size: 1.5rem;
 }
 
 .app-auth-loading-mark {

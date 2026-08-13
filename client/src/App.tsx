@@ -265,7 +265,7 @@ function App() {
           : Number.NaN;
         const minimumDisplayMs = Number.isFinite(previewDelay) && previewDelay > 0
           ? Math.min(previewDelay, 10000)
-          : 3000;
+          : 2000;
         const elapsedMs = Date.now() - (initialAuthCheckStartedAtRef.current ?? Date.now());
         const remainingMs = Math.max(0, minimumDisplayMs - elapsedMs);
         if (remainingMs > 0) {
