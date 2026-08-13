@@ -14,6 +14,44 @@ body {
   margin: 0;
 }
 
+/* Keep the login screen from flashing while a saved session is being checked. */
+.app-auth-loading {
+  display: grid;
+  min-height: 100vh;
+  place-items: center;
+  background: #e0f2fe;
+}
+
+.app-auth-loading-card {
+  display: grid;
+  justify-items: center;
+  gap: 0.65rem;
+  color: #34455f;
+  text-align: center;
+}
+
+.app-auth-loading-card span {
+  font-size: 0.9rem;
+}
+
+.app-auth-loading-card small {
+  color: #718096;
+  font-size: 0.75rem;
+}
+
+.app-auth-loading-mark {
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 3px solid #cbd8ff;
+  border-top-color: #5d7ff0;
+  border-radius: 50%;
+  animation: app-auth-loading-spin 0.9s linear infinite;
+}
+
+@keyframes app-auth-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
 .container {
   width: 100%;
   max-width: 1400px; /* 컨테이너 폭 확장 */
