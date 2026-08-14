@@ -113,11 +113,11 @@ const RecurringManager = ({ categories, transactions, canManage, onSuccess }: Pr
     ? recurringExpenseGroups.entries.slice(0, 9)
     : recurringExpenseGroups.entries;
   const hiddenRecurringGroupAmount = hiddenRecurringGroups.reduce((sum, [, amount]) => sum + amount, 0);
-  const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === 'all' || memberFilter === '미지정' ? '공동' : memberFilter, isVariable: false, isActive: true, memo: '' });
+  const openEditor = (item?: Partial<RecurringTransaction>) => setEditing(item || { vendor: '', amount: 0, category: categories[0]?.name || '', type: 'expense', day_of_month: 1, member: memberFilter === '효' || memberFilter === '굥' ? memberFilter : '', isVariable: false, isActive: true, memo: '' });
   const addFromCandidate = (candidate: RecurringCandidate) => openEditor({ vendor: candidate.vendor, amount: candidate.averageAmount, category: candidate.category, type: 'expense', day_of_month: candidate.dayOfMonth, member: candidate.member, isVariable: candidate.isVariable, isActive: true });
 
   const save = async () => {
-    if (!editing?.vendor?.trim() || !editing.category || !editing.amount || !editing.day_of_month) return;
+    if (!editing?.vendor?.trim() || !editing.category || Number(editing.amount) <= 0 || !Number.isInteger(Number(editing.day_of_month)) || Number(editing.day_of_month) < 1 || Number(editing.day_of_month) > 28 || !editing.member) return;
     setIsSaving(true);
     try {
       const isUpdate = Boolean(editing.id);
@@ -310,16 +310,16 @@ const RecurringManager = ({ categories, transactions, canManage, onSuccess }: Pr
     {canManage && <button type="button" className="mobile-entry-fab recurring-mobile-add" onClick={() => openEditor()} aria-label="고정비 항목 등록"><Plus size={22} /></button>}
     {editing && <div className="entry-modal-overlay"><section className="entry-modal recurring-editor" role="dialog" aria-modal="true" aria-label="고정비 항목 등록">
       <div className="entry-modal-header"><h3>{editing.id ? '고정비 항목 수정' : '고정비 항목 등록'}</h3><button className="btn-icon" onClick={() => setEditing(null)}><X size={20} /></button></div>
-      <div className="entry-form recurring-editor-form">
-        <label>내용<input className="edit-input" value={editing.vendor || ''} onChange={(event) => setEditing({ ...editing, vendor: event.target.value })} /></label>
-        <label>예상 금액<input className="edit-input" type="number" min="0" value={editing.amount || ''} onChange={(event) => setEditing({ ...editing, amount: Number(event.target.value) })} /></label>
-        <label>대분류<select className="edit-input" value={editing.category || ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })}>{categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}</select></label>
-        <label>예정일<input className="edit-input" type="number" min="1" max="28" value={editing.day_of_month || 1} onChange={(event) => setEditing({ ...editing, day_of_month: Number(event.target.value) })} /></label>
-        <label>구성원<select className="edit-input" value={editing.member || '공동'} onChange={(event) => setEditing({ ...editing, member: event.target.value })}>{['효', '굥', '봉', '공동'].map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
+      <form className="entry-form recurring-editor-form" onSubmit={(event) => { event.preventDefault(); void save(); }}>
+        <label>내용<input className="edit-input" value={editing.vendor || ''} onChange={(event) => setEditing({ ...editing, vendor: event.target.value })} required /></label>
+        <label>예상 금액<input className="edit-input" type="number" min="1" value={editing.amount || ''} onChange={(event) => setEditing({ ...editing, amount: Number(event.target.value) })} required /></label>
+        <label>대분류<select className="edit-input" value={editing.category || ''} onChange={(event) => setEditing({ ...editing, category: event.target.value })} required>{categories.map((category) => <option key={category.id} value={category.name}>{category.name}</option>)}</select></label>
+        <label>예정일<input className="edit-input" type="number" min="1" max="28" value={editing.day_of_month || 1} onChange={(event) => setEditing({ ...editing, day_of_month: Number(event.target.value) })} required /></label>
+        <label>구성원<select className="edit-input" value={editing.member || ''} onChange={(event) => setEditing({ ...editing, member: event.target.value })} required><option value="">구성원 선택</option>{['효', '굥'].map((member) => <option key={member} value={member}>{member}</option>)}</select></label>
         <label className="recurring-variable"><input type="checkbox" checked={Boolean(editing.isVariable)} onChange={(event) => setEditing({ ...editing, isVariable: event.target.checked })} /> 변동 금액</label>
         <label className="recurring-memo">메모<input className="edit-input" value={editing.memo || ''} onChange={(event) => setEditing({ ...editing, memo: event.target.value })} /></label>
-        <div className="form-actions"><button className="btn btn-secondary" onClick={() => setEditing(null)}>취소</button><button className="btn btn-primary" disabled={isSaving} onClick={() => void save()}>저장</button></div>
-      </div>
+        <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={() => setEditing(null)}>취소</button><button type="submit" className="btn btn-primary" disabled={isSaving}>저장</button></div>
+      </form>
     </section></div>}
   </div>;
 };

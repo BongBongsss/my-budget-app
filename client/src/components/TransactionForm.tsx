@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { addTransaction, CategoryItem, autoCategorizeVendor } from '../api';
-import { PlusCircle } from 'lucide-react';
 
 interface TransactionFormProps {
   onSuccess: () => void;
@@ -20,7 +19,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
     vendor: '',
     amount: '',
     currency: 'KRW',
-    source: 'manual',
+    source: '수기입력',
     memo: '',
     member: '효'
   });
@@ -62,7 +61,7 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
 
   return (
     <div className={compact ? 'entry-form' : 'card-form'}>
-      {!compact && <h3>Add New Transaction</h3>}
+      {!compact && <h3>거래 입력</h3>}
       <form onSubmit={handleSubmit}>
         <div className="grid-form" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
           <div className="form-group"><label>날짜</label><input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} required/></div>
@@ -78,8 +77,8 @@ const TransactionForm: React.FC<TransactionFormProps> = ({ onSuccess, categories
           <div className="form-group" style={{ gridColumn: 'span 2' }}><label>메모</label><input type="text" value={formData.memo} onChange={(e) => setFormData({...formData, memo: e.target.value})} /></div>
         </div>
         <div className="form-actions">
-          <button type="submit" className="btn btn-primary" disabled={isSubmitting}><PlusCircle className="mr-2" size={18} /> {isSubmitting ? 'Adding...' : 'Add'}</button>
           {onCancel && <button type="button" className="btn btn-secondary" onClick={onCancel} disabled={isSubmitting}>취소</button>}
+          <button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? '저장 중...' : '저장'}</button>
         </div>
       </form>
     </div>

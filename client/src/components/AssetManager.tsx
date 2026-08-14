@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
+import { Trash2, Edit2, Check, X, Landmark, TrendingUp, Wallet, CreditCard } from 'lucide-react';
 import { getAssets, getAssetTypes, addAsset, updateAsset, deleteAsset, getAssetHistory, saveAssetHistory, Asset, AssetType } from '../api';
 import { Chart as ChartJS, Tooltip, Legend, CategoryScale, LinearScale, Title, PointElement, LineElement } from 'chart.js';
 import { Line } from 'react-chartjs-2';
@@ -112,7 +112,8 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     }
   };
 
-  const handleAdd = async () => {
+  const handleAdd = async (event?: React.FormEvent) => {
+    event?.preventDefault();
     if (!newAsset.name || isSubmitting) return;
     setIsSubmitting(true);
     try {
@@ -120,7 +121,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       setNewAsset({ name: '', type: 'bank', balance: 0, member: '공동', memo: '' });
       await fetchData();
       onCloseAdd?.();
-      onSuccess?.('자산 추가가 완료되었습니다.');
+      onSuccess?.('자산 등록이 완료되었습니다.');
     } catch (err: any) {
       console.error('Failed to add asset:', err);
       alert(`자산 추가 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
@@ -354,17 +355,14 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
         )}
       </div>
 
-      {isAdmin && isAddOpen && <EntryModal title="자산 등록" onClose={onCloseAdd || (() => undefined)}><div className="card-form entry-asset-form shadow-md mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold flex items-center gap-2">자산 추가</h3>
-            <button onClick={handleAdd} className="btn btn-primary flex items-center gap-1 text-sm py-1.5 px-3">
-              <Plus size={16} /> 등록
-            </button>
+      {isAdmin && isAddOpen && <EntryModal title="자산 등록" onClose={onCloseAdd || (() => undefined)}><form className="card-form entry-asset-form shadow-md mb-8" onSubmit={handleAdd}>
+          <div className="flex items-center mb-6">
+            <h3 className="text-lg font-bold flex items-center gap-2">자산 등록</h3>
           </div>
           <div className="space-y-2">
             <div className="form-group">
               <label className="text-xs font-bold text-gray-500 mb-0.5 block">자산 이름</label>
-              <input type="text" placeholder="예: 국민은행 예금" className="w-full p-1.5 border rounded text-sm" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} />
+              <input type="text" placeholder="예: 국민은행 예금" className="w-full p-1.5 border rounded text-sm" value={newAsset.name} onChange={e => setNewAsset({...newAsset, name: e.target.value})} required />
             </div>
             <div className="grid grid-cols-2 gap-2">
                 <div className="form-group">
@@ -388,8 +386,9 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
               <label className="text-xs font-bold text-gray-500 mb-0.5 block">메모</label>
               <input type="text" placeholder="기타 정보" className="w-full p-1.5 border rounded text-sm" value={newAsset.memo} onChange={e => setNewAsset({...newAsset, memo: e.target.value})} />
             </div>
-          </div>
-        </div></EntryModal>}
+           </div>
+          <div className="form-actions"><button type="button" className="btn btn-secondary" onClick={onCloseAdd}>취소</button><button type="submit" className="btn btn-primary" disabled={isSubmitting}>{isSubmitting ? '저장 중...' : '저장'}</button></div>
+        </form></EntryModal>}
 
       <div className="transaction-list shadow-md" style={{ marginTop: '1rem' }}>
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">내 자산 목록</h3>

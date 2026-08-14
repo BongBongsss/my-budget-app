@@ -968,6 +968,11 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   background: #2563eb;
 }
 
+.recurring-editor-form .form-actions,
+.entry-asset-form .form-actions {
+  justify-content: flex-end;
+}
+
 .undo-close {
   display: inline-flex;
   align-items: center;

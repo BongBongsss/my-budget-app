@@ -40,7 +40,7 @@ const RecurringSettings: React.FC<RecurringSettingsProps> = ({ categories, onRef
           {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
         </select>
         <input type="number" min="1" max="28" className="edit-input" value={formData.day_of_month} onChange={e => setFormData({...formData, day_of_month: e.target.value})} />
-        <button type="submit" className="btn btn-primary col-span-2"><Plus size={18} className="mr-2"/>Add</button>
+        <button type="submit" className="btn btn-primary col-span-2"><Plus size={18} className="mr-2"/>입력</button>
       </form>
       <table className="category-table">
         <tbody>

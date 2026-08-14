@@ -25,13 +25,13 @@ describe('TransactionForm', () => {
     await user.type(textInputs[1], 'Coffee shop');
     await user.type(document.querySelector('input[type="number"]')!, '5000');
 
-    const submit = screen.getByRole('button', { name: 'Add' });
+    const submit = screen.getByRole('button', { name: '저장' });
     await user.click(submit);
 
     expect(addTransactionMock).toHaveBeenCalledTimes(1);
-    expect(screen.getByRole('button', { name: 'Adding...' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '저장 중...' })).toBeDisabled();
 
-    await user.click(screen.getByRole('button', { name: 'Adding...' }));
+    await user.click(screen.getByRole('button', { name: '저장 중...' }));
     expect(addTransactionMock).toHaveBeenCalledTimes(1);
 
     finishRequest();

@@ -8,14 +8,57 @@ const instance = axios.create({
   withCredentials: true,
 });
 
+// A rapid double-click must not turn into two writes. Keep this at the API
+// boundary so the safeguard also covers every settings screen.
+const pendingMutationKeys = new Set<string>();
+
+const stableSerialize = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return `[${value.map(stableSerialize).join(',')}]`;
+  if (typeof value !== 'object') return JSON.stringify(value);
+  return `{${Object.keys(value as Record<string, unknown>)
+    .sort()
+    .map((key) => `${JSON.stringify(key)}:${stableSerialize((value as Record<string, unknown>)[key])}`)
+    .join(',')}}`;
+};
+
+export const mutationRequestKey = (config: any) => {
+  const method = String(config.method || 'get').toLowerCase();
+  if (!['post', 'put', 'patch', 'delete'].includes(method)) return null;
+
+  const data = config.data;
+  const body = data instanceof FormData
+    ? [...data.entries()].map(([key, value]) => `${key}:${value instanceof File ? `${value.name}:${value.size}:${value.lastModified}` : String(value)}`).join('|')
+    : typeof data === 'string' ? data : stableSerialize(data || {});
+  return `${method}:${config.baseURL || ''}:${config.url || ''}:${body}`;
+};
+
+instance.interceptors.request.use((config: any) => {
+  const mutationKey = mutationRequestKey(config);
+  if (!mutationKey) return config;
+  if (pendingMutationKeys.has(mutationKey)) {
+    const error = new axios.CanceledError('This change is already being processed.');
+    (error as any).isDuplicateMutation = true;
+    return Promise.reject(error);
+  }
+  pendingMutationKeys.add(mutationKey);
+  config.__mutationKey = mutationKey;
+  return config;
+});
+
 /**
  * Global Error Interceptor
  * 서버에서 오는 공통 에러 포맷({ status, code, message })을 처리합니다.
  */
 instance.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if ((response.config as any).__mutationKey) pendingMutationKeys.delete((response.config as any).__mutationKey);
+    return response;
+  },
   (error) => {
     const originalRequest = error.config;
+    if (originalRequest?.__mutationKey) pendingMutationKeys.delete(originalRequest.__mutationKey);
+    if ((error as any).isDuplicateMutation) return Promise.reject(error);
     
     if (error.response) {
       const { status, data } = error.response;

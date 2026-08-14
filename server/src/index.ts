@@ -22,6 +22,7 @@ import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
 import { errorHandler } from './middleware/errorHandler';
+import { createMutationGuard } from './middleware/mutationGuard';
 import { UnauthorizedError, BadRequestError, ForbiddenError } from './utils/errors';
 import { asyncHandler } from './utils/asyncHandler';
 import { assertStrongPassword, assertTrustedMutationOrigin, loginAttemptLimiter } from './security/authSecurity';
@@ -217,6 +218,10 @@ app.use('/api', (req, res, next) => {
     if (req.path === '/login' || req.path === '/health' || req.path === '/auth-status') return next();
     isAuthenticated(req, res, next);
 });
+
+// A second rapid click can otherwise reach two route handlers before the UI
+// has had time to re-render. Guard identical in-flight writes per session.
+app.use('/api', createMutationGuard());
 
 app.use('/api/review-requests', reviewRequestRoutes);
 app.use('/api/notices', noticeRoutes);

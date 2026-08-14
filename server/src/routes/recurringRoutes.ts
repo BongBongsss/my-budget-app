@@ -18,6 +18,34 @@ import { BadRequestError } from '../utils/errors';
 
 const router = Router();
 
+const validateRecurringInput = (body: Record<string, unknown>, partial = false) => {
+  const data = { ...body } as Record<string, unknown>;
+  const has = (key: string) => data[key] !== undefined;
+
+  if (!partial || has('vendor')) {
+    if (typeof data.vendor !== 'string' || !data.vendor.trim()) throw new BadRequestError('고정비 내용은 필수입니다.');
+    data.vendor = data.vendor.trim();
+  }
+  if (!partial || has('category')) {
+    if (typeof data.category !== 'string' || !data.category.trim()) throw new BadRequestError('고정비 분류는 필수입니다.');
+    data.category = data.category.trim();
+  }
+  if (!partial || has('amount')) {
+    const amount = Number(data.amount);
+    if (!Number.isFinite(amount) || amount <= 0) throw new BadRequestError('예상 금액은 0원보다 커야 합니다.');
+    data.amount = amount;
+  }
+  if (!partial || has('day_of_month')) {
+    const day = Number(data.day_of_month);
+    if (!Number.isInteger(day) || day < 1 || day > 28) throw new BadRequestError('예정일은 매월 1일부터 28일 사이여야 합니다.');
+    data.day_of_month = day;
+  }
+  if (!partial || has('member')) {
+    if (data.member !== '효' && data.member !== '굥') throw new BadRequestError('고정비 구성원은 효 또는 굥으로 선택해 주세요.');
+  }
+  return data;
+};
+
 router.get('/', asyncHandler(async (req: Request, res: Response) => {
   const yearMonth = typeof req.query.yearMonth === 'string' && /^\d{4}-\d{2}$/.test(req.query.yearMonth) ? req.query.yearMonth : undefined;
   const recurring = await getAllRecurringTransactions(yearMonth);
@@ -25,11 +53,7 @@ router.get('/', asyncHandler(async (req: Request, res: Response) => {
 }));
 
 router.post('/', asyncHandler(async (req: Request, res: Response) => {
-  const { vendor, amount, category, day_of_month } = req.body;
-  if (!vendor || amount === undefined || !category || day_of_month === undefined) {
-    throw new BadRequestError('Vendor, amount, category, and day_of_month are required');
-  }
-  const recurring = await addRecurringTransaction(req.body);
+  const recurring = await addRecurringTransaction(validateRecurringInput(req.body) as Parameters<typeof addRecurringTransaction>[0]);
   res.status(201).json(recurring);
 }));
 
@@ -79,7 +103,7 @@ router.delete('/candidates/ignored/:vendorKey', asyncHandler(async (req: Request
 }));
 
 router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
-  res.json(await updateRecurringTransaction(req.params.id as string, req.body));
+  res.json(await updateRecurringTransaction(req.params.id as string, validateRecurringInput(req.body, true) as Parameters<typeof updateRecurringTransaction>[1]));
 }));
 
 router.delete('/:id', asyncHandler(async (req: Request, res: Response) => {
