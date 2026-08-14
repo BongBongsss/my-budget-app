@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react';
+import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import api from './api';
 import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
@@ -17,7 +17,7 @@ import RecurringMissingModal from './components/RecurringMissingModal';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2 } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2, RefreshCw } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -88,6 +88,8 @@ function App() {
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [pullRefreshDistance, setPullRefreshDistance] = useState(0);
+  const [isPullRefreshing, setIsPullRefreshing] = useState(false);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const successToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const verifyingRef = useRef(false);
@@ -98,6 +100,9 @@ function App() {
   const suppressEntryButtonClickRef = useRef(false);
   const hasCompletedInitialAuthCheckRef = useRef(false);
   const initialAuthCheckStartedAtRef = useRef<number | null>(null);
+  const pullRefreshStartYRef = useRef<number | null>(null);
+  const isPullRefreshTrackingRef = useRef(false);
+  const isPullRefreshInFlightRef = useRef(false);
 
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
@@ -255,11 +260,13 @@ function App() {
       setCategories(catRes.data);
       setAssets(assetRes.data);
       setRecurringCandidateCount(recurringCandidatesRes.data.length);
+      return true;
     } catch (err: any) {
       if (err.response && err.response.status === 401) {
         setIsAuthenticated(false);
       }
       console.error(err);
+      return false;
     } finally {
       if (!hasCompletedInitialAuthCheckRef.current) {
         const previewDelay = import.meta.env.DEV
@@ -277,6 +284,45 @@ function App() {
       hasCompletedInitialAuthCheckRef.current = true;
       setIsAuthChecking(false);
     }
+  };
+
+  const resetPullRefresh = () => {
+    pullRefreshStartYRef.current = null;
+    isPullRefreshTrackingRef.current = false;
+    setPullRefreshDistance(0);
+  };
+
+  const handlePullRefreshStart = (event: ReactTouchEvent<HTMLDivElement>) => {
+    if (event.touches.length !== 1 || isPullRefreshing || window.innerWidth > 768 || window.scrollY > 0) return;
+    pullRefreshStartYRef.current = event.touches[0].clientY;
+    isPullRefreshTrackingRef.current = true;
+  };
+
+  const handlePullRefreshMove = (event: ReactTouchEvent<HTMLDivElement>) => {
+    const startY = pullRefreshStartYRef.current;
+    if (!isPullRefreshTrackingRef.current || startY === null) return;
+
+    const distance = event.touches[0].clientY - startY;
+    if (distance <= 0) {
+      resetPullRefresh();
+      return;
+    }
+
+    event.preventDefault();
+    setPullRefreshDistance(Math.min(distance * 0.55, 96));
+  };
+
+  const handlePullRefreshEnd = async () => {
+    const shouldRefresh = pullRefreshDistance >= 64 && !isPullRefreshInFlightRef.current;
+    resetPullRefresh();
+    if (!shouldRefresh) return;
+
+    isPullRefreshInFlightRef.current = true;
+    setIsPullRefreshing(true);
+    const refreshed = await fetchData();
+    setIsPullRefreshing(false);
+    isPullRefreshInFlightRef.current = false;
+    if (refreshed) showSuccessMessage('최신 데이터를 불러왔습니다.');
   };
 
   const handleLoginSuccess = (role: 'admin' | 'viewer') => {
@@ -461,7 +507,7 @@ function App() {
       setImportSummary(res.data.summary);
       showSuccessMessage(`${res.data.summary.total}건의 거래를 불러왔습니다.`);
     } catch (err: any) {
-      alert(err.response?.data?.message || 'Import failed. Please check the file and try again.');
+      alert(err.response?.data?.message || '가져오기에 실패했습니다. 파일을 확인한 후 다시 시도해 주세요.');
     } finally {
       e.target.value = '';
     }
@@ -483,7 +529,7 @@ function App() {
       link.remove();
       window.URL.revokeObjectURL(url);
     } catch (err) {
-      alert('Export failed');
+      alert('내보내기에 실패했습니다.');
     }
   };
 
@@ -579,7 +625,19 @@ function App() {
   }
 
   return (
-    <div className="container">
+    <div
+      className="container"
+      onTouchStart={handlePullRefreshStart}
+      onTouchMove={handlePullRefreshMove}
+      onTouchEnd={handlePullRefreshEnd}
+      onTouchCancel={resetPullRefresh}
+    >
+      {(pullRefreshDistance > 0 || isPullRefreshing) && (
+        <div className="pull-refresh-indicator" role="status" aria-live="polite">
+          <RefreshCw size={17} className={isPullRefreshing ? 'is-spinning' : ''} aria-hidden="true" />
+          <span>{isPullRefreshing ? '새로고침 중...' : pullRefreshDistance >= 64 ? '놓으면 새로고침' : '당겨서 새로고침'}</span>
+        </div>
+      )}
       <header className="header app-header">
         <h1 className="app-title">효굥봉 가계부</h1>
         <button
@@ -803,7 +861,7 @@ function App() {
               onBulkUpdateMember={handleBulkUpdateMember}
               onVerify={handleVerify}
               isVerifying={isVerifying}
-              onRefresh={fetchData}
+              onRefresh={() => { void fetchData(); }}
               period={period}
               setPeriod={setPeriod}
               year={year}
@@ -873,7 +931,7 @@ function App() {
       {missingRecurringItems && <RecurringMissingModal
         items={missingRecurringItems}
         onClose={() => setMissingRecurringItems(null)}
-        onAdded={fetchData}
+        onAdded={() => { void fetchData(); }}
       />}
 
       {importSummary && (
@@ -881,7 +939,7 @@ function App() {
           <div className="import-result-modal">
             <div className="modal-header" style={{ marginBottom: '1rem' }}>
               <div>
-                <h3 style={{ margin: 0 }}>Import 완료</h3>
+                <h3 style={{ margin: 0 }}>가져오기 완료</h3>
                 <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
                   방금 가져온 파일의 검토 결과입니다.
                 </p>

@@ -34,7 +34,7 @@ const FileImport: React.FC<FileImportProps> = ({ onImportSuccess }) => {
       setImportSummary(res.data.summary);
     } catch (err: any) {
       console.error('File import failed:', err);
-      alert(`File import failed: ${err.message || 'unknown error'}`);
+      alert(`가져오기에 실패했습니다: ${err.message || '알 수 없는 오류'}`);
     } finally {
       setIsSubmitting(false);
       e.target.value = '';
@@ -43,7 +43,7 @@ const FileImport: React.FC<FileImportProps> = ({ onImportSuccess }) => {
 
   return (
     <div className="import-section mb-8">
-      <h3 className="text-lg font-bold mb-4">CSV/Excel Import</h3>
+      <h3 className="text-lg font-bold mb-4">CSV/Excel 가져오기</h3>
       <div className="file-upload">
         <input
           type="file"
@@ -55,7 +55,7 @@ const FileImport: React.FC<FileImportProps> = ({ onImportSuccess }) => {
         />
         <label htmlFor="fileInput" className={`upload-label ${isSubmitting ? 'opacity-50 cursor-not-allowed' : ''}`}>
           {isSubmitting ? <Loader2 className="mr-2 animate-spin" /> : <Upload className="mr-2" />}
-          {isSubmitting ? 'Importing...' : 'Choose file'}
+          {isSubmitting ? '가져오는 중...' : '파일 선택'}
         </label>
       </div>
 
@@ -64,7 +64,7 @@ const FileImport: React.FC<FileImportProps> = ({ onImportSuccess }) => {
           <div className="import-result-modal">
             <div className="modal-header" style={{ marginBottom: '1rem' }}>
               <div>
-                <h3 style={{ margin: 0 }}>Import 완료</h3>
+                <h3 style={{ margin: 0 }}>가져오기 완료</h3>
                 <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
                   방금 가져온 파일의 검토 결과입니다.
                 </p>

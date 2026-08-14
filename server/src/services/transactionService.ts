@@ -55,6 +55,10 @@ const pickTransactionUpdateData = (updates: Partial<Transaction>) => {
   );
 };
 
+const hasTransactionUpdate = (before: Record<string, unknown>, updates: Record<string, unknown>) => (
+  Object.entries(updates).some(([field, value]) => before[field] !== value)
+);
+
 const mapImportRowToTransaction = (row: any) => ({
   id: row.id,
   date: row.date,
@@ -480,6 +484,10 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
 
       const data = pickTransactionUpdateData(updates);
 
+      if (!hasTransactionUpdate(importBefore as Record<string, unknown>, data)) {
+        return { transaction: mapImportRowToTransaction(importBefore), auditLogIds: [] };
+      }
+
       const updatedImportRow = await tx.importRow.update({
         where: { id },
         data,
@@ -499,9 +507,14 @@ export const updateTransaction = async (id: string, updates: Partial<Transaction
       return { transaction: mapImportRowToTransaction(updatedImportRow), auditLogIds: [auditLog.id] };
     }
 
+    const data = pickTransactionUpdateData(updates);
+    if (!hasTransactionUpdate(before as Record<string, unknown>, data)) {
+      return { transaction: before, auditLogIds: [] };
+    }
+
     const updated = await tx.transaction.update({
       where: { id },
-      data: pickTransactionUpdateData(updates),
+      data,
     });
 
     const auditLog = await tx.auditLog.create({

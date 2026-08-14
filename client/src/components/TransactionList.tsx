@@ -540,7 +540,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
               onClick={handleExportCsv}
               disabled={sortedTransactions.length === 0}
               style={{ fontSize: '0.8rem', padding: '2px 8px' }}
-              title="현재 필터 결과 CSV export"
+              title="현재 필터 결과 CSV 내보내기"
             >
               <Download size={16} style={{ marginRight: '4px' }} /> CSV
             </button>

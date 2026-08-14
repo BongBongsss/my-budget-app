@@ -25,7 +25,7 @@ const actionColors: Record<string, { bg: string; color: string }> = {
 
 const entityLabels: Record<string, string> = {
   transaction: '거래',
-  importRow: 'Import 후보',
+  importRow: '승인 전 데이터',
   asset: '자산',
 };
 
@@ -59,7 +59,8 @@ const getOriginalDateTime = (log: AuditLog) => {
     .join(' ');
 };
 
-const transactionFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'memo', 'member'];
+const transactionFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member', 'isManualCategory', 'isVerified', 'isDuplicate', 'isDeleted'];
+const importRowFields = [...transactionFields, 'status', 'invalidReason', 'committedAt', 'transactionId'];
 const assetFields = ['name', 'type', 'balance', 'member', 'memo'];
 
 const fieldLabels: Record<string, string> = {
@@ -74,6 +75,16 @@ const fieldLabels: Record<string, string> = {
   member: '구성원',
   name: '이름',
   balance: '잔액',
+  currency: '통화',
+  source: '출처',
+  status: '상태',
+  invalidReason: '오류 사유',
+  committedAt: '승인 일시',
+  transactionId: '승인된 거래 ID',
+  isManualCategory: '분류 수동 지정',
+  isVerified: '확인 상태',
+  isDuplicate: '중복 상태',
+  isDeleted: '삭제 상태',
 };
 
 const formatAuditValue = (field: string, value: unknown) => {
@@ -83,18 +94,24 @@ const formatAuditValue = (field: string, value: unknown) => {
     if (value === 'income') return '수입';
     if (value === 'expense') return '지출';
   }
+  if (field === 'status') {
+    const labels: Record<string, string> = { new: '신규', duplicate: '중복', invalid: '오류', ignored: '제외', committed: '승인 완료', approved: '승인 완료' };
+    return labels[String(value)] || String(value);
+  }
+  if (field === 'committedAt') return new Date(String(value)).toLocaleString();
+  if (typeof value === 'boolean') return value ? '예' : '아니오';
   return String(value);
 };
 
 const getChangedFields = (log: AuditLog) => {
   if (!log.beforeData || !log.afterData) return [];
-  const fields = log.entityType === 'asset' ? assetFields : transactionFields;
+  const fields = log.entityType === 'asset' ? assetFields : log.entityType === 'importRow' ? importRowFields : transactionFields;
   return fields.filter((field) => log.beforeData[field] !== log.afterData[field]);
 };
 
 const getDeletedDetails = (log: AuditLog) => {
   if (log.action !== 'delete' || !log.beforeData) return '';
-  const fields = log.entityType === 'asset' ? assetFields : transactionFields;
+  const fields = log.entityType === 'asset' ? assetFields : log.entityType === 'importRow' ? importRowFields : transactionFields;
   return fields
     .filter((field) => log.beforeData[field] !== null && log.beforeData[field] !== undefined && log.beforeData[field] !== '')
     .map((field) => `${fieldLabels[field]}: ${formatAuditValue(field, log.beforeData[field])}`)
@@ -182,7 +199,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
         <div>
           <h3 style={{ margin: 0 }}>활동 로그</h3>
           <div style={{ color: '#64748b', fontSize: '0.85rem', marginTop: '4px' }}>
-            거래와 Import 후보의 추가, 수정, 삭제, 복구 이력을 확인합니다.
+            거래와 승인 전 데이터의 추가, 수정, 삭제, 복구 이력을 확인합니다.
           </div>
         </div>
 
@@ -195,7 +212,7 @@ function AuditLogView({ isAdmin, onRestored }: Props) {
           >
             <option value="">전체 대상</option>
             <option value="transaction">거래</option>
-            <option value="importRow">Import 후보</option>
+            <option value="importRow">승인 전 데이터</option>
             <option value="asset">자산</option>
           </select>
           <select

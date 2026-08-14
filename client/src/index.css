@@ -14,6 +14,10 @@ body {
   margin: 0;
 }
 
+.pull-refresh-indicator {
+  display: none;
+}
+
 /* Keep the login screen from flashing while a saved session is being checked. */
 .app-auth-loading {
   display: grid;
@@ -51,6 +55,10 @@ body {
 }
 
 @keyframes app-auth-loading-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes pull-refresh-spin {
   to { transform: rotate(360deg); }
 }
 
@@ -1290,7 +1298,41 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 /* Mobile-only layout: the desktop table remains unchanged above this breakpoint. */
 @media (max-width: 768px) {
-  body { overflow-x: hidden; }
+  body { overflow-x: hidden; overscroll-behavior-y: contain; }
+  .pull-refresh-indicator {
+    position: fixed;
+    z-index: 1200;
+    top: 0.75rem;
+    left: 50%;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #cbd8ff;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 6px 16px rgba(48, 82, 145, 0.18);
+    color: #3d5fa8;
+    font-size: 0.8rem;
+    font-weight: 700;
+    transform: translateX(-50%);
+  }
+  .pull-refresh-indicator .is-spinning { animation: pull-refresh-spin 0.9s linear infinite; }
+  .audit-log-table tr:not(.is-expanded) td:nth-child(4)::after {
+    content: '눌러서 변경 내역 보기';
+    display: block;
+    margin-top: 0.22rem;
+    color: #5d7ff0;
+    font-size: 0.76rem;
+    font-weight: 600;
+  }
+  .audit-log-table tr.is-expanded td:nth-child(4)::after {
+    content: '변경 내역을 접으려면 다시 누르세요';
+    display: block;
+    margin-top: 0.22rem;
+    color: #64748b;
+    font-size: 0.76rem;
+  }
   .container { padding: 0.75rem; }
   .view-action-bar { display: none; }
   .desktop-entry-button { display: none; }
