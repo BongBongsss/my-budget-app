@@ -17,7 +17,7 @@ import RecurringMissingModal from './components/RecurringMissingModal';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2 } from 'lucide-react';
 
 type ImportSummary = {
   total: number;
@@ -87,7 +87,9 @@ function App() {
   
   const [lastUndoAction, setLastUndoAction] = useState<UndoAction | null>(null);
   const [showUndo, setShowUndo] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const successToastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const verifyingRef = useRef(false);
   const entryButtonHoldTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const entryButtonExpandTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -326,6 +328,7 @@ function App() {
         label: '거래를 수정했습니다.',
         auditLogIds: result.data.auditLogIds,
       });
+      showSuccessMessage('거래 수정이 완료되었습니다.');
     } catch (err) {
       fetchData();
     }
@@ -348,6 +351,7 @@ function App() {
         label: `거래 ${before.length}건을 수정했습니다.`,
         auditLogIds: result.data.auditLogIds,
       });
+      showSuccessMessage(`${before.length}건의 거래 일괄 변경이 완료되었습니다.`);
       await fetchData();
     } catch (err) {
       console.error('Bulk update failed:', err);
@@ -371,6 +375,7 @@ function App() {
         label: `거래 ${before.length}건을 수정했습니다.`,
         auditLogIds: res.data.auditLogIds,
       });
+      showSuccessMessage(`${before.length}건을 ${member}로 변경했습니다.`);
       await fetchData();
     } catch (err) {
       console.error('Bulk member update failed:', err);
@@ -402,6 +407,15 @@ function App() {
     }, 10000);
   };
 
+  const showSuccessMessage = (message: string) => {
+    setSuccessMessage(message);
+    if (successToastTimerRef.current) clearTimeout(successToastTimerRef.current);
+    successToastTimerRef.current = setTimeout(() => {
+      setSuccessMessage(null);
+      successToastTimerRef.current = null;
+    }, 3000);
+  };
+
   const dismissUndo = () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     setShowUndo(false);
@@ -410,7 +424,30 @@ function App() {
 
   useEffect(() => () => {
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    if (successToastTimerRef.current) clearTimeout(successToastTimerRef.current);
   }, []);
+
+  useEffect(() => {
+    if (isAuthChecking || !import.meta.env.DEV) return;
+    const preview = new URLSearchParams(window.location.search).get('successToastPreview');
+    const messages: Record<string, string> = {
+      transaction: '거래 추가가 완료되었습니다.',
+      transactionEdit: '거래 수정이 완료되었습니다.',
+      bulk: '12건의 거래 일괄 변경이 완료되었습니다.',
+      member: '12건을 효로 변경했습니다.',
+      memberGung: '12건을 굥으로 변경했습니다.',
+      import: '12건의 거래를 불러왔습니다.',
+      approve: '12건의 거래 승인 처리가 완료되었습니다.',
+      recurring: '고정비 수동 매칭이 완료되었습니다.',
+      recurringAdd: '고정비 항목 등록이 완료되었습니다.',
+      recurringPause: '고정비 항목을 중지했습니다.',
+      recurringDelete: '고정비 항목을 삭제했습니다.',
+      asset: '자산 수정이 완료되었습니다.',
+      assetAdd: '자산 추가가 완료되었습니다.',
+      assetDelete: '자산 삭제가 완료되었습니다.',
+    };
+    if (preview && messages[preview]) showSuccessMessage(messages[preview]);
+  }, [isAuthChecking]);
 
   const handleFileImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (userRole !== 'admin') return;
@@ -422,6 +459,7 @@ function App() {
       await fetchData();
       setActiveTab('new');
       setImportSummary(res.data.summary);
+      showSuccessMessage(`${res.data.summary.total}건의 거래를 불러왔습니다.`);
     } catch (err: any) {
       alert(err.response?.data?.message || 'Import failed. Please check the file and try again.');
     } finally {
@@ -459,6 +497,7 @@ function App() {
       const missingRecurring = await getMissingRecurring();
       if (missingRecurring.data.length > 0) setMissingRecurringItems(missingRecurring.data);
       setActiveTab('all');
+      showSuccessMessage(ids.length === 1 ? '거래 승인 처리가 완료되었습니다.' : `${ids.length}건의 거래 승인 처리가 완료되었습니다.`);
     } catch (err) {
       alert('승인 중 오류가 발생했습니다.');
     } finally {
@@ -654,7 +693,7 @@ function App() {
           
           {userRole === 'admin' && isTransactionFormOpen && (
             <EntryModal title="거래 입력" onClose={closeTransactionForm}>
-              <TransactionForm onSuccess={() => { closeTransactionForm(); fetchData(); }} onCancel={closeTransactionForm} categories={categories} compact />
+              <TransactionForm onSuccess={() => { closeTransactionForm(); fetchData(); showSuccessMessage('거래 추가가 완료되었습니다.'); }} onCancel={closeTransactionForm} categories={categories} compact />
             </EntryModal>
           )}
           
@@ -788,12 +827,12 @@ function App() {
             </button>}
           </div>
           <ErrorBoundary title="자산 관리를 불러오지 못했습니다.">
-            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} />
+            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} onSuccess={showSuccessMessage} />
           </ErrorBoundary>
         </div>
       ) : currentView === 'recurring' ? (
         <ErrorBoundary title="고정비 관리 정보를 불러오지 못했습니다.">
-          <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} />
+          <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} onSuccess={showSuccessMessage} />
         </ErrorBoundary>
       ) : (
           <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
@@ -898,6 +937,12 @@ function App() {
           <span>{lastUndoAction.label}</span>
           <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 직전 작업 일괄 되돌리기</button>
           <button onClick={dismissUndo} className="undo-close" aria-label="되돌리기 알림 닫기" title="닫기"><X size={16} /></button>
+        </div>
+      )}
+      {successMessage && (
+        <div className={`success-toast${showUndo ? ' success-toast-above-undo' : ''}`} role="status">
+          <CheckCircle2 size={18} aria-hidden="true" />
+          <span>{successMessage}</span>
         </div>
       )}
     </div>

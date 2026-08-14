@@ -19,9 +19,10 @@ interface Props {
   categories: CategoryItem[];
   transactions: Transaction[];
   canManage: boolean;
+  onSuccess?: (message: string) => void;
 }
 
-const RecurringManager = ({ categories, transactions, canManage }: Props) => {
+const RecurringManager = ({ categories, transactions, canManage, onSuccess }: Props) => {
   const [list, setList] = useState<RecurringTransaction[]>([]);
   const [candidates, setCandidates] = useState<RecurringCandidate[]>([]);
   const [memberFilter, setMemberFilter] = useState<MemberFilter>('all');
@@ -119,15 +120,18 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     if (!editing?.vendor?.trim() || !editing.category || !editing.amount || !editing.day_of_month) return;
     setIsSaving(true);
     try {
+      const isUpdate = Boolean(editing.id);
       if (editing.id) await updateRecurring(editing.id, editing);
       else await addRecurring(editing);
       setEditing(null); await load();
+      onSuccess?.(isUpdate ? '고정비 항목 수정이 완료되었습니다.' : '고정비 항목 등록이 완료되었습니다.');
     } finally { setIsSaving(false); }
   };
   const handleCandidate = async (action: 'defer' | 'ignore', candidate: RecurringCandidate) => {
     if (action === 'defer') await deferRecurringCandidate(candidate.vendor);
     else await ignoreRecurringCandidate(candidate.vendor);
     await load();
+    onSuccess?.(action === 'defer' ? '고정비 추천을 나중에 다시 확인합니다.' : '고정비 추천에서 제외했습니다.');
   };
   const toggleCandidatePane = async () => {
     if (isCandidatePaneLoading) return;
@@ -149,6 +153,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     await restoreIgnoredRecurringCandidate(vendorKey);
     setIgnoredCandidates((previous) => previous.filter((item) => item.vendorKey !== vendorKey));
     await load();
+    onSuccess?.('고정비 추천에 다시 포함했습니다.');
   };
   const toggleRegisteredPane = async () => {
     if (registeredPane === 'registered') {
@@ -174,12 +179,26 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
     setMissingItems((previous) => previous.filter((current) => current.id !== item.id));
     setMissingEditingId(null);
     await load();
+    onSuccess?.('미반영 고정비를 거래에 추가했습니다.');
   };
   const confirmMatch = async (item: RecurringTransaction, transactionId: string) => {
     if (!item.id || !item.matchYearMonth) return;
     await confirmRecurringMatch(item.id, transactionId, item.matchYearMonth);
     setExpandedMatchId(null);
     await load();
+    onSuccess?.('고정비 수동 매칭이 완료되었습니다.');
+  };
+  const toggleActive = async (item: RecurringTransaction) => {
+    if (!item.id) return;
+    await updateRecurring(item.id, { isActive: !item.isActive });
+    await load();
+    onSuccess?.(item.isActive === false ? '고정비 항목을 재개했습니다.' : '고정비 항목을 중지했습니다.');
+  };
+  const removeRecurring = async (item: RecurringTransaction) => {
+    if (!item.id) return;
+    await deleteRecurring(item.id);
+    await load();
+    onSuccess?.('고정비 항목을 삭제했습니다.');
   };
 
   const status = (item: RecurringTransaction) => {
@@ -282,7 +301,7 @@ const RecurringManager = ({ categories, transactions, canManage }: Props) => {
               </div>)}
             </div>}
             {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
-            {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void updateRecurring(item.id!, { isActive: !item.isActive }).then(load)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => item.id && void deleteRecurring(item.id).then(load)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
+            {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void toggleActive(item)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => void removeRecurring(item)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
           </article>;
         })}</div>}
       </section>

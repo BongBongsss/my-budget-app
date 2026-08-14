@@ -984,6 +984,30 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   background: rgba(255, 255, 255, 0.16);
 }
 
+.success-toast {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  z-index: 2001;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  transform: translateX(-50%);
+  padding: 0.8rem 1.1rem;
+  border: 1px solid #a7e6be;
+  border-radius: 9px;
+  background: #ecfdf3;
+  box-shadow: 0 10px 15px -3px rgba(34, 119, 67, 0.16);
+  color: #19733d;
+  font-size: 0.92rem;
+  font-weight: 600;
+  animation: slideUp 0.25s ease-out;
+}
+
+.success-toast-above-undo {
+  bottom: 5.4rem;
+}
+
 @keyframes slideUp {
   from { bottom: -50px; opacity: 0; }
   to { bottom: 2rem; opacity: 1; }
@@ -1752,4 +1776,6 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
   .undo-toast { width: calc(100vw - 1.5rem); bottom: 1rem; padding: 0.75rem; gap: 0.6rem; }
   .undo-toast span { flex: 1; font-size: 0.85rem; }
+  .success-toast { bottom: 1rem; width: calc(100vw - 1.5rem); justify-content: center; }
+  .success-toast.success-toast-above-undo { bottom: 5.6rem; }
 }

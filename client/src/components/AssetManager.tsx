@@ -13,12 +13,13 @@ interface AssetManagerProps {
   isAddOpen?: boolean;
   onCloseAdd?: () => void;
   assetTypesVersion?: number;
+  onSuccess?: (message: string) => void;
 }
 
 const ASSET_MEMBER_OPTIONS: Asset['member'][] = ['효', '굥', '봉', '공동'];
 type AssetMemberFilter = 'all' | Asset['member'];
 
-const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd, assetTypesVersion = 0 }) => {
+const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddOpen = false, onCloseAdd, assetTypesVersion = 0, onSuccess }) => {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [history, setHistory] = useState<any[]>([]);
   const [assetTypes, setAssetTypes] = useState<AssetType[]>([]);
@@ -119,6 +120,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       setNewAsset({ name: '', type: 'bank', balance: 0, member: '공동', memo: '' });
       await fetchData();
       onCloseAdd?.();
+      onSuccess?.('자산 추가가 완료되었습니다.');
     } catch (err: any) {
       console.error('Failed to add asset:', err);
       alert(`자산 추가 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
@@ -134,6 +136,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       await updateAsset(id, editForm);
       setEditingId(null);
       await fetchData();
+      onSuccess?.('자산 수정이 완료되었습니다.');
     } catch (err: any) {
       console.error('Failed to update asset:', err);
       alert(`자산 수정 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
@@ -149,6 +152,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
       try {
         await deleteAsset(id);
         await fetchData();
+        onSuccess?.('자산 삭제가 완료되었습니다.');
       } catch (err: any) {
         console.error('Failed to delete asset:', err);
         alert(`자산 삭제 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
@@ -164,6 +168,7 @@ const AssetManager: React.FC<AssetManagerProps> = ({ userRole = 'viewer', isAddO
     try {
       await saveAssetHistory();
       await fetchData();
+      onSuccess?.('자산 이력 저장이 완료되었습니다.');
     } catch (err: any) {
       console.error('Failed to save history:', err);
       alert(`이력 저장 중 오류가 발생했습니다: ${err.message || '알 수 없는 오류'}`);
