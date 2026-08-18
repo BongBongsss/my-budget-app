@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { Suspense, lazy, useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import api from './api';
 import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
@@ -7,17 +7,19 @@ import Summary from './components/Summary';
 import TransactionForm from './components/TransactionForm';
 import SummaryCharts from './components/SummaryCharts';
 import TransactionList from './components/TransactionList';
-import SettingsModal from './components/SettingsModal';
-import AssetManager from './components/AssetManager';
 import EntryModal from './components/EntryModal';
-import AuditLogView from './components/AuditLogView';
 import NoticeCenter from './components/NoticeCenter';
-import RecurringManager from './components/RecurringManager';
 import RecurringMissingModal from './components/RecurringMissingModal';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
 import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2, RefreshCw } from 'lucide-react';
+
+const SettingsModal = lazy(() => import('./components/SettingsModal'));
+const AssetManager = lazy(() => import('./components/AssetManager'));
+const AuditLogView = lazy(() => import('./components/AuditLogView'));
+const RecurringManager = lazy(() => import('./components/RecurringManager'));
+const LazyViewFallback = () => <div className="card-form" role="status">화면을 불러오는 중입니다.</div>;
 
 type ImportSummary = {
   total: number;
@@ -35,6 +37,16 @@ type ImportSummary = {
 type UndoAction = { label: string; auditLogIds: string[] };
 type StatisticsExclusions = { income: string[]; expense: string[] };
 const RELEASE_NOTES = [
+  {
+    version: 'v1.2',
+    releasedAt: '2026.08',
+    summary: '초기 로딩과 개발 환경 안정성 개선',
+    changes: [
+      '자산 관리·고정비 관리·수정 로그·설정 화면을 필요할 때 불러오도록 개선',
+      '첫 화면의 초기 로딩 용량을 줄여 더 빠르게 표시',
+      'Vite·Vitest 개발 도구 호환성 및 로컬 작업 파일 관리 정리',
+    ],
+  },
   {
     version: 'v1.1',
     releasedAt: '2026.08',
@@ -674,7 +686,7 @@ function App() {
         <div className="app-title-group">
           <h1 className="app-title">효굥봉 가계부</h1>
           <button type="button" className="app-version-link" onClick={() => setIsUpdateHistoryOpen(true)}>
-            v1.1
+            v1.2
           </button>
         </div>
         <button
@@ -934,16 +946,22 @@ function App() {
             </button>}
           </div>
           <ErrorBoundary title="자산 관리를 불러오지 못했습니다.">
-            <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} onSuccess={showSuccessMessage} />
+            <Suspense fallback={<LazyViewFallback />}>
+              <AssetManager userRole={userRole} isAddOpen={isAssetFormOpen} onCloseAdd={closeAssetForm} assetTypesVersion={assetTypesVersion} onSuccess={showSuccessMessage} />
+            </Suspense>
           </ErrorBoundary>
         </div>
       ) : currentView === 'recurring' ? (
         <ErrorBoundary title="고정비 관리 정보를 불러오지 못했습니다.">
-          <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} onSuccess={showSuccessMessage} />
+            <Suspense fallback={<LazyViewFallback />}>
+              <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} onSuccess={showSuccessMessage} />
+            </Suspense>
         </ErrorBoundary>
       ) : (
           <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
-            <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
+            <Suspense fallback={<LazyViewFallback />}>
+              <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
+            </Suspense>
           </ErrorBoundary>
       )}
 
@@ -1056,13 +1074,17 @@ function App() {
         </EntryModal>
       )}
 
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        categories={categories}
-        onRefresh={fetchData}
-        onAssetTypesChanged={() => setAssetTypesVersion((version) => version + 1)}
-      />
+      {isSettingsModalOpen && (
+        <Suspense fallback={null}>
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            categories={categories}
+            onRefresh={fetchData}
+            onAssetTypesChanged={() => setAssetTypesVersion((version) => version + 1)}
+          />
+        </Suspense>
+      )}
 
       {showUndo && userRole === 'admin' && lastUndoAction && (
         <div className="undo-toast">

@@ -17,3 +17,9 @@ backup/neon-before-migration-*/
 backup/neon-current-before-restore/
 # Personal database exports and import samples must remain local only.
 server/backup/
+# Generated manuals and temporary working files remain local only.
+output/
+tmp/
+# Local database recovery helpers are intentionally not deployed.
+server/src/scripts/initLocalDb.ts
+server/src/scripts/repairLocalSchema.ts
