@@ -36,6 +36,16 @@ type UndoAction = { label: string; auditLogIds: string[] };
 type StatisticsExclusions = { income: string[]; expense: string[] };
 const RELEASE_NOTES = [
   {
+    version: 'v1.1',
+    releasedAt: '2026.08',
+    summary: '추이 탐색과 그룹명 수정 편의성 개선',
+    changes: [
+      '12개월 추이의 월을 선택하면 해당 항목·월 거래만 목록에 표시',
+      '모바일·PC에서 선택한 월 행을 강조 표시',
+      '상위 그룹명 수정 시 카드 하단에서 저장·취소 가능',
+    ],
+  },
+  {
     version: 'v1.0',
     releasedAt: '2026.08',
     summary: '첫 정식 버전',
@@ -122,7 +132,7 @@ function App() {
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥' | '미지정'>('all');
-  const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string} | null>(null);
+  const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string, monthKey?: string} | null>(null);
   const [trendSummaryGroups, setTrendSummaryGroups] = useState<{ income: string | null; expense: string | null }>({ income: null, expense: null });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -572,6 +582,11 @@ function App() {
     if (filter) setActiveTab('all');
   };
 
+  const handleTrendMonthSelect = (selection: { type: 'income' | 'expense'; group: string; monthKey: string } | null) => {
+    setChartFilter(selection);
+    if (selection) setActiveTab('all');
+  };
+
   const closeTransactionForm = () => setIsTransactionFormOpen(false);
   const closeAssetForm = () => setIsAssetFormOpen(false);
 
@@ -605,15 +620,17 @@ function App() {
   const invalidCount = unverifiedTransactions.filter(t => t.importStatus === 'invalid' || t.isInvalid).length;
   const verifiedCount = allVerifiedForPeriod.length;
 
-  const filteredTransactions = filteredByPeriod.filter(t => {
+  const transactionsForList = chartFilter?.monthKey ? transactions : filteredByPeriod;
+  const filteredTransactions = transactionsForList.filter(t => {
     const matchesMember = memberFilter === 'all' || t.member === memberFilter;
     if (!matchesMember) return false;
 
     // getGroupName helper for filtering
     // 차트 필터 적용
-    if (chartFilter) {
-      const groupName = getGroupName(t.category, categories);
-      if (t.type !== chartFilter.type || groupName !== chartFilter.group) return false;
+      if (chartFilter) {
+        const groupName = getGroupName(t.category, categories);
+        if (t.type !== chartFilter.type || groupName !== chartFilter.group) return false;
+        if (chartFilter.monthKey && !t.date.startsWith(chartFilter.monthKey)) return false;
     }
 
     if (activeTab === 'all') return t.isVerified !== false;
@@ -657,7 +674,7 @@ function App() {
         <div className="app-title-group">
           <h1 className="app-title">효굥봉 가계부</h1>
           <button type="button" className="app-version-link" onClick={() => setIsUpdateHistoryOpen(true)}>
-            v1.0
+            v1.1
           </button>
         </div>
         <button
@@ -775,6 +792,7 @@ function App() {
               period={period}
               onHighlight={handleChartHighlight}
               onTrendGroupsChange={setTrendSummaryGroups}
+              onTrendMonthSelect={handleTrendMonthSelect}
               excludedGroups={statisticsExclusions}
               onExcludedGroupsChange={setStatisticsExclusions}
             />

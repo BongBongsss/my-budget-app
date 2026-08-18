@@ -194,6 +194,7 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
   border-radius: 7px;
   background: #f8fafc;
 }
+.summary-chart-area .mobile-comparison-bar.is-selected { border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
 .summary-chart-area .mobile-comparison-bar-fill { position: absolute; inset: 0 auto 0 0; opacity: 0.78; }
 .summary-chart-area .mobile-comparison-bar-content { position: relative; z-index: 1; display: grid; gap: 0.1rem; color: #0f172a; text-shadow: 0 1px 2px rgb(255 255 255 / 0.9); }
 .summary-chart-area .mobile-comparison-bar-name { overflow: hidden; font-size: 0.85rem; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
@@ -1813,7 +1814,7 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     font-size: 0.68rem;
   }
   .mobile-trend-list { gap: 0.35rem; }
-  .mobile-trend-bar { cursor: default; }
+  .mobile-trend-bar { cursor: pointer; font: inherit; }
   .mobile-comparison-chart-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; }
   .mobile-comparison-chart-dot.income { background: #22c55e; }
   .mobile-comparison-chart-dot.expense { background: #ef4444; }

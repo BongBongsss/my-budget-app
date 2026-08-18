@@ -16,15 +16,17 @@ interface SummaryChartsProps {
   period: 'all' | 'month' | 'year';
   onHighlight: (filter: { type: 'income' | 'expense', group: string } | null) => void;
   onTrendGroupsChange?: React.Dispatch<React.SetStateAction<{ income: string | null; expense: string | null }>>;
+  onTrendMonthSelect?: (selection: { type: 'income' | 'expense'; group: string; monthKey: string } | null) => void;
   excludedGroups?: { income: string[]; expense: string[] };
   onExcludedGroupsChange?: React.Dispatch<React.SetStateAction<{ income: string[]; expense: string[] }>>;
 }
 
-const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransactions, categories, period, onHighlight, onTrendGroupsChange, excludedGroups = { income: [], expense: [] }, onExcludedGroupsChange = () => undefined }) => {
+const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransactions, categories, period, onHighlight, onTrendGroupsChange, onTrendMonthSelect, excludedGroups = { income: [], expense: [] }, onExcludedGroupsChange = () => undefined }) => {
   const [incomeView] = useState<'pie' | 'bar'>('bar');
   const [expenseView] = useState<'pie' | 'bar'>('bar');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
   const [trendGroups, setTrendGroups] = useState<{ income: string | null; expense: string | null }>({ income: null, expense: null });
+  const [selectedTrendMonth, setSelectedTrendMonth] = useState<{ type: 'income' | 'expense'; group: string; monthKey: string } | null>(null);
   const [isCompactMobile, setIsCompactMobile] = useState(false);
   const [isIncomeExpanded, setIsIncomeExpanded] = useState(false);
   const [isExpenseExpanded, setIsExpenseExpanded] = useState(false);
@@ -56,6 +58,12 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
   useEffect(() => {
     onTrendGroupsChange?.(trendGroups);
   }, [onTrendGroupsChange, trendGroups]);
+
+  useEffect(() => {
+    if (!selectedTrendMonth || trendGroups[selectedTrendMonth.type] === selectedTrendMonth.group) return;
+    setSelectedTrendMonth(null);
+    onTrendMonthSelect?.(null);
+  }, [onTrendMonthSelect, selectedTrendMonth, trendGroups]);
 
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
@@ -194,6 +202,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     return {
       labels: months.map(({ label }) => label),
       mobileLabels: months.map(({ mobileLabel }) => mobileLabel),
+      monthKeys: months.map(({ key }) => key),
       datasets: [{ data: values, backgroundColor: color, borderRadius: 5, barThickness: 20, maxBarThickness: 24 }],
     };
   };
@@ -210,14 +219,29 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
         {trendData.mobileLabels.map((label: string, index: number) => {
           const value = values[index];
           const width = maximumValue > 0 ? (value / maximumValue) * 100 : 0;
+          const monthKey = trendData.monthKeys[index];
+          const isSelected = selectedTrendMonth?.type === type
+            && selectedTrendMonth.group === group
+            && selectedTrendMonth.monthKey === monthKey;
           return (
-            <div className="mobile-comparison-bar mobile-trend-bar" key={`${type}-${label}`}>
+            <button
+              type="button"
+              className={`mobile-comparison-bar mobile-trend-bar ${isSelected ? 'is-selected' : ''}`}
+              key={`${type}-${label}`}
+              aria-pressed={isSelected}
+              onClick={(event) => {
+                event.stopPropagation();
+                const selection = isSelected ? null : { type, group, monthKey };
+                setSelectedTrendMonth(selection);
+                onTrendMonthSelect?.(selection);
+              }}
+            >
               <span className="mobile-comparison-bar-fill" style={{ width: `${width}%`, backgroundColor: color }} />
               <span className="mobile-comparison-bar-content">
                 <span className="mobile-comparison-bar-name">{label}</span>
                 <span className="mobile-comparison-bar-value">{value.toLocaleString()}원 · {total ? ((value / total) * 100).toFixed(1) : '0.0'}%</span>
               </span>
-            </div>
+            </button>
           );
         })}
       </div>
