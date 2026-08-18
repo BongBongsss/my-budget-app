@@ -34,6 +34,18 @@ type ImportSummary = {
 
 type UndoAction = { label: string; auditLogIds: string[] };
 type StatisticsExclusions = { income: string[]; expense: string[] };
+const RELEASE_NOTES = [
+  {
+    version: 'v1.0',
+    releasedAt: '2026.08',
+    summary: '첫 정식 버전',
+    changes: [
+      '수입·지출 구성 항목별 최근 12개월 추이 제공',
+      '월별 금액과 12개월 합계 대비 비율 표시',
+      '선택 항목 기준 수입·지출·잔액 비교 서머리 제공',
+    ],
+  },
+];
 type FloatingButtonPosition = { left: number; top: number };
 type FloatingButtonDrag = {
   pointerId: number;
@@ -52,6 +64,8 @@ function App() {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [assetTypesVersion, setAssetTypesVersion] = useState(0);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
+  const [isUpdateHistoryOpen, setIsUpdateHistoryOpen] = useState(false);
+  const [expandedReleaseVersion, setExpandedReleaseVersion] = useState<string | null>(RELEASE_NOTES[0].version);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [unreadNoticeCount, setUnreadNoticeCount] = useState(0);
   const [recurringCandidateCount, setRecurringCandidateCount] = useState(0);
@@ -109,6 +123,7 @@ function App() {
   const [month, setMonth] = useState(new Date().getMonth() + 1);
   const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥' | '미지정'>('all');
   const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string} | null>(null);
+  const [trendSummaryGroups, setTrendSummaryGroups] = useState<{ income: string | null; expense: string | null }>({ income: null, expense: null });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -639,7 +654,12 @@ function App() {
         </div>
       )}
       <header className="header app-header">
-        <h1 className="app-title">효굥봉 가계부</h1>
+        <div className="app-title-group">
+          <h1 className="app-title">효굥봉 가계부</h1>
+          <button type="button" className="app-version-link" onClick={() => setIsUpdateHistoryOpen(true)}>
+            v1.0
+          </button>
+        </div>
         <button
           type="button"
           className="header-menu-toggle"
@@ -711,12 +731,19 @@ function App() {
                 <Settings size={16} /> 설정
             </button>
           )}
-          
+
+          <button type="button" className="btn btn-secondary header-action-btn" onClick={() => {
+            setIsMobileMenuOpen(false);
+            setIsUpdateHistoryOpen(true);
+          }}>
+            <History size={16} /> 버전 정보
+          </button>
+
           <button className="btn btn-danger header-action-btn" onClick={() => {
             setIsMobileMenuOpen(false);
             handleLogout();
           }}>
-            로그아웃
+            <LogOut size={16} /> 로그아웃
           </button>
         </div>
       </header>
@@ -735,6 +762,9 @@ function App() {
             year={year} setYear={setYear} 
             month={month} setMonth={setMonth} 
             memberFilter={memberFilter} setMemberFilter={setMemberFilter}
+            trendTransactions={allVerifiedForMember}
+            trendGroups={trendSummaryGroups}
+            categories={categories}
           />
           <SuggestionNotification onRuleApproved={fetchData} />
           <ErrorBoundary title="차트를 불러오지 못했습니다.">
@@ -744,6 +774,7 @@ function App() {
               categories={categories}
               period={period}
               onHighlight={handleChartHighlight}
+              onTrendGroupsChange={setTrendSummaryGroups}
               excludedGroups={statisticsExclusions}
               onExcludedGroupsChange={setStatisticsExclusions}
             />
@@ -980,6 +1011,31 @@ function App() {
             </div>
           </div>
         </div>
+      )}
+
+      {isUpdateHistoryOpen && (
+        <EntryModal title="버전 정보" onClose={() => setIsUpdateHistoryOpen(false)}>
+          <div className="version-history">
+            {RELEASE_NOTES.map((release) => (
+              <button
+                type="button"
+                className={`version-history-release ${expandedReleaseVersion === release.version ? 'is-expanded' : ''}`}
+                key={release.version}
+                aria-expanded={expandedReleaseVersion === release.version}
+                onClick={() => setExpandedReleaseVersion((current) => current === release.version ? null : release.version)}
+              >
+                <div className="version-history-release-heading">
+                  <h3>{release.version}</h3>
+                  <span>{release.releasedAt}</span>
+                </div>
+                <p>{release.summary}</p>
+                <ul>
+                  {release.changes.map((change) => <li key={change}>{change}</li>)}
+                </ul>
+              </button>
+            ))}
+          </div>
+        </EntryModal>
       )}
 
       <SettingsModal

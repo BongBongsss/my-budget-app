@@ -15,11 +15,12 @@ interface SummaryChartsProps {
   categories: CategoryItem[];
   period: 'all' | 'month' | 'year';
   onHighlight: (filter: { type: 'income' | 'expense', group: string } | null) => void;
+  onTrendGroupsChange?: React.Dispatch<React.SetStateAction<{ income: string | null; expense: string | null }>>;
   excludedGroups?: { income: string[]; expense: string[] };
   onExcludedGroupsChange?: React.Dispatch<React.SetStateAction<{ income: string[]; expense: string[] }>>;
 }
 
-const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransactions, categories, period, onHighlight, excludedGroups = { income: [], expense: [] }, onExcludedGroupsChange = () => undefined }) => {
+const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransactions, categories, period, onHighlight, onTrendGroupsChange, excludedGroups = { income: [], expense: [] }, onExcludedGroupsChange = () => undefined }) => {
   const [incomeView] = useState<'pie' | 'bar'>('bar');
   const [expenseView] = useState<'pie' | 'bar'>('bar');
   const [activeHighlight, setActiveHighlight] = useState<{ type: 'income' | 'expense', group: string } | null>(null);
@@ -51,6 +52,10 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
   };
 
   useEffect(() => () => clearTrendPressTimer(), []);
+
+  useEffect(() => {
+    onTrendGroupsChange?.(trendGroups);
+  }, [onTrendGroupsChange, trendGroups]);
 
   const EXPENSE_PALETTE = ['#f87171', '#fb923c', '#fbbf24', '#f472b6', '#a78bfa', '#fb7185'];
   const INCOME_PALETTE = ['#4ade80', '#38bdf8', '#818cf8', '#2dd4bf', '#a3e635', '#60a5fa'];
@@ -139,7 +144,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     trendPressTimerRef.current = setTimeout(() => {
       trendPressTimerRef.current = null;
       suppressNextGroupClickRef.current = true;
-      const confirmed = window.confirm(`“${group}”의 최근 10개월 추세를 보시겠습니까?`);
+      const confirmed = window.confirm(`“${group}”의 최근 12개월 추이를 보시겠습니까?`);
       if (confirmed) {
         setTrendGroups((current) => ({ ...current, [type]: group }));
       }
@@ -172,8 +177,8 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
 
   const getMonthlyTrendData = (type: 'income' | 'expense', group: string) => {
     const current = new Date();
-    const months = Array.from({ length: 10 }, (_, index) => {
-      const date = new Date(current.getFullYear(), current.getMonth() - 9 + index, 1);
+    const months = Array.from({ length: 12 }, (_, index) => {
+      const date = new Date(current.getFullYear(), current.getMonth() - 11 + index, 1);
       const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
       return {
         key,
@@ -197,6 +202,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
     const trendData = getMonthlyTrendData(type, group);
     const values = trendData.datasets[0].data as number[];
     const maximumValue = Math.max(...values, 0);
+    const total = values.reduce((sum, value) => sum + value, 0);
     const color = type === 'income' ? '#4ade80' : '#f87171';
 
     return (
@@ -209,7 +215,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
               <span className="mobile-comparison-bar-fill" style={{ width: `${width}%`, backgroundColor: color }} />
               <span className="mobile-comparison-bar-content">
                 <span className="mobile-comparison-bar-name">{label}</span>
-                <span className="mobile-comparison-bar-value">{value.toLocaleString()}원</span>
+                <span className="mobile-comparison-bar-value">{value.toLocaleString()}원 · {total ? ((value / total) * 100).toFixed(1) : '0.0'}%</span>
               </span>
             </div>
           );
@@ -436,7 +442,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       <div className="mobile-comparison-chart-grid" style={{ marginBottom: '32px' }}>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.income ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="수입 구성">
           <div className="mobile-comparison-chart-header income">
-            <span className="mobile-comparison-chart-dot income" />{trendGroups.income || '수입 구성'}
+            <span className="mobile-comparison-chart-dot income" />{trendGroups.income ? `${trendGroups.income} · 최근 12개월 추이` : '수입 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'income' ? null : 'income'); }} aria-label="수입 통계 설정"><Settings size={18} /></button>
             {renderSettings('income', incomeData.activeGroups)}
             {trendGroups.income && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, income: null })); }}>← 구성비</button>}
@@ -445,7 +451,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
         </section>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.expense ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="지출 구성">
           <div className="mobile-comparison-chart-header expense">
-            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense || '지출 구성'}
+            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense ? `${trendGroups.expense} · 최근 12개월 추이` : '지출 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'expense' ? null : 'expense'); }} aria-label="지출 통계 설정"><Settings size={18} /></button>
             {renderSettings('expense', expenseData.activeGroups)}
             {trendGroups.expense && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, expense: null })); }}>← 구성비</button>}
@@ -461,7 +467,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       {/* 좌측: 수입 섹션 */}
       <div className={`card-form summary-chart-card ${incomeView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>{trendGroups.income ? `${trendGroups.income} · 최근 10개월 추세` : '수입 구성'}</h3><button type="button" className="chart-settings-button" onClick={() => setSettingsType((current) => current === 'income' ? null : 'income')} aria-label="수입 통계 설정"><Settings size={20} /></button>{renderSettings('income', incomeData.activeGroups)}
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#10b981' }}>{trendGroups.income ? `${trendGroups.income} · 최근 12개월 추이` : '수입 구성'}</h3><button type="button" className="chart-settings-button" onClick={() => setSettingsType((current) => current === 'income' ? null : 'income')} aria-label="수입 통계 설정"><Settings size={20} /></button>{renderSettings('income', incomeData.activeGroups)}
             {trendGroups.income && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, income: null }))}>← 구성비</button>}
         </div>
 
@@ -518,7 +524,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       {/* 우측: 지출 섹션 */}
       <div className={`card-form summary-chart-card ${expenseView === 'pie' ? 'is-pie' : 'is-bar'}`} style={{ display: 'flex', flexDirection: 'column', minHeight: 0, padding: '15px', position: 'relative', overflow: 'visible' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>{trendGroups.expense ? `${trendGroups.expense} · 최근 10개월 추세` : '지출 구성'}</h3><button type="button" className="chart-settings-button" onClick={() => setSettingsType((current) => current === 'expense' ? null : 'expense')} aria-label="지출 통계 설정"><Settings size={20} /></button>{renderSettings('expense', expenseData.activeGroups)}
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#ef4444' }}>{trendGroups.expense ? `${trendGroups.expense} · 최근 12개월 추이` : '지출 구성'}</h3><button type="button" className="chart-settings-button" onClick={() => setSettingsType((current) => current === 'expense' ? null : 'expense')} aria-label="지출 통계 설정"><Settings size={20} /></button>{renderSettings('expense', expenseData.activeGroups)}
             {trendGroups.expense && <button type="button" className="btn btn-secondary" onClick={() => setTrendGroups((current) => ({ ...current, expense: null }))}>← 구성비</button>}
         </div>
 
