@@ -442,7 +442,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
       <div className="mobile-comparison-chart-grid" style={{ marginBottom: '32px' }}>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.income ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="수입 구성">
           <div className="mobile-comparison-chart-header income">
-            <span className="mobile-comparison-chart-dot income" />{trendGroups.income ? `${trendGroups.income} · 최근 12개월 추이` : '수입 구성'}
+            <span className="mobile-comparison-chart-dot income" />{trendGroups.income || '수입 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'income' ? null : 'income'); }} aria-label="수입 통계 설정"><Settings size={18} /></button>
             {renderSettings('income', incomeData.activeGroups)}
             {trendGroups.income && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, income: null })); }}>← 구성비</button>}
@@ -451,7 +451,7 @@ const SummaryCharts: React.FC<SummaryChartsProps> = ({ transactions, trendTransa
         </section>
         <section className={`card-form mobile-comparison-chart-card ${trendGroups.expense ? 'is-trend' : ''}`} onClick={clearHighlight} aria-label="지출 구성">
           <div className="mobile-comparison-chart-header expense">
-            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense ? `${trendGroups.expense} · 최근 12개월 추이` : '지출 구성'}
+            <span className="mobile-comparison-chart-dot expense" />{trendGroups.expense || '지출 구성'}
             <button type="button" className="chart-settings-button" onClick={(event) => { event.stopPropagation(); setSettingsType((current) => current === 'expense' ? null : 'expense'); }} aria-label="지출 통계 설정"><Settings size={18} /></button>
             {renderSettings('expense', expenseData.activeGroups)}
             {trendGroups.expense && <button type="button" className="mobile-comparison-back" onClick={(event) => { event.stopPropagation(); setTrendGroups((current) => ({ ...current, expense: null })); }}>← 구성비</button>}
