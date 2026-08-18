@@ -809,6 +809,14 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   white-space: nowrap;
 }
 
+.group-name-editor { display: flex; flex: 1 1 auto; align-items: center; min-width: 0; gap: 0.25rem; }
+.group-name-editor input { flex: 1 1 auto; min-width: 0; padding: 2px 4px; border: 1px solid #3b82f6; border-radius: 4px; font-size: 0.75rem; }
+.group-name-editor-actions { display: flex; justify-content: flex-end; min-width: 80px; gap: 0.35rem; margin-top: auto; padding-top: 0.75rem; }
+.group-name-editor-actions button { display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; padding: 0; border: 0; border-radius: 5px; cursor: pointer; }
+.group-name-editor-save { color: #16a34a; background: transparent; }
+.group-name-editor-cancel { color: #dc2626; background: transparent; }
+.group-name-editor-actions button:hover { background: #f1f5f9; }
+
 .category-name-cell .btn-icon { flex: 0 0 auto; }
 
 .category-settings > form .edit-input {

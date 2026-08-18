@@ -143,7 +143,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
       }}>
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: 'repeat(4, 1fr)', 
+          gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '15px' 
         }}>
           {sortedGroups.map(group => (
@@ -158,6 +158,7 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                 boxShadow: '0 2px 4px rgba(0,0,0,0.05)',
                 border: group === '미분류' ? '1px dashed #f87171' : '1px solid #e2e8f0',
                 minHeight: '180px',
+                minWidth: editingGroupName === group ? 0 : undefined,
                 display: 'flex',
                 flexDirection: 'column'
               }}
@@ -169,19 +170,21 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                   color: group === '미분류' ? '#ef4444' : '#334155',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '4px'
+                  gap: '4px',
+                  minWidth: editingGroupName === group ? 0 : undefined
                 }}>
                   <FolderPlus size={14} />
                   {editingGroupName === group ? (
-                    <input 
-                      type="text" 
-                      value={newGroupName} 
-                      onChange={(e) => setNewPasswordName(e.target.value)}
-                      autoFocus
-                      style={{ fontSize: '0.75rem', padding: '2px 4px', border: '1px solid #3b82f6', borderRadius: '4px', width: '100%' }}
-                      onKeyDown={(e) => e.key === 'Enter' && saveGroupName(group)}
-                      onBlur={() => setEditingGroupName(null)}
-                    />
+                    <div className="group-name-editor">
+                      <input
+                        type="text"
+                        value={newGroupName}
+                        onChange={(e) => setNewPasswordName(e.target.value)}
+                        autoFocus
+                        onKeyDown={(e) => e.key === 'Enter' && saveGroupName(group)}
+                        onBlur={() => setEditingGroupName(null)}
+                      />
+                    </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
                       <span style={{ fontWeight: 'bold' }}>{group} ({groupedCategories[group]?.length || 0})</span>
@@ -224,6 +227,26 @@ const CategoryGroupSettings: React.FC<CategoryGroupSettingsProps> = ({ categorie
                     </div>
                 )}
               </div>
+              {editingGroupName === group && (
+                <div className="group-name-editor-actions">
+                  <button
+                    type="button"
+                    className="group-name-editor-save"
+                    aria-label={`${group} 그룹명 저장`}
+                    title="저장"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => void saveGroupName(group)}
+                  ><Check size={14} /></button>
+                  <button
+                    type="button"
+                    className="group-name-editor-cancel"
+                    aria-label={`${group} 그룹명 수정 취소`}
+                    title="취소"
+                    onMouseDown={(event) => event.preventDefault()}
+                    onClick={() => setEditingGroupName(null)}
+                  ><X size={14} /></button>
+                </div>
+              )}
             </div>
           ))}
 
