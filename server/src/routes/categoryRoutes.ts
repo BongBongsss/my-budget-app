@@ -26,6 +26,14 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
   res.status(201).json(category);
 }));
 
+router.put('/:id', asyncHandler(async (req: Request, res: Response) => {
+  const { name } = req.body;
+  if (typeof name !== 'string' || !name.trim()) throw new BadRequestError('Category name is required');
+
+  const category = await categoryService.renameCategory(req.params.id as string, name.trim());
+  res.json(category);
+}));
+
 router.delete('/', asyncHandler(async (req: Request, res: Response) => {
   const { id } = req.body;
   if (!id || typeof id !== 'string') throw new BadRequestError('Category ID is required');

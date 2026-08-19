@@ -1,6 +1,7 @@
 import prisma from '../db';
 import { randomUUID } from 'crypto';
 import { isRuleMatch, sortRulesBySpecificity } from './ruleMatching';
+import { ConflictError, NotFoundError } from '../utils/errors';
 
 export interface CategoryRule {
   id: string;
@@ -80,6 +81,28 @@ export const deleteCategory = async (id: string) => {
   return await prisma.category.updateMany({
     where: { id, isDeleted: false },
     data: { isDeleted: true },
+  });
+};
+
+export const renameCategory = async (id: string, name: string) => {
+  return prisma.$transaction(async (tx) => {
+    const category = await tx.category.findFirst({ where: { id, isDeleted: false } });
+    if (!category) throw new NotFoundError('Category not found');
+    if (category.name === name) return category;
+
+    const duplicate = await tx.category.findUnique({ where: { name } });
+    if (duplicate) throw new ConflictError('A category with this name already exists');
+
+    const oldName = category.name;
+    await Promise.all([
+      tx.transaction.updateMany({ where: { category: oldName }, data: { category: name } }),
+      tx.importRow.updateMany({ where: { category: oldName }, data: { category: name } }),
+      tx.categoryRule.updateMany({ where: { assigned_category: oldName }, data: { assigned_category: name } }),
+      tx.categoryGroupRule.updateMany({ where: { categoryName: oldName }, data: { categoryName: name } }),
+      tx.recurringTransaction.updateMany({ where: { category: oldName }, data: { category: name } }),
+    ]);
+
+    return tx.category.update({ where: { id }, data: { name } });
   });
 };
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { CategoryItem, addCategory, deleteCategory } from '../api';
-import { Plus, Trash2 } from 'lucide-react';
+import { CategoryItem, addCategory, deleteCategory, updateCategory } from '../api';
+import { Check, Edit3, Plus, Trash2, X } from 'lucide-react';
 
 interface CategorySettingsProps {
   categories: CategoryItem[];
@@ -9,6 +9,9 @@ interface CategorySettingsProps {
 
 const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefresh }) => {
   const [newName, setNewName] = useState('');
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,6 +34,36 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
         console.error('Category deletion failed:', err);
         alert(`카테고리를 삭제하지 못했습니다.\n${err?.message || '서버 오류가 발생했습니다.'}`);
       }
+    }
+  };
+
+  const startEditing = (category: CategoryItem) => {
+    setEditingId(category.id || null);
+    setEditingName(category.name);
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingName('');
+  };
+
+  const handleRename = async (category: CategoryItem) => {
+    const name = editingName.trim();
+    if (!category.id || !name) return;
+    if (name === category.name) {
+      cancelEditing();
+      return;
+    }
+
+    try {
+      setIsSaving(true);
+      await updateCategory(category.id, name);
+      cancelEditing();
+      onRefresh();
+    } catch (err: any) {
+      alert(err?.message || '대분류명을 수정하지 못했습니다.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -61,8 +94,48 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
               <tr key={cat.id}>
                 <td>
                   <div className="category-name-cell">
-                    <span>{cat.name}</span>
-                  <button 
+                    {editingId === cat.id ? (
+                      <input
+                        autoFocus
+                        type="text"
+                        value={editingName}
+                        onChange={(event) => setEditingName(event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') void handleRename(cat);
+                          if (event.key === 'Escape') cancelEditing();
+                        }}
+                        className="edit-input"
+                        aria-label={`${cat.name} 대분류명 수정`}
+                      />
+                    ) : <span>{cat.name}</span>}
+                    {editingId === cat.id ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void handleRename(cat)}
+                          className="btn-icon edit"
+                          title="저장"
+                          aria-label={`${cat.name} 수정 저장`}
+                          disabled={isSaving}
+                        >
+                          <Check size={16} />
+                        </button>
+                        <button type="button" onClick={cancelEditing} className="btn-icon delete" title="취소" aria-label={`${cat.name} 수정 취소`} disabled={isSaving}>
+                          <X size={16} />
+                        </button>
+                      </>
+                    ) : <>
+                      <button
+                        type="button"
+                        onClick={() => startEditing(cat)}
+                        className="btn-icon edit"
+                        title="수정"
+                        aria-label={`${cat.name} 수정`}
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                    <button
+                    type="button"
                     onClick={() => cat.id && handleDelete(cat.id)}
                     className="btn-icon delete"
                     title="삭제"
@@ -70,6 +143,7 @@ const CategorySettings: React.FC<CategorySettingsProps> = ({ categories, onRefre
                   >
                     <Trash2 size={16} />
                   </button>
+                    </>}
                   </div>
                 </td>
               </tr>
