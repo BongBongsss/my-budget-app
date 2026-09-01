@@ -495,7 +495,7 @@ function App() {
     undoTimerRef.current = setTimeout(() => {
       setShowUndo(false);
       setLastUndoAction(null);
-    }, 5000);
+    }, 3000);
   };
 
   const showSuccessMessage = (message: string) => {
