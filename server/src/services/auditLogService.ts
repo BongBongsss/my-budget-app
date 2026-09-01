@@ -99,7 +99,7 @@ const findLatestRestorableBatch = async (client: any) => {
 
 export const getLatestRestorableBatch = async () => findLatestRestorableBatch(prisma);
 
-const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member'];
+const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategory', 'vendor', 'amount', 'currency', 'source', 'memo', 'member', 'isManualCategory'];
 const assetUpdateFields = ['name', 'type', 'balance', 'member', 'memo'];
 const importRowUpdateFields = [...transactionUpdateFields, 'status', 'invalidReason', 'committedAt', 'transactionId'];
 

@@ -476,18 +476,26 @@ function App() {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
       await fetchData();
     } catch (err) {
-      alert('복구에 실패했습니다.');
+      const message = err instanceof Error ? err.message : '알 수 없는 오류가 발생했습니다.';
+      console.error('Immediate undo failed:', err);
+      alert(`복구에 실패했습니다.\n${message}`);
     }
   };
 
   const showUndoMessage = (action: UndoAction) => {
+    if (action.auditLogIds.length === 0) {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      setShowUndo(false);
+      setLastUndoAction(null);
+      return;
+    }
     setLastUndoAction(action);
     setShowUndo(true);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     undoTimerRef.current = setTimeout(() => {
       setShowUndo(false);
       setLastUndoAction(null);
-    }, 10000);
+    }, 5000);
   };
 
   const showSuccessMessage = (message: string) => {
@@ -497,12 +505,6 @@ function App() {
       setSuccessMessage(null);
       successToastTimerRef.current = null;
     }, 3000);
-  };
-
-  const dismissUndo = () => {
-    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    setShowUndo(false);
-    setLastUndoAction(null);
   };
 
   useEffect(() => () => {
@@ -1086,17 +1088,19 @@ function App() {
         </Suspense>
       )}
 
-      {showUndo && userRole === 'admin' && lastUndoAction && (
-        <div className="undo-toast">
-          <span>{lastUndoAction.label}</span>
-          <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 직전 작업 일괄 되돌리기</button>
-          <button onClick={dismissUndo} className="undo-close" aria-label="되돌리기 알림 닫기" title="닫기"><X size={16} /></button>
-        </div>
-      )}
-      {successMessage && (
-        <div className={`success-toast${showUndo ? ' success-toast-above-undo' : ''}`} role="status">
-          <CheckCircle2 size={18} aria-hidden="true" />
-          <span>{successMessage}</span>
+      {(successMessage || (showUndo && userRole === 'admin' && lastUndoAction)) && (
+        <div className="notification-stack">
+          {successMessage && (
+            <div className="success-toast" role="status">
+              <CheckCircle2 size={18} aria-hidden="true" />
+              <span>{successMessage}</span>
+            </div>
+          )}
+          {showUndo && userRole === 'admin' && lastUndoAction && (
+            <div className="undo-toast">
+              <button onClick={handleUndo} className="undo-btn"><Undo2 size={15} /> 직전 작업 일괄 되돌리기</button>
+            </div>
+          )}
         </div>
       )}
     </div>
