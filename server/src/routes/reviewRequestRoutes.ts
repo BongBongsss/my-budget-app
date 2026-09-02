@@ -1,6 +1,7 @@
 import { Router, Request, Response } from 'express';
 import {
   createReviewRequest,
+  createBulkReviewRequests,
   deleteReviewRequest,
   listReviewRequests,
   updateReviewRequestStatus,
@@ -40,6 +41,29 @@ router.post('/', asyncHandler(async (req: Request, res: Response) => {
     authorRole: req.session?.role,
   });
   res.status(201).json(request);
+}));
+
+router.post('/bulk', asyncHandler(async (req: Request, res: Response) => {
+  requireAdmin(req);
+  const { targets, body } = req.body || {};
+  if (!Array.isArray(targets) || targets.length === 0 || !body) {
+    throw new BadRequestError('targets and body are required');
+  }
+
+  const uniqueTargets = new Map<string, { targetType: 'transaction' | 'importRow'; targetId: string; title: string }>();
+  for (const target of targets) {
+    if (!target || (target.targetType !== 'transaction' && target.targetType !== 'importRow') || typeof target.targetId !== 'string' || !target.targetId || typeof target.title !== 'string' || !target.title.trim()) {
+      throw new BadRequestError('Each target must be a transaction or import row');
+    }
+    uniqueTargets.set(`${target.targetType}:${target.targetId}`, target);
+  }
+
+  const requests = await createBulkReviewRequests({
+    targets: [...uniqueTargets.values()],
+    body,
+    authorRole: req.session?.role,
+  });
+  res.status(201).json({ count: requests.length, ids: requests.map((request) => request.id) });
 }));
 
 router.patch('/:id/status', asyncHandler(async (req: Request, res: Response) => {

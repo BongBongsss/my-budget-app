@@ -680,7 +680,21 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
   outline: none;
 }
 
-.editing-row { background-color: #eff6ff; }
+.desktop-transaction-table tbody tr.is-selected > td {
+  background-color: #eff6ff;
+}
+
+.desktop-transaction-table tbody tr.is-selected > td:first-child {
+  box-shadow: inset 3px 0 0 #3b82f6;
+}
+
+.desktop-transaction-table tbody tr.editing-row > td {
+  background-color: #eef2ff;
+}
+
+.desktop-transaction-table tbody tr.editing-row > td:first-child {
+  box-shadow: inset 3px 0 0 #4f46e5;
+}
 .btn-icon.edit { color: #64748b; }
 .btn-icon.edit:hover { color: #3b82f6; }
 .btn-icon.delete:hover { color: #ef4444; }
@@ -871,6 +885,9 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
 
 .btn-primary { background: #3b82f6; color: white; }
 .btn-secondary { background: #e2e8f0; color: #475569; }
+.bulk-review-input { display: inline-flex; align-items: center; gap: 0.3rem; width: 170px; padding: 2px 5px; border: 1px solid #3b82f6; border-radius: 4px; background: #fff; color: #64748b; }
+.bulk-review-input:focus-within { border-color: #2563eb; box-shadow: 0 0 0 1px #bfdbfe; }
+.bulk-review-input input { width: 100%; min-width: 0; border: 0; outline: 0; background: transparent; color: #1e293b; font-size: 0.8rem; }
 
 /* Main Navigation Styles */
 .main-nav {

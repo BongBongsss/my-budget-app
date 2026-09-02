@@ -289,6 +289,10 @@ export const getReviewRequests = (params?: { targetType?: string; targetId?: str
   instance.get<ReviewRequest[]>('/review-requests', { params });
 export const createReviewRequest = (request: Partial<ReviewRequest>) =>
   instance.post<ReviewRequest>('/review-requests', request);
+export const createBulkReviewRequests = (request: {
+  targets: Array<{ targetType: 'transaction' | 'importRow'; targetId: string; title: string }>;
+  body: string;
+}) => instance.post<{ count: number; ids: string[] }>('/review-requests/bulk', request);
 export const updateReviewRequestStatus = (id: string, status: 'open' | 'done') =>
   instance.patch<ReviewRequest>(`/review-requests/${id}/status`, { status });
 export const deleteReviewRequest = (id: string) => instance.delete(`/review-requests/${id}`);

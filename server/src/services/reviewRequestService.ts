@@ -38,6 +38,24 @@ export const createReviewRequest = async (data: {
   });
 };
 
+export const createBulkReviewRequests = async (data: {
+  targets: Array<{ targetType: ReviewTargetType; targetId: string; title: string }>;
+  body: string;
+  authorRole?: string;
+}) => {
+  return prisma.$transaction(data.targets.map((target) => prisma.reviewRequest.create({
+    data: {
+      targetType: target.targetType,
+      targetId: target.targetId,
+      type: 'question',
+      title: target.title.trim(),
+      body: data.body.trim(),
+      authorRole: data.authorRole,
+      status: 'open',
+    },
+  })));
+};
+
 export const updateReviewRequestStatus = async (id: string, status: 'open' | 'done') => {
   return prisma.reviewRequest.update({
     where: { id },

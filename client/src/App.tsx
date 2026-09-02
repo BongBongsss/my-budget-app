@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import api from './api';
-import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
+import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, deleteReviewRequest, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import ErrorBoundary from './components/ErrorBoundary';
 import Summary from './components/Summary';
@@ -34,7 +34,7 @@ type ImportSummary = {
   };
 };
 
-type UndoAction = { label: string; auditLogIds: string[] };
+type UndoAction = { label: string; auditLogIds?: string[]; reviewRequestIds?: string[] };
 type StatisticsExclusions = { income: string[]; expense: string[] };
 const RELEASE_NOTES = [
   {
@@ -467,10 +467,23 @@ function App() {
     }
   };
 
+  const handleBulkReviewRequestsCreated = (ids: string[]) => {
+    if (ids.length === 0) return;
+    showUndoMessage({
+      label: `${ids.length}건의 확인요청을 등록했습니다.`,
+      reviewRequestIds: ids,
+    });
+    showSuccessMessage(`${ids.length}건의 확인요청 등록이 완료되었습니다.`);
+  };
+
   const handleUndo = async () => {
     if (userRole !== 'admin' || !lastUndoAction) return;
     try {
-      await restoreAuditLogs(lastUndoAction.auditLogIds);
+      if (lastUndoAction.reviewRequestIds?.length) {
+        await Promise.all(lastUndoAction.reviewRequestIds.map((id) => deleteReviewRequest(id)));
+      } else if (lastUndoAction.auditLogIds?.length) {
+        await restoreAuditLogs(lastUndoAction.auditLogIds);
+      }
       setShowUndo(false);
       setLastUndoAction(null);
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
@@ -483,7 +496,7 @@ function App() {
   };
 
   const showUndoMessage = (action: UndoAction) => {
-    if (action.auditLogIds.length === 0) {
+    if (!action.auditLogIds?.length && !action.reviewRequestIds?.length) {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
       setShowUndo(false);
       setLastUndoAction(null);
@@ -921,6 +934,7 @@ function App() {
               onBulkDelete={handleBulkDelete}
               onUpdate={handleUpdate}
               onBulkUpdate={handleBulkUpdate}
+              onBulkReviewRequestsCreated={handleBulkReviewRequestsCreated}
               onBulkUpdateMember={handleBulkUpdateMember}
               onVerify={handleVerify}
               isVerifying={isVerifying}

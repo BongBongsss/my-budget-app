@@ -3,6 +3,7 @@ import {
   CategoryItem,
   ReviewRequest,
   Transaction,
+  createBulkReviewRequests,
   createReviewRequest,
   deleteReviewRequest,
   getReviewRequests,
@@ -19,6 +20,7 @@ interface TransactionListProps {
   onBulkDelete: (ids: string[]) => void;
   onUpdate: (id: string, updates: Partial<Transaction>) => void;
   onBulkUpdate: (ids: string[], updates: Partial<Transaction>) => Promise<void>;
+  onBulkReviewRequestsCreated?: (ids: string[]) => void;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
   onVerify?: (ids: string[]) => Promise<void>;
   isVerifying?: boolean;
@@ -41,7 +43,7 @@ type CellFilterType = 'date' | 'time' | 'member' | 'type' | 'group' | 'category'
 const UNASSIGNED_CATEGORY = '미분류';
 
 const TransactionList: React.FC<TransactionListProps> = ({ 
-  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdate, onBulkUpdateMember, onVerify, onRefresh,
+  transactions = [], categories = [], onDelete, onBulkDelete, onUpdate, onBulkUpdate, onBulkReviewRequestsCreated, onBulkUpdateMember, onVerify, onRefresh,
   period, setPeriod, year, setYear, month, setMonth, 
   memberFilter, setMemberFilter, isAdmin = true, pageScope = 'default', externalFilterActive = false, isVerifying = false
 }) => {
@@ -72,6 +74,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [reviewType, setReviewType] = useState<'question' | 'change_request'>('question');
   const [reviewTitle, setReviewTitle] = useState('');
   const [reviewBody, setReviewBody] = useState('');
+  const [pendingBulkReviewBody, setPendingBulkReviewBody] = useState('');
   const [expandedMobileTransactionIds, setExpandedMobileTransactionIds] = useState<Set<string>>(new Set());
   const [mobileFilterTarget, setMobileFilterTarget] = useState<Transaction | null>(null);
   const mobileLongPressTimerRef = useRef<number | null>(null);
@@ -150,12 +153,25 @@ const TransactionList: React.FC<TransactionListProps> = ({
     if (bulkSource !== undefined && bulkSource !== '') updates.source = bulkSource;
     if (bulkMemo !== undefined && bulkMemo !== '') updates.memo = bulkMemo;
 
-    if (Object.keys(updates).length === 0) {
+    const hasTransactionUpdates = Object.keys(updates).length > 0;
+    const selectedIdSet = new Set(selectedIds);
+    const reviewTargets = pendingBulkReviewBody
+      ? transactions
+        .filter((transaction) => transaction.id && selectedIdSet.has(transaction.id))
+        .map((transaction) => ({ targetType: getReviewTargetType(transaction), targetId: transaction.id!, title: `${transaction.vendor} 확인요청` }))
+      : [];
+
+    if (!hasTransactionUpdates && reviewTargets.length === 0) {
       alert('필드를 하나 이상 선택해 주세요.');
       return;
     }
-    await onBulkUpdate(selectedIds, updates);
-    setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkVendor(''); setBulkSource(''); setBulkMemo(''); setSelectedIds([]);
+    if (hasTransactionUpdates) await onBulkUpdate(selectedIds, updates);
+    if (reviewTargets.length > 0) {
+      const response = await createBulkReviewRequests({ targets: reviewTargets, body: pendingBulkReviewBody });
+      onBulkReviewRequestsCreated?.(response.data.ids);
+      await onRefresh();
+    }
+    setBulkCategory(''); setBulkType(''); setBulkSubcategory(''); setBulkVendor(''); setBulkSource(''); setBulkMemo(''); setPendingBulkReviewBody(''); setSelectedIds([]);
   };
 
   const applyCellFilter = (type: CellFilterType, value?: string) => {
@@ -575,6 +591,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
             <input type="text" placeholder="내용 일괄 입력" value={bulkVendor} onChange={(e) => setBulkVendor(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '130px' }} />
             <input type="text" placeholder="결제수단 일괄 입력" value={bulkSource} onChange={(e) => setBulkSource(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '140px' }} />
             <input type="text" placeholder="메모 일괄 입력" value={bulkMemo} onChange={(e) => setBulkMemo(e.target.value)} className="edit-input" style={{ fontSize: '0.8rem', padding: '2px 5px', width: '150px' }} />
+            <label className="bulk-review-input" title="선택 거래에 같은 확인요청을 등록합니다."><MessageCircle size={16} /><input type="text" placeholder="확인요청 일괄 입력" value={pendingBulkReviewBody} onChange={(event) => setPendingBulkReviewBody(event.target.value)} /></label>
             <button className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '2px 8px' }} onClick={handleBulkUpdate} title="Apply Batch Changes"><ListChecks size={16} className="mr-1" /> 일괄 적용</button>
             <span className="text-sm text-blue-600 font-bold ml-2">{selectedIds.length}개 선택됨</span>
         </div>
@@ -601,7 +618,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
         </thead>
         <tbody>
           {paginatedTransactions.map((tx) => (
-            <tr key={tx.id!}>
+            <tr
+              key={tx.id!}
+              className={`${selectedIds.includes(tx.id!) ? 'is-selected' : ''} ${editingId === tx.id! ? 'editing-row' : ''}`.trim()}
+            >
               <td>{isAdmin && <input type="checkbox" checked={selectedIds.includes(tx.id!)} onChange={() => toggleSelect(tx.id!)} />}</td>
               {editingId === tx.id! ? (
                 <>
@@ -886,6 +906,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
           </div>
         </div>
       )}
+
     </div>
   );
 };
