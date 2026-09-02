@@ -174,8 +174,8 @@ const RecurringManager = ({ categories, transactions, canManage, onSuccess }: Pr
     const firstMonth = availableMonths.find((yearMonth) => yearMonth.startsWith(`${year}-`));
     if (firstMonth) selectYearMonth(firstMonth);
   };
-  const addMissingItem = async (item: MissingRecurringTransaction) => {
-    await addMissingRecurring(item.id!, item.scheduledDate.slice(0, 7), Number(missingAmount));
+  const addMissingItem = async (item: RecurringTransaction) => {
+    await addMissingRecurring(item.id!, item.matchYearMonth || activeYearMonth, Number(missingAmount));
     setMissingItems((previous) => previous.filter((current) => current.id !== item.id));
     setMissingEditingId(null);
     await load();
@@ -301,6 +301,7 @@ const RecurringManager = ({ categories, transactions, canManage, onSuccess }: Pr
               </div>)}
             </div>}
             {cardMemo && <p className="recurring-card-memo" title={cardMemo}>메모: {cardMemo}</p>}
+            {canManage && item.isActive && item.matchStatus === 'missing' && (missingEditingId === item.id ? <div className="recurring-missing-inline-edit"><input className="edit-input" type="number" min="1" value={missingAmount} onChange={(event) => setMissingAmount(event.target.value)} aria-label={`${item.vendor} 실제 금액`} /><button className="btn btn-primary" disabled={Number(missingAmount) <= 0} onClick={() => void addMissingItem(item)}>추가</button><button className="btn btn-secondary" onClick={() => setMissingEditingId(null)}>취소</button></div> : <button type="button" className="btn btn-primary recurring-add-missing-action" onClick={() => { setMissingEditingId(item.id!); setMissingAmount(String(Math.round(item.amount))); }}>이번 달 거래에 추가</button>)}
             {canManage && <div className="recurring-actions"><button className="btn btn-secondary" onClick={() => openEditor(item)}>수정</button><button className="btn btn-secondary" onClick={() => void toggleActive(item)}>{item.isActive === false ? '재개' : '중지'}</button><button className="btn btn-secondary danger-action" onClick={() => void removeRecurring(item)} aria-label={`${item.vendor} 삭제`}><Trash2 size={16} /></button></div>}
           </article>;
         })}</div>}
