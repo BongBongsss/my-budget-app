@@ -126,13 +126,17 @@ const TransactionList: React.FC<TransactionListProps> = ({
       {!category && <option value="" disabled>미분류 (선택 필요)</option>}
       {category && !categories.some((item) => item.name === category) && (
         <option value={category}>
-          {category === UNASSIGNED_CATEGORY ? '미분류 (선택 필요)' : category}
+          {category === UNASSIGNED_CATEGORY ? '미분류 (선택 필요)' : `${category} (선택 필요)`}
         </option>
       )}
       {categories.map((categoryItem) => (
         <option key={categoryItem.id} value={categoryItem.name}>{categoryItem.name}</option>
       ))}
     </>
+  );
+
+  const needsCategorySelection = (category?: string) => (
+    !category || !categories.some((item) => item.name === category)
   );
 
   const handleBulkUpdate = async () => {
@@ -624,7 +628,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td onDoubleClick={() => applyCellFilter('member', tx.member)} style={{ cursor: 'pointer' }}>{tx.member}</td>
                   <td style={{ whiteSpace: 'nowrap', cursor: 'pointer' }} onDoubleClick={() => applyCellFilter('type', tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영')}>{tx.type === 'expense' ? '지출' : tx.type === 'income' ? '수입' : '미반영'}</td>
                   <td title={getGroupName(tx.category, categories)} onDoubleClick={() => applyCellFilter('group', getGroupName(tx.category, categories))} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{getGroupName(tx.category, categories)}</div></td>
-                  <td title={tx.category} onDoubleClick={() => applyCellFilter('category', tx.category)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.category}</div></td>
+                  <td title={tx.category} onDoubleClick={() => applyCellFilter('category', tx.category)} style={{ cursor: 'pointer' }}>
+                    <div style={cellEllipsisStyle}>{tx.category || '미분류'}</div>
+                    {needsCategorySelection(tx.category) && <span className="category-selection-needed">분류 선택 필요</span>}
+                  </td>
                   <td title={tx.subcategory} onDoubleClick={() => applyCellFilter('subcategory', tx.subcategory)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.subcategory}</div></td>
                   <td title={tx.vendor} onDoubleClick={() => applyCellFilter('vendor', tx.vendor)} style={{ cursor: 'pointer' }}><div style={cellEllipsisStyle}>{tx.vendor}</div></td>
                   <td style={{ textAlign: 'right', cursor: 'pointer' }} onDoubleClick={() => applyCellFilter('amount', String(tx.amount))}>{tx.amount.toLocaleString()}</td>
@@ -751,7 +758,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     <strong>{tx.amount.toLocaleString()}원</strong>
                   </div>
                   <div className="mobile-card-vendor">{tx.vendor || '(내용 없음)'}</div>
-                  <div className="mobile-card-meta">{tx.category || '미분류'}{tx.subcategory ? ` · ${tx.subcategory}` : ''} · {tx.member || '미지정'}</div>
+                  <div className="mobile-card-meta">
+                    {tx.category || '미분류'}{tx.subcategory ? ` · ${tx.subcategory}` : ''} · {tx.member || '미지정'}
+                    {needsCategorySelection(tx.category) && <span className="category-selection-needed">분류 선택 필요</span>}
+                  </div>
                   {(tx.source || tx.memo) && <div className="mobile-card-note">{tx.source}{tx.source && tx.memo ? ' · ' : ''}{tx.memo}</div>}
                   <div className="mobile-card-actions">
                     {!isAdmin ? (
