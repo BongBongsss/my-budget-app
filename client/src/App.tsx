@@ -854,12 +854,13 @@ function App() {
               {Object.entries(pendingMonthCounts).sort(([a], [b]) => b.localeCompare(a)).map(([monthKey, count]) => (
                 <button
                   key={monthKey}
+                  aria-pressed={period === 'month' && monthKey === `${year}-${String(month).padStart(2, '0')}`}
                   className={period === 'month' && monthKey === `${year}-${String(month).padStart(2, '0')}` ? 'btn btn-primary' : 'btn btn-secondary'}
                   onClick={() => {
                     const [selectedYear, selectedMonth] = monthKey.split('-').map(Number);
-                    if (period === 'month' && year === selectedYear && month === selectedMonth && activeTab === 'new' && chartFilter === null) return;
+                    const isSelectedMonth = period === 'month' && year === selectedYear && month === selectedMonth;
                     pendingMonthViewportTopRef.current = pendingMonthSelectorRef.current?.getBoundingClientRect().top ?? null;
-                    setPeriod('month');
+                    setPeriod(isSelectedMonth ? 'all' : 'month');
                     setYear(selectedYear);
                     setMonth(selectedMonth);
                     setChartFilter(null);
