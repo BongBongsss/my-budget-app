@@ -1,4 +1,4 @@
-import { Suspense, lazy, useState, useEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
+import { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
 import api from './api';
 import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, deleteReviewRequest, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
@@ -143,6 +143,15 @@ function App() {
   const [period, setPeriod] = useState<'all' | 'month' | 'year'>('all');
   const [year, setYear] = useState(new Date().getFullYear());
   const [month, setMonth] = useState(new Date().getMonth() + 1);
+  const pendingMonthSelectorRef = useRef<HTMLDivElement>(null);
+  const pendingMonthViewportTopRef = useRef<number | null>(null);
+  useLayoutEffect(() => {
+    const previousTop = pendingMonthViewportTopRef.current;
+    if (previousTop === null || !pendingMonthSelectorRef.current) return;
+    pendingMonthViewportTopRef.current = null;
+    const offset = pendingMonthSelectorRef.current.getBoundingClientRect().top - previousTop;
+    window.scrollTo({ top: window.scrollY + offset, behavior: 'instant' });
+  });
   const [memberFilter, setMemberFilter] = useState<'all' | '효' | '굥' | '미지정'>('all');
   const [chartFilter, setChartFilter] = useState<{type: 'income' | 'expense', group: string, monthKey?: string} | null>(null);
   const [trendSummaryGroups, setTrendSummaryGroups] = useState<{ income: string | null; expense: string | null }>({ income: null, expense: null });
@@ -646,6 +655,14 @@ function App() {
   const duplicateCount = unverifiedTransactions.filter(t => t.importStatus === 'duplicate' || (!t.importStatus && t.isDuplicate)).length;
   const invalidCount = unverifiedTransactions.filter(t => t.importStatus === 'invalid' || t.isInvalid).length;
   const verifiedCount = allVerifiedForPeriod.length;
+  const pendingMonthCounts = transactions.reduce<Record<string, number>>((counts, transaction) => {
+    if (transaction.isVerified !== false || (memberFilter !== 'all' && transaction.member !== memberFilter)) return counts;
+    const monthKey = transaction.date.slice(0, 7);
+    if (/^\d{4}-(0[1-9]|1[0-2])$/.test(monthKey)) counts[monthKey] = (counts[monthKey] || 0) + 1;
+    return counts;
+  }, {});
+  const approvalPeriodLabel = period === 'month' ? `${year}년 ${month}월` : period === 'year' ? `${year}년` : '전체 기간';
+  const approvalTabLabel = activeTab === 'duplicate' ? '중복' : '신규';
 
   const transactionsForList = chartFilter?.monthKey ? transactions : filteredByPeriod;
   const filteredTransactions = transactionsForList.filter(t => {
@@ -831,6 +848,30 @@ function App() {
             </EntryModal>
           )}
           
+          {userRole === 'admin' && Object.keys(pendingMonthCounts).length > 0 && (
+            <div ref={pendingMonthSelectorRef} style={{ margin: '16px 0', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+              <strong>월별 미승인</strong>
+              {Object.entries(pendingMonthCounts).sort(([a], [b]) => b.localeCompare(a)).map(([monthKey, count]) => (
+                <button
+                  key={monthKey}
+                  className={period === 'month' && monthKey === `${year}-${String(month).padStart(2, '0')}` ? 'btn btn-primary' : 'btn btn-secondary'}
+                  onClick={() => {
+                    const [selectedYear, selectedMonth] = monthKey.split('-').map(Number);
+                    if (period === 'month' && year === selectedYear && month === selectedMonth && activeTab === 'new' && chartFilter === null) return;
+                    pendingMonthViewportTopRef.current = pendingMonthSelectorRef.current?.getBoundingClientRect().top ?? null;
+                    setPeriod('month');
+                    setYear(selectedYear);
+                    setMonth(selectedMonth);
+                    setChartFilter(null);
+                    setActiveTab('new');
+                  }}
+                >
+                  {monthKey.replace('-', '년 ')}월 · {count}건
+                </button>
+              ))}
+              <span style={{ color: '#64748b', fontSize: '0.875rem' }}>검토할 월을 선택하세요. 다른 달의 미승인 자료는 유지됩니다.</span>
+            </div>
+          )}
           <div className="tabs transaction-tabs" style={{ marginBottom: 0, display: 'flex', alignItems: 'center' }}>
             {/* Force cache refresh: v2 */}
             <button 
@@ -914,12 +955,13 @@ function App() {
                     className="btn btn-primary"
                     style={{ backgroundColor: '#16a34a', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: '500' }}
                     onClick={() => {
-                      if (window.confirm('표시된 모든 내역을 승인하시겠습니까?')) {
+                      if (window.confirm(`${approvalPeriodLabel}의 표시된 ${approvalTabLabel} ${filteredTransactions.length}건을 승인하시겠습니까?`)) {
                         handleVerify(filteredTransactions.map(t => t.id!));
                       }
                     }}
                   >
-                    모두 승인
+                    <span className="bulk-approval-desktop-label">{approvalPeriodLabel} {approvalTabLabel} {filteredTransactions.length}건 승인</span>
+                    <span className="bulk-approval-mobile-label">{filteredTransactions.length}건 승인</span>
                   </button>
                 )}
               </div>
