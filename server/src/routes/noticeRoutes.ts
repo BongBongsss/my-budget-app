@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express';
 import { createNotice, deleteNotice, listNotices, markNoticeRead } from '../services/noticeService';
 import { asyncHandler } from '../utils/asyncHandler';
-import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { BadRequestError, ForbiddenError } from '../utils/errors';
 
 const router = Router();
 
@@ -9,7 +9,7 @@ const getRole = (req: Request): 'admin' | 'viewer' => req.session?.role || 'view
 
 const requireAdmin = (req: Request) => {
   if (req.session?.role !== 'admin') {
-    throw new UnauthorizedError('Admin role required');
+    throw new ForbiddenError('Admin role required');
   }
 };
 

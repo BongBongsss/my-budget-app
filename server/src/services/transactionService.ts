@@ -395,6 +395,12 @@ export const verifyTransactions = async (ids: string[], actor?: AuditActor) => {
         },
       })));
 
+      // Keep request IDs and status intact so existing undo actions still work.
+      await Promise.all(importRows.map((row, index) => tx.reviewRequest.updateMany({
+        where: { targetType: 'importRow', targetId: row.id },
+        data: { targetType: 'transaction', targetId: transactionsToCreate[index].id },
+      })));
+
       await tx.auditLog.createMany({
         data: [
           ...transactionsToCreate.map((transaction) => buildAuditLogData({

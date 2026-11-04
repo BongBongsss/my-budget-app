@@ -1,5 +1,5 @@
 import { Suspense, lazy, useState, useEffect, useLayoutEffect, useRef, type CSSProperties, type PointerEvent as ReactPointerEvent, type TouchEvent as ReactTouchEvent } from 'react';
-import api from './api';
+import api, { onSessionExpired, resetApiSession } from './api';
 import { getTransactions, getCategories, getAssets, getChartStatisticsSettings, getRecurringCandidates, getMissingRecurring, MissingRecurringTransaction, Transaction, CategoryItem, Asset, importFile, exportTransactionsBackup, deleteTransaction, deleteReviewRequest, bulkDeleteTransactions, updateTransaction, bulkUpdateTransactions, verifyTransactions, restoreAuditLogs } from './api';
 import SuggestionNotification from './components/SuggestionNotification';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -97,6 +97,16 @@ function App() {
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
   const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'recurring' | 'logs'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isReauthenticating, setIsReauthenticating] = useState(false);
+  const [viewSessionVersion, setViewSessionVersion] = useState(0);
+  const authenticatedRef = useRef(false);
+  const authCycleRef = useRef(0);
+  useEffect(() => onSessionExpired(() => {
+    authCycleRef.current += 1;
+    if (authenticatedRef.current) setIsReauthenticating(true);
+    authenticatedRef.current = false;
+    setIsAuthenticated(false);
+  }), []);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
@@ -285,6 +295,7 @@ function App() {
     : entryButtonExpandedOffset ? { transform: `translateX(-${entryButtonExpandedOffset}px)` } : undefined;
 
   const fetchData = async () => {
+    const authCycle = authCycleRef.current;
     if (!hasCompletedInitialAuthCheckRef.current && initialAuthCheckStartedAtRef.current === null) {
       initialAuthCheckStartedAtRef.current = Date.now();
     }
@@ -292,7 +303,9 @@ function App() {
     try {
       // 1. 인증 상태 및 역할 확인
       const authRes = await api.get('/auth-status');
+      if (authCycle !== authCycleRef.current) return false;
       setUserRole(authRes.data.role || 'viewer');
+      authenticatedRef.current = true;
       setIsAuthenticated(true);
 
       // 2. 데이터 조회
@@ -302,13 +315,15 @@ function App() {
         getAssets(),
         getRecurringCandidates(),
       ]);
+      if (authCycle !== authCycleRef.current) return false;
       setTransactions(txRes.data);
       setCategories(catRes.data);
       setAssets(assetRes.data);
       setRecurringCandidateCount(recurringCandidatesRes.data.length);
       return true;
     } catch (err: any) {
-      if (err.response && err.response.status === 401) {
+      if (authCycle === authCycleRef.current && err.status === 401) {
+        authenticatedRef.current = false;
         setIsAuthenticated(false);
       }
       console.error(err);
@@ -372,14 +387,39 @@ function App() {
   };
 
   const handleLoginSuccess = (role: 'admin' | 'viewer') => {
+    authCycleRef.current += 1;
+    authenticatedRef.current = true;
+    if (role !== userRole) {
+      setViewSessionVersion((version) => version + 1);
+      setIsTransactionFormOpen(false);
+      setIsAssetFormOpen(false);
+      setIsSettingsModalOpen(false);
+      setCurrentView('budget');
+      setTransactions([]);
+      setAssets([]);
+      setCategories([]);
+      setShowUndo(false);
+      setLastUndoAction(null);
+    }
     setUserRole(role);
     setIsAuthenticated(true);
+    setIsReauthenticating(false);
     setIsAuthChecking(false);
     fetchData();
   };
 
   const handleLogout = async () => {
     await api.post('/logout');
+    resetApiSession();
+    authCycleRef.current += 1;
+    authenticatedRef.current = false;
+    setIsReauthenticating(false);
+    setViewSessionVersion((version) => version + 1);
+    setIsTransactionFormOpen(false);
+    setIsAssetFormOpen(false);
+    setIsSettingsModalOpen(false);
+    setShowUndo(false);
+    setLastUndoAction(null);
     setIsAuthenticated(false);
     setTransactions([]);
   };
@@ -422,7 +462,8 @@ function App() {
       });
       showSuccessMessage('거래 수정이 완료되었습니다.');
     } catch (err) {
-      fetchData();
+      // The editor must know this failed so it can retain the unsaved draft.
+      throw err;
     }
   };
 
@@ -696,12 +737,17 @@ function App() {
     );
   }
 
-  if (!isAuthenticated) {
+  if (!isAuthenticated && !isReauthenticating) {
     return <Login onLogin={handleLoginSuccess} />;
   }
 
   return (
+    <>
+    {isReauthenticating && <Login onLogin={handleLoginSuccess} message="로그인이 만료되었습니다. 다시 로그인해 주세요. 편집 중인 내용은 이 탭에서 유지됩니다." />}
     <div
+      key={viewSessionVersion}
+      style={isReauthenticating ? { display: 'none' } : undefined}
+      aria-hidden={isReauthenticating || undefined}
       className="container"
       onTouchStart={handlePullRefreshStart}
       onTouchMove={handlePullRefreshMove}
@@ -762,7 +808,7 @@ function App() {
           </button>
         </nav>
         <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
-          <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} />
+          <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} suspended={isReauthenticating} />
 
           {/* Admin 전용 버튼: Import */}
           {userRole === 'admin' && (
@@ -1161,6 +1207,7 @@ function App() {
         </div>
       )}
     </div>
+    </>
   );
 }
 

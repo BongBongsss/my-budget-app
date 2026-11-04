@@ -18,7 +18,7 @@ interface TransactionListProps {
   categories: CategoryItem[];
   onDelete: (id: string) => void;
   onBulkDelete: (ids: string[]) => void;
-  onUpdate: (id: string, updates: Partial<Transaction>) => void;
+  onUpdate: (id: string, updates: Partial<Transaction>) => void | Promise<void>;
   onBulkUpdate: (ids: string[], updates: Partial<Transaction>) => Promise<void>;
   onBulkReviewRequestsCreated?: (ids: string[]) => void;
   onBulkUpdateMember?: (ids: string[], member: string) => void;
@@ -50,6 +50,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState<Partial<Transaction>>({});
+  const [editError, setEditError] = useState<string | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const savingEditRef = useRef(false);
   const [pageByScope, setPageByScope] = useState<Record<string, number>>({});
   const currentPage = pageByScope[pageScope] || 1;
   const [itemsPerPage, setItemsPerPage] = useState(10);
@@ -114,6 +117,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
   useEffect(() => {
     setSelectedIds([]);
     setEditingId(null);
+    setEditError(null);
   }, [pageScope]);
 
   const uniqueValues = {
@@ -364,15 +368,28 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   const startEdit = (tx: Transaction) => {
     if (!isAdmin) return;
+    setEditError(null);
     setEditingId(tx.id!);
     setEditValues(tx);
   };
 
   const saveEdit = async (id: string) => {
-    if (!isAdmin) return;
-    await onUpdate(id, editValues);
-    setEditingId(null);
-    setEditValues({});
+    if (!isAdmin || savingEditRef.current) return;
+    savingEditRef.current = true;
+    setIsSavingEdit(true);
+    setEditError(null);
+    try {
+      await onUpdate(id, editValues);
+      setEditingId(null);
+      setEditValues({});
+    } catch {
+      setEditError('저장을 확인하지 못했습니다. 입력 내용은 유지됩니다. 서버 상태를 확인한 후 다시 저장해 주세요.');
+      // A lost response may still have committed the change. Refresh without closing the draft.
+      try { await onRefresh(); } catch { /* Keep the draft available while offline. */ }
+    } finally {
+      savingEditRef.current = false;
+      setIsSavingEdit(false);
+    }
   };
 
   const handleSingleVerify = async (id: string) => {
@@ -483,6 +500,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
 
   return (
     <div className="transaction-list">
+      {editError && <p role="alert" style={{ color: '#b91c1c' }}>{editError}</p>}
       <div className="transaction-filter-bar flex justify-start items-center gap-2 mb-4">
         <PeriodMemberFilter
           period={period}
@@ -637,8 +655,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                   <td><input type="text" value={editValues.source || ''} onChange={e => setEditValues({...editValues, source: e.target.value})} style={{ width: '100%' }} /></td>
                   <td><input type="text" value={editValues.memo || ''} onChange={e => setEditValues({...editValues, memo: e.target.value})} style={{ width: '100%' }} /></td>
                   <td style={{ textAlign: 'center' }}>
-                    <button className="btn-icon" onClick={() => saveEdit(tx.id!)}><Check size={16} /></button>
-                    <button className="btn-icon" onClick={() => setEditingId(null)}><X size={16} /></button>
+                    <button className="btn-icon" aria-label="거래 수정 저장" disabled={isSavingEdit} onClick={() => saveEdit(tx.id!)}><Check size={16} /></button>
+                    <button className="btn-icon" aria-label="거래 수정 취소" disabled={isSavingEdit} onClick={() => { setEditingId(null); setEditError(null); }}><X size={16} /></button>
                   </td>
                 </>
               ) : (
@@ -765,8 +783,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     <label className="mobile-edit-wide">메모<input value={editValues.memo || ''} onChange={e => setEditValues({ ...editValues, memo: e.target.value })} /></label>
                   </div>
                   <div className="mobile-card-actions">
-                    <button className="btn btn-primary" onClick={() => saveEdit(tx.id!)}><Check size={16} /> 저장</button>
-                    <button className="btn btn-secondary" onClick={() => setEditingId(null)}><X size={16} /> 취소</button>
+                    <button className="btn btn-primary" disabled={isSavingEdit} onClick={() => saveEdit(tx.id!)}><Check size={16} /> 저장</button>
+                    <button className="btn btn-secondary" disabled={isSavingEdit} onClick={() => { setEditingId(null); setEditError(null); }}><X size={16} /> 취소</button>
                   </div>
                 </div>
               ) : (

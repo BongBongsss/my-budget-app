@@ -7,13 +7,13 @@ import {
   updateReviewRequestStatus,
 } from '../services/reviewRequestService';
 import { asyncHandler } from '../utils/asyncHandler';
-import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { BadRequestError, ForbiddenError } from '../utils/errors';
 
 const router = Router();
 
 const requireAdmin = (req: Request) => {
   if (req.session?.role !== 'admin') {
-    throw new UnauthorizedError('Admin role required');
+    throw new ForbiddenError('Admin role required');
   }
 };
 

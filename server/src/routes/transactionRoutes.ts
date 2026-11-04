@@ -16,7 +16,7 @@ import {
 } from '../services/transactionService';
 import { getImportFileFormat, parseCSVForImport, parseExcelForImport } from '../services/importService';
 import { asyncHandler } from '../utils/asyncHandler';
-import { BadRequestError, UnauthorizedError } from '../utils/errors';
+import { BadRequestError, ForbiddenError } from '../utils/errors';
 
 const router = Router();
 const MAX_IMPORT_FILE_SIZE_BYTES = 10 * 1024 * 1024;
@@ -36,7 +36,7 @@ const getAuditActor = (req: Request) => ({
 
 const requireAdmin = (req: Request) => {
   if (req.session?.role !== 'admin') {
-    throw new UnauthorizedError('Admin role required');
+    throw new ForbiddenError('Admin role required');
   }
 };
 

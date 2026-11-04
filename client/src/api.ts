@@ -11,6 +11,19 @@ const instance = axios.create({
 // A rapid double-click must not turn into two writes. Keep this at the API
 // boundary so the safeguard also covers every settings screen.
 const pendingMutationKeys = new Set<string>();
+const sessionExpiredListeners = new Set<() => void>();
+let sessionGeneration = 0;
+let sessionExpiredNotified = false;
+
+export const onSessionExpired = (listener: () => void) => {
+  sessionExpiredListeners.add(listener);
+  return () => { sessionExpiredListeners.delete(listener); };
+};
+
+export const resetApiSession = () => {
+  sessionGeneration += 1;
+  sessionExpiredNotified = false;
+};
 
 const stableSerialize = (value: unknown): string => {
   if (value === null || value === undefined) return '';
@@ -34,6 +47,7 @@ export const mutationRequestKey = (config: any) => {
 };
 
 instance.interceptors.request.use((config: any) => {
+  config.__sessionGeneration = sessionGeneration;
   const mutationKey = mutationRequestKey(config);
   if (!mutationKey) return config;
   if (pendingMutationKeys.has(mutationKey)) {
@@ -53,6 +67,7 @@ instance.interceptors.request.use((config: any) => {
 instance.interceptors.response.use(
   (response) => {
     if ((response.config as any).__mutationKey) pendingMutationKeys.delete((response.config as any).__mutationKey);
+    if (response.config.url === '/login') resetApiSession();
     return response;
   },
   (error) => {
@@ -65,10 +80,14 @@ instance.interceptors.response.use(
       const errorMessage = data?.message || 'An unexpected error occurred';
       const errorCode = data?.code || 'UNKNOWN_ERROR';
 
-      // 401 Unauthorized: 인증 만료 시 로그인 페이지로 리다이렉트 권장
-      if (status === 401 && !originalRequest._retry) {
-        console.error('Session expired or unauthorized. Redirecting to login...');
-        // window.location.href = '/login'; // 실제 환경에 맞게 조정 가능
+      const isSessionExpired = status === 401
+        && originalRequest?.url !== '/login'
+        && (originalRequest?.url !== '/change-password' || errorCode === 'SESSION_EXPIRED')
+        && errorMessage !== 'Admin role required';
+      if (isSessionExpired && !sessionExpiredNotified
+        && (originalRequest?.__sessionGeneration ?? sessionGeneration) === sessionGeneration) {
+        sessionExpiredNotified = true;
+        sessionExpiredListeners.forEach((listener) => listener());
       }
 
       // 에러 객체에 서버에서 온 정보를 담아 다시 던짐 (컴포넌트에서 활용 가능)
@@ -76,6 +95,7 @@ instance.interceptors.response.use(
       (enhancedError as any).status = status;
       (enhancedError as any).code = errorCode;
       (enhancedError as any).details = data?.details;
+      (enhancedError as any).response = error.response;
 
       return Promise.reject(enhancedError);
     }

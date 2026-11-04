@@ -4,20 +4,26 @@ import { Wallet, User, Lock } from 'lucide-react';
 
 interface LoginProps {
   onLogin: (role: 'admin' | 'viewer') => void;
+  message?: string;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, message }) => {
   const [username, setUsername] = useState<'admin' | 'viewer'>('admin');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
+    setIsSubmitting(true);
     try {
       const res = await api.post('/login', { username, password, rememberMe });
       onLogin(res.data.role);
     } catch (err) {
       alert('아이디 또는 비밀번호가 틀렸습니다.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -32,6 +38,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <p>내 손안의 똑똑한 가계부 관리자</p>
         </div>
 
+        {message && <p role="status">{message}</p>}
         <form onSubmit={handleSubmit} className="login-form">
           <div className="form-group">
             <label className="flex items-center gap-1"><User size={14}/> User ID</label>
@@ -56,7 +63,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
               required
             />
           </div>
-          <button type="submit" className="login-btn">
+          <button type="submit" className="login-btn" disabled={isSubmitting}>
             로그인하기
           </button>
           <label className="login-remember"><input type="checkbox" checked={rememberMe} onChange={(event) => setRememberMe(event.target.checked)} /> 자동 로그인</label>

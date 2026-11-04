@@ -37,6 +37,7 @@ const loginAsAdmin = async (page: Page) => {
   });
   await page.route('**/api/categories', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/assets', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
+  await page.route('**/api/chart-statistics-settings', (route) => route.fulfill({ contentType: 'application/json', body: '{"income":[],"expense":[]}' }));
   await page.route('**/api/notices**', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/suggestions/candidates', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/recurring/candidates', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));

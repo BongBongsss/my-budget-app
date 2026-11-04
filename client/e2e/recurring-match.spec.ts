@@ -29,6 +29,7 @@ test('admin can review and manually confirm a fixed-cost match', async ({ page }
   ]) }));
   await page.route('**/api/categories', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify([{ id: 'transport', name: '교통비', groupName: '생활비' }]) }));
   await page.route('**/api/assets', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
+  await page.route('**/api/chart-statistics-settings', (route) => route.fulfill({ contentType: 'application/json', body: '{"income":[],"expense":[]}' }));
   await page.route('**/api/notices**', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/suggestions/candidates', (route) => route.fulfill({ contentType: 'application/json', body: '[]' }));
   await page.route('**/api/recurring**', (route) => route.fulfill({ contentType: 'application/json', body: JSON.stringify(recurring()) }));

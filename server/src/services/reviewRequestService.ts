@@ -1,16 +1,32 @@
 import prisma from '../db';
+import { Prisma } from '@prisma/client';
 
 export type ReviewTargetType = 'general' | 'transaction' | 'importRow' | 'asset';
+
+const resolveReviewTarget = async (
+  client: Prisma.TransactionClient,
+  targetType: string | undefined,
+  targetId: string | null | undefined,
+) => {
+  if (targetType === 'importRow' && targetId) {
+    const row = await client.importRow.findUnique({ where: { id: targetId } });
+    if (row?.status === 'committed' && row.transactionId) {
+      return { targetType: 'transaction', targetId: row.transactionId };
+    }
+  }
+  return { targetType, targetId };
+};
 
 export const listReviewRequests = async (filters: {
   targetType?: string;
   targetId?: string;
   status?: string;
 } = {}) => {
+  const target = await resolveReviewTarget(prisma, filters.targetType, filters.targetId);
   return prisma.reviewRequest.findMany({
     where: {
-      ...(filters.targetType ? { targetType: filters.targetType } : {}),
-      ...(filters.targetId ? { targetId: filters.targetId } : {}),
+      ...(target.targetType ? { targetType: target.targetType } : {}),
+      ...(target.targetId ? { targetId: target.targetId } : {}),
       ...(filters.status ? { status: filters.status } : {}),
     },
     orderBy: { createdAt: 'desc' },
@@ -25,17 +41,20 @@ export const createReviewRequest = async (data: {
   body: string;
   authorRole?: string;
 }) => {
-  return prisma.reviewRequest.create({
-    data: {
-      targetType: data.targetType,
-      targetId: data.targetId || null,
-      type: data.type || 'question',
-      title: data.title.trim(),
-      body: data.body.trim(),
-      authorRole: data.authorRole,
-      status: 'open',
-    },
-  });
+  return prisma.$transaction(async (tx) => {
+    const target = await resolveReviewTarget(tx, data.targetType, data.targetId);
+    return tx.reviewRequest.create({
+      data: {
+        targetType: target.targetType!,
+        targetId: target.targetId || null,
+        type: data.type || 'question',
+        title: data.title.trim(),
+        body: data.body.trim(),
+        authorRole: data.authorRole,
+        status: 'open',
+      },
+    });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
 export const createBulkReviewRequests = async (data: {
@@ -43,17 +62,20 @@ export const createBulkReviewRequests = async (data: {
   body: string;
   authorRole?: string;
 }) => {
-  return prisma.$transaction(data.targets.map((target) => prisma.reviewRequest.create({
-    data: {
-      targetType: target.targetType,
-      targetId: target.targetId,
-      type: 'question',
-      title: target.title.trim(),
-      body: data.body.trim(),
-      authorRole: data.authorRole,
-      status: 'open',
-    },
-  })));
+  return prisma.$transaction(async (tx) => Promise.all(data.targets.map(async (original) => {
+    const target = await resolveReviewTarget(tx, original.targetType, original.targetId);
+    return tx.reviewRequest.create({
+      data: {
+        targetType: target.targetType!,
+        targetId: target.targetId,
+        type: 'question',
+        title: original.title.trim(),
+        body: data.body.trim(),
+        authorRole: data.authorRole,
+        status: 'open',
+      },
+    });
+  })), { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
 export const updateReviewRequestStatus = async (id: string, status: 'open' | 'done') => {

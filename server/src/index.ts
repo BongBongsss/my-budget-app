@@ -112,7 +112,7 @@ declare module 'express-session' {
 app.use((req: any, res: any, next: any) => {
   const refresh = getRememberSessionRefresh(req.session);
   if (refresh.expired) {
-    return req.session.destroy(() => next(new UnauthorizedError('Remembered session expired. Please log in again.')));
+    return req.session.destroy(() => next(new UnauthorizedError('Remembered session expired. Please log in again.', 'SESSION_EXPIRED')));
   }
   if (refresh.active) req.session.cookie.maxAge = refresh.maxAge;
   next();
@@ -122,14 +122,14 @@ const isAuthenticated = (req: any, res: any, next: any) => {
   if (req.session && req.session.authenticated) {
     return next();
   }
-  next(new UnauthorizedError());
+  next(new UnauthorizedError('Please log in again.', 'SESSION_EXPIRED'));
 };
 
 const isAdmin = (req: any, res: any, next: any) => {
   if (req.session?.role === 'admin') {
     return next();
   }
-  next(new UnauthorizedError('Admin role required'));
+  next(new ForbiddenError('Admin role required'));
 };
 
 app.post('/api/login', asyncHandler(async (req: any, res: any) => {
@@ -194,7 +194,7 @@ app.post('/api/change-password', asyncHandler(async (req: any, res: any) => {
   const { current, newPassword } = req.body;
   const role = req.session.role;
 
-  if (!role) throw new UnauthorizedError();
+  if (!role) throw new UnauthorizedError('Please log in again.', 'SESSION_EXPIRED');
   assertStrongPassword(newPassword);
 
   const auth = await prisma.auth.findUnique({ where: { role } });

@@ -5,10 +5,11 @@ import { Notice, createNotice, deleteNotice, getNotices, markNoticeRead } from '
 
 interface NoticeCenterProps {
   isAdmin: boolean;
+  suspended?: boolean;
   onUnreadCountChange?: (count: number) => void;
 }
 
-const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChange }) => {
+const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChange, suspended = false }) => {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [unreadNotices, setUnreadNotices] = useState<Notice[]>([]);
   const [isListOpen, setIsListOpen] = useState(false);
@@ -78,7 +79,7 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChang
         )}
       </button>
 
-      {popupNotice && createPortal(
+      {!suspended && popupNotice && createPortal(
         <div className="modal-overlay">
           <div className="notice-popup">
             <div className="notice-header">
@@ -99,7 +100,7 @@ const NoticeCenter: React.FC<NoticeCenterProps> = ({ isAdmin, onUnreadCountChang
         </div>
       , document.body)}
 
-      {isListOpen && createPortal(
+      {!suspended && isListOpen && createPortal(
         <div className="modal-overlay">
           <div className="notice-list-modal">
             <div className="notice-header">

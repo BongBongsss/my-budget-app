@@ -102,4 +102,14 @@ describe('HTTP dependency compatibility', () => {
     expect(response.body.code).toBe('INVALID_UPLOAD');
     expect(stageImportRows).not.toHaveBeenCalled();
   });
+
+  it('reports admin-only access as forbidden rather than an expired session', async () => {
+    const status = await new Promise<number>((resolve, reject) => {
+      http.get({ hostname: '127.0.0.1', port, path: '/api/transactions/export' }, (response) => {
+        response.resume();
+        response.on('end', () => resolve(response.statusCode!));
+      }).on('error', reject);
+    });
+    expect(status).toBe(403);
+  });
 });

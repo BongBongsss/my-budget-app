@@ -27,6 +27,7 @@ vi.mock('../db', () => ({
       },
       reviewRequest: {
         findMany: vi.fn(),
+        updateMany: vi.fn(),
       },
     })),
     transaction: {
@@ -258,6 +259,7 @@ describe('TransactionService (Soft Delete Test)', () => {
         update: vi.fn().mockResolvedValue({ ...importRow, status: 'committed' }),
       },
       transaction: { createMany: vi.fn().mockResolvedValue({ count: 1 }), updateMany: vi.fn() },
+      reviewRequest: { updateMany: vi.fn().mockResolvedValue({ count: 0 }) },
       auditLog: { createMany: vi.fn() },
     };
     (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
@@ -278,6 +280,11 @@ describe('TransactionService (Soft Delete Test)', () => {
       ]),
     }));
     expect(result.count).toBe(1);
+    const createdId = (tx.transaction.createMany as any).mock.calls[0][0].data[0].id;
+    expect(tx.reviewRequest.updateMany).toHaveBeenCalledWith({
+      where: { targetType: 'importRow', targetId: importRow.id },
+      data: { targetType: 'transaction', targetId: createdId },
+    });
   });
 
   it('reclassifies staged rows atomically with a restorable audit batch', async () => {
