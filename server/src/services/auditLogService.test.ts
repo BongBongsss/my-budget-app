@@ -111,6 +111,7 @@ describe('AuditLogService', () => {
         update: vi.fn(),
       },
       transaction: {
+        findUnique: vi.fn().mockResolvedValue(deletedTransaction),
         upsert: vi.fn().mockResolvedValue(restoredTransaction),
       },
     };
@@ -137,6 +138,64 @@ describe('AuditLogService', () => {
       where: { id: 'log-1' },
       data: { restoredAt: expect.any(Date) },
     }));
+  });
+
+  it.each([
+    ['transaction', { id: 'record-1', memo: 'Updated memo', isDeleted: false }],
+    ['transaction', { id: 'record-1', memo: 'Updated memo', isDeleted: true }],
+    ['asset', { id: 'record-1', balance: 2000, isDeleted: true }],
+    ['importRow', { id: 'record-1', amount: 1000, status: 'committed' }],
+  ])('rejects a stale %s deletion without overwriting current data', async (entityType, current) => {
+    const afterData = entityType === 'asset'
+      ? { id: 'record-1', balance: 1000, isDeleted: true }
+      : entityType === 'importRow'
+        ? { id: 'record-1', amount: 1000, status: 'ignored' }
+        : { id: 'record-1', memo: 'Original memo', isDeleted: true };
+    const model = { findUnique: vi.fn().mockResolvedValue(current), upsert: vi.fn() };
+    const tx = {
+      auditLog: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'old-delete', entityType, entityId: 'record-1', action: 'delete',
+          beforeData: { ...afterData, isDeleted: false }, afterData,
+        }),
+        update: vi.fn(), create: vi.fn(),
+      },
+      [entityType]: model,
+    };
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreTransactionFromAuditLog('old-delete', { role: 'admin' }))
+      .rejects.toBeInstanceOf(ConflictError);
+    expect(model.upsert).not.toHaveBeenCalled();
+    expect(tx.auditLog.create).not.toHaveBeenCalled();
+    expect(prisma.$transaction).toHaveBeenCalledWith(expect.any(Function), { isolationLevel: 'Serializable' });
+  });
+
+  it('restores a matching asset deletion when stored timestamps are JSON strings', async () => {
+    const current = {
+      id: 'asset-1', name: 'Savings', type: 'cash', balance: 1000,
+      member: '효', memo: null, isDeleted: true,
+      updatedAt: new Date('2026-11-04T00:00:00.000Z'),
+    };
+    const afterData = JSON.parse(JSON.stringify(current));
+    const tx = {
+      auditLog: {
+        findUnique: vi.fn().mockResolvedValue({
+          id: 'asset-delete', entityType: 'asset', entityId: current.id, action: 'delete',
+          beforeData: { ...afterData, isDeleted: false }, afterData,
+        }),
+        update: vi.fn(), create: vi.fn(),
+      },
+      asset: {
+        findUnique: vi.fn().mockResolvedValue(current),
+        upsert: vi.fn().mockResolvedValue({ ...current, isDeleted: false }),
+      },
+    };
+    (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
+
+    await expect(restoreTransactionFromAuditLog('asset-delete', { role: 'admin' }))
+      .resolves.toMatchObject({ id: current.id, isDeleted: false, member: '효' });
+    expect(tx.asset.upsert).toHaveBeenCalled();
   });
 
   it('restores an ignored import row to its previous status and writes a restore log', async () => {
@@ -175,6 +234,7 @@ describe('AuditLogService', () => {
         update: vi.fn(),
       },
       importRow: {
+        findUnique: vi.fn().mockResolvedValue({ ...deletedImportRow, status: 'ignored' }),
         upsert: vi.fn().mockResolvedValue(deletedImportRow),
       },
     };
@@ -220,7 +280,10 @@ describe('AuditLogService', () => {
         update: vi.fn(),
         create: vi.fn(),
       },
-      transaction: { upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }) },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(beforeData),
+        upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }),
+      },
     };
 
     (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));
@@ -248,7 +311,10 @@ describe('AuditLogService', () => {
         update: vi.fn(),
         create: vi.fn(),
       },
-      transaction: { upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }) },
+      transaction: {
+        findUnique: vi.fn().mockResolvedValue(beforeData),
+        upsert: vi.fn().mockResolvedValue({ ...beforeData, isDeleted: false }),
+      },
     };
 
     (prisma.$transaction as any).mockImplementationOnce((callback: any) => callback(tx));

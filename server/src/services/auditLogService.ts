@@ -1,4 +1,5 @@
 import { randomUUID } from 'crypto';
+import { isDeepStrictEqual } from 'util';
 import { Asset, Prisma, Transaction } from '@prisma/client';
 import prisma from '../db';
 import { BadRequestError, ConflictError, NotFoundError } from '../utils/errors';
@@ -103,6 +104,26 @@ const transactionUpdateFields = ['date', 'time', 'type', 'category', 'subcategor
 const assetUpdateFields = ['name', 'type', 'balance', 'member', 'memo'];
 const importRowUpdateFields = [...transactionUpdateFields, 'status', 'invalidReason', 'committedAt', 'transactionId'];
 
+const assertDeleteRestoreIsCurrent = async (tx: Prisma.TransactionClient, auditLog: any) => {
+  const where = { id: auditLog.entityId };
+  const current = auditLog.entityType === 'asset' ? await tx.asset.findUnique({ where })
+    : auditLog.entityType === 'importRow' ? await tx.importRow.findUnique({ where })
+      : await tx.transaction.findUnique({ where });
+  if (!current) throw new NotFoundError('Record to restore was not found.');
+
+  const { updatedAt: _updatedAt, ...legacySnapshot } = auditLog.beforeData;
+  const expected = auditLog.afterData || {
+    ...legacySnapshot,
+    ...(auditLog.entityType === 'importRow' ? { status: 'ignored' } : { isDeleted: true }),
+  };
+  const matches = Object.entries(expected).every(([field, value]) =>
+    isDeepStrictEqual(JSON.parse(JSON.stringify((current as Record<string, unknown>)[field]) ?? 'null'), value)
+  );
+  if (!matches) {
+    throw new ConflictError('This record has changed since the selected deletion. Refresh and restore the newest matching deletion instead.', 'STALE_AUDIT_RESTORE');
+  }
+};
+
 const changedFields = (beforeData: Record<string, any>, afterData: Record<string, any>, fields: string[]) => (
   fields.filter((field) => beforeData[field] !== afterData[field])
 );
@@ -163,6 +184,9 @@ const restoreAuditLogInTransaction = async (tx: Prisma.TransactionClient, auditL
   await tx.auditLog.update({ where: { id: auditLog.id }, data: { restoredAt: new Date() } });
 
   if (auditLog.action === 'update') return restoreUpdateFromAuditLog(tx, auditLog, actor);
+
+  if (!auditLog.beforeData?.id) throw new BadRequestError('Delete log does not contain restorable data.');
+  await assertDeleteRestoreIsCurrent(tx, auditLog);
 
     if (auditLog.entityType === 'asset') {
       const beforeData = auditLog.beforeData as Partial<Asset> | null;
@@ -302,7 +326,7 @@ export const restoreTransactionFromAuditLog = async (auditLogId: string, actor: 
   return prisma.$transaction(async (tx) => {
     const auditLog = await tx.auditLog.findUnique({ where: { id: auditLogId } });
     return restoreAuditLogInTransaction(tx, auditLog, actor);
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
 export const restoreAuditLogs = async (auditLogIds: string[], actor: AuditActor) => {
@@ -323,7 +347,7 @@ export const restoreAuditLogs = async (auditLogIds: string[], actor: AuditActor)
       count: restored.length,
       restoredAsset: auditLogs.some((log) => log.entityType === 'asset'),
     };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
 
 export const restoreLatestAuditBatch = async (actor: AuditActor) => {
@@ -336,5 +360,5 @@ export const restoreLatestAuditBatch = async (actor: AuditActor) => {
     });
     for (const log of logs) await restoreAuditLogInTransaction(tx, log, actor);
     return { count: logs.length };
-  });
+  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 };
