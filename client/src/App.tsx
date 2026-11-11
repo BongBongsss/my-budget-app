@@ -39,7 +39,7 @@ function AuthLoading({ complete }: { complete: boolean }) {
       <div className="app-auth-loading-card">
         <div className="app-auth-loading-mark" aria-hidden="true" />
         <span>로그인 정보 확인 중</span>
-        <small>예상 진행률 {complete ? 100 : progress}%</small>
+        <small>진행률 {complete ? 100 : progress}%</small>
         <small>잠시만 기다려 주세요</small>
       </div>
     </main>
