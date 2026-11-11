@@ -21,24 +21,25 @@ const AuditLogView = lazy(() => import('./components/AuditLogView'));
 const RecurringManager = lazy(() => import('./components/RecurringManager'));
 const LazyViewFallback = () => <div className="card-form" role="status">화면을 불러오는 중입니다.</div>;
 
-function AuthLoading() {
+function AuthLoading({ complete }: { complete: boolean }) {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
+    if (complete) return;
     const startedAt = Date.now();
     const timer = window.setInterval(() => {
       const elapsedSeconds = (Date.now() - startedAt) / 1000;
       setProgress(Math.min(95, Math.floor(96 * (1 - Math.exp(-elapsedSeconds / 12)))));
     }, 250);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [complete]);
 
   return (
     <main className="app-auth-loading" aria-label="데이터 불러오는 중">
       <div className="app-auth-loading-card">
         <div className="app-auth-loading-mark" aria-hidden="true" />
         <span>데이터 불러오는 중</span>
-        <small>진행률 {progress}%</small>
+        <small>진행률 {complete ? 100 : progress}%</small>
         <small>잠시만 기다려 주세요</small>
       </div>
     </main>
@@ -132,6 +133,8 @@ function App() {
     setIsAuthenticated(false);
   }), []);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isAuthLoadingComplete, setIsAuthLoadingComplete] = useState(false);
+  const initialLoadCompletedRef = useRef(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -347,6 +350,11 @@ function App() {
       console.error(err);
       return false;
     } finally {
+      if (!initialLoadCompletedRef.current) {
+        initialLoadCompletedRef.current = true;
+        setIsAuthLoadingComplete(true);
+        await new Promise((resolve) => window.setTimeout(resolve, 350));
+      }
       setIsAuthChecking(false);
     }
   };
@@ -730,7 +738,7 @@ function App() {
   });
 
   if (isAuthChecking) {
-    return <AuthLoading />;
+    return <AuthLoading complete={isAuthLoadingComplete} />;
   }
 
   if (!isAuthenticated && !isReauthenticating) {
