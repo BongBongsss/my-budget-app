@@ -21,25 +21,24 @@ const AuditLogView = lazy(() => import('./components/AuditLogView'));
 const RecurringManager = lazy(() => import('./components/RecurringManager'));
 const LazyViewFallback = () => <div className="card-form" role="status">화면을 불러오는 중입니다.</div>;
 
-function AuthLoading({ complete }: { complete: boolean }) {
+function AuthLoading() {
   const [progress, setProgress] = useState(0);
 
   useEffect(() => {
-    if (complete) return;
     const startedAt = Date.now();
     const timer = window.setInterval(() => {
       const elapsedSeconds = (Date.now() - startedAt) / 1000;
       setProgress(Math.min(95, Math.floor(96 * (1 - Math.exp(-elapsedSeconds / 12)))));
     }, 250);
     return () => window.clearInterval(timer);
-  }, [complete]);
+  }, []);
 
   return (
     <main className="app-auth-loading" aria-label="로그인 상태 확인 중">
       <div className="app-auth-loading-card">
         <div className="app-auth-loading-mark" aria-hidden="true" />
         <span>로그인 정보 확인 중</span>
-        <small>진행률 {complete ? 100 : progress}%</small>
+        <small>진행률 {progress}%</small>
         <small>잠시만 기다려 주세요</small>
       </div>
     </main>
@@ -133,7 +132,6 @@ function App() {
     setIsAuthenticated(false);
   }), []);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
-  const [isAuthLoadingComplete, setIsAuthLoadingComplete] = useState(false);
   const [userRole, setUserRole] = useState<'admin' | 'viewer'>('viewer');
   const [importSummary, setImportSummary] = useState<ImportSummary | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -170,8 +168,6 @@ function App() {
   const entryButtonDragRef = useRef<FloatingButtonDrag | null>(null);
   const entryButtonRef = useRef<HTMLButtonElement>(null);
   const suppressEntryButtonClickRef = useRef(false);
-  const hasCompletedInitialAuthCheckRef = useRef(false);
-  const initialAuthCheckStartedAtRef = useRef<number | null>(null);
   const pullRefreshStartYRef = useRef<number | null>(null);
   const isPullRefreshTrackingRef = useRef(false);
   const isPullRefreshInFlightRef = useRef(false);
@@ -322,10 +318,6 @@ function App() {
 
   const fetchData = async () => {
     const authCycle = authCycleRef.current;
-    if (!hasCompletedInitialAuthCheckRef.current && initialAuthCheckStartedAtRef.current === null) {
-      initialAuthCheckStartedAtRef.current = Date.now();
-    }
-
     try {
       // 1. 인증 상태 및 역할 확인
       const authRes = await api.get('/auth-status');
@@ -355,22 +347,6 @@ function App() {
       console.error(err);
       return false;
     } finally {
-      if (!hasCompletedInitialAuthCheckRef.current) {
-        const previewDelay = import.meta.env.DEV
-          ? Number(new URLSearchParams(window.location.search).get('authLoadingPreview'))
-          : Number.NaN;
-        const minimumDisplayMs = Number.isFinite(previewDelay) && previewDelay > 0
-          ? Math.min(previewDelay, 10000)
-          : 1500;
-        const elapsedMs = Date.now() - (initialAuthCheckStartedAtRef.current ?? Date.now());
-        const remainingMs = Math.max(0, minimumDisplayMs - elapsedMs);
-        if (remainingMs > 0) {
-          await new Promise((resolve) => window.setTimeout(resolve, remainingMs));
-        }
-        setIsAuthLoadingComplete(true);
-        await new Promise((resolve) => window.setTimeout(resolve, 350));
-      }
-      hasCompletedInitialAuthCheckRef.current = true;
       setIsAuthChecking(false);
     }
   };
@@ -754,7 +730,7 @@ function App() {
   });
 
   if (isAuthChecking) {
-    return <AuthLoading complete={isAuthLoadingComplete} />;
+    return <AuthLoading />;
   }
 
   if (!isAuthenticated && !isReauthenticating) {
