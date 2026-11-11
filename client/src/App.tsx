@@ -21,6 +21,30 @@ const AuditLogView = lazy(() => import('./components/AuditLogView'));
 const RecurringManager = lazy(() => import('./components/RecurringManager'));
 const LazyViewFallback = () => <div className="card-form" role="status">화면을 불러오는 중입니다.</div>;
 
+function AuthLoading() {
+  const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    const startedAt = Date.now();
+    const timer = window.setInterval(() => {
+      const elapsedSeconds = (Date.now() - startedAt) / 1000;
+      setProgress(Math.min(95, Math.floor(96 * (1 - Math.exp(-elapsedSeconds / 12)))));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return (
+    <main className="app-auth-loading" aria-label="로그인 상태 확인 중">
+      <div className="app-auth-loading-card">
+        <div className="app-auth-loading-mark" aria-hidden="true" />
+        <span>로그인 정보 확인 중</span>
+        <small>예상 진행률 {progress}%</small>
+        <small>잠시만 기다려 주세요</small>
+      </div>
+    </main>
+  );
+}
+
 type ImportSummary = {
   total: number;
   newCount: number;
@@ -726,15 +750,7 @@ function App() {
   });
 
   if (isAuthChecking) {
-    return (
-      <main className="app-auth-loading" aria-live="polite" aria-label="로그인 상태 확인 중">
-        <div className="app-auth-loading-card">
-          <div className="app-auth-loading-mark" aria-hidden="true" />
-          <span>로그인 정보 확인 중</span>
-          <small>잠시만 기다려 주세요</small>
-        </div>
-      </main>
-    );
+    return <AuthLoading />;
   }
 
   if (!isAuthenticated && !isReauthenticating) {
