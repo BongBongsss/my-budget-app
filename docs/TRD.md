@@ -8,3 +8,4 @@
 - 검증 비대상과 미검증 상태를 구분하고, 푸시 날짜 정정·검증 불가 대응·기존 문서 확인·병렬 작업 기록 충돌 처리 기준을 둔다. (§D5)
 - 제품 요구사항의 기준 문서는 루트 `BudgetSpec.md`이며 `server/BudgetSpec.md`에서 이를 안내한다. 과거 인수인계·리뷰 문서는 `_archive/history/`에 보관한다. (§D7)
 - 문서별 역할은 `docs/README.md`에서 안내한다. 중복 메모의 기준은 루트 `나중에 할일.txt`이며 서버 쪽은 안내로 유지한다. (§D8)
+- Windows의 Codex 사용자 설정에 `chrome-devtools` MCP를 `cmd /c npx -y chrome-devtools-mcp@latest`로 등록했으며 이후 세션에서 연결과 화면 조회를 확인했다. (§D9)
