@@ -1,6 +1,7 @@
 # 변경 이력
 
 앱에 표시되는 버전과 소스·배포 상태를 대응하기 위한 기록입니다.
+프로젝트 작업 이력은 [docs/LOG.md](./docs/LOG.md), 문서 안내는 [docs/README.md](./docs/README.md)를 참고합니다.
 
 ## 기록 원칙
 
