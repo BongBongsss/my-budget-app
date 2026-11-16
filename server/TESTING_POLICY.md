@@ -4,11 +4,11 @@ To ensure data integrity and system reliability, this project adheres to the fol
 
 ## 1. Core Philosophy
 - **Automated Verification:** Every critical business logic change must be accompanied by an automated test.
-- **Regression Prevention:** If a bug is discovered, a test case reproducing that bug must be added to the test suite before or during the fix.
+- **Regression Prevention:** Add a regression test for critical business logic and data-integrity bugs. For other bugs, assess the regression risk and add a meaningful test when warranted; document why when it is not practical.
 
 ## 2. Testing Scope
 ### A. Mandatory (Unit Tests)
-- **Business Logic:** Any calculation, data transformation, or validation logic in `services/` must have corresponding unit tests.
+- **Business Logic:** Critical calculations, data transformations, and validation logic in `services/` must have corresponding automated tests.
 - **Data Integrity:** Rules that prevent invalid transactions, improper categories, or asset miscalculations must be verified.
 
 ### B. Suggested (Integration Tests)
@@ -17,11 +17,11 @@ To ensure data integrity and system reliability, this project adheres to the fol
 ## 3. Best Practices
 - **Test Case Isolation:** Each test should be independent and shouldn't rely on the state of other tests.
 - **Descriptive Naming:** Tests must clearly describe the expected behavior (e.g., `it('should return error when transaction amount is negative')`).
-- **Reproducibility:** When reporting a bug or requesting a fix, the agent/developer must include a test case that captures the failing scenario.
+- **Reproducibility:** Identify the failing scenario and capture it in an automated test when the risk warrants one.
 
 ## 4. Verification Workflow
 1. **Identify:** A bug or requirement is identified.
-2. **Write:** Write a failing test case that reproduces the issue.
+2. **Write:** For a critical or regression-prone issue, write a meaningful test that reproduces the issue when practical.
 3. **Fix/Implement:** Write the code to satisfy the test case.
-4. **Verify:** Run the test suite and confirm all tests pass.
-5. **Protect:** Commit the test case along with the implementation to prevent future regressions.
+4. **Verify:** Run checks appropriate to the change and follow the pre-push verification policy before pushing.
+5. **Protect:** When a commit is requested, include the relevant test with the implementation.

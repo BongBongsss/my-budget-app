@@ -34,7 +34,7 @@ Use domain-specific error classes instead of generic `Error` objects:
 - **Persistence:** Log full error details (including stack traces) to server logs or a logging service for diagnostic purposes.
 
 ## 5. Pre-Push Validation
-- **Local Type Check:** Run `npx tsc --noEmit` before every push to ensure zero type errors.
+- **Pre-push checks:** Follow the repository's `VERIFY_BEFORE_PUSH.md`; its verification command includes the server type check.
 - **Compiler Warnings:** Treat compiler warnings and deprecation notices (e.g., TS5107) as errors that must be resolved to maintain long-term stability.
 
 ---

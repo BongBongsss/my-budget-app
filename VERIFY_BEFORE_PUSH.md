@@ -6,6 +6,10 @@ Run the following command from the repository root before pushing a change:
 npm run verify
 ```
 
+If it fails or cannot run, report the result and reason and do not push. Any
+exception requires the user's explicit approval after they are informed of the
+failed or missing checks.
+
 It performs Prisma schema validation, server type checking, server tests,
 client tests, and a production client build. It does not modify application
 data or connect to the production database.
