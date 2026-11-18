@@ -8,8 +8,10 @@ function Get-SecondMonday([datetime]$date) {
 
 function Test-CompletedBackup([System.IO.FileInfo]$file) {
   try {
-    $backup = Get-Content -LiteralPath $file.FullName -Raw | ConvertFrom-Json
-    return $backup.type -eq 'budget-app-full-backup' -and $null -ne $backup.data -and $null -ne $backup.counts
+    $verifyScript = Join-Path $PSScriptRoot '..\src\scripts\verifyLocalBackup.ts'
+    $tsNode = Join-Path $PSScriptRoot '..\..\node_modules\ts-node\dist\bin.js'
+    & node $tsNode $verifyScript $file.FullName --production *> $null
+    return $LASTEXITCODE -eq 0
   } catch {
     return $false
   }

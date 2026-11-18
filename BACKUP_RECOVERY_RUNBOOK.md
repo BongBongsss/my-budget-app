@@ -2,12 +2,22 @@
 
 ## Monthly backup
 
-The scheduled task runs the existing read-only backup command after the second
-Monday of each month. A manual run is also possible:
+The Windows task checks daily at 09:00 while the user is logged in. It creates
+one verified backup on or after the second Monday of each month and retries on
+later days if needed. If the PC is off or the user is logged out, it waits for a
+subsequent scheduled run. A manual run is also possible:
 
 ```powershell
 ./server/scripts/create-local-backup.ps1
 ```
+
+The backup reads `DATABASE_URL` from `server/.env` explicitly and rejects any
+host other than the confirmed production Neon endpoint. It does not use
+`server/.env.local`. If the production endpoint changes, update and verify the
+allowlist before relying on this backup. Tables are read in one read-only,
+repeatable-read transaction and the written file is validated. The scheduler
+only treats a validated file bearing the production project and branch markers
+as a completed monthly backup.
 
 The JSON output is stored under `server/backup/`, which is ignored by Git.
 Keep that directory private and do not place it in an unencrypted shared
@@ -16,7 +26,7 @@ folder.
 ## Verify a new backup
 
 ```powershell
-npm run backup:verify --workspace=server -- server/backup/<backup-file>.json
+node node_modules/ts-node/dist/bin.js server/src/scripts/verifyLocalBackup.ts server/backup/<backup-file>.json --production
 ```
 
 Verification checks the format, timestamp, excluded session/migration tables,

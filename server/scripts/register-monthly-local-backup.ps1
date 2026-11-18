@@ -12,7 +12,6 @@ $taskParameters = @{
   Action = $action
   Trigger = $trigger
   Principal = $principal
-  Force = $true
 }
 Register-ScheduledTask @taskParameters | Out-Null
 

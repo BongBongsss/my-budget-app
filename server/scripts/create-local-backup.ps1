@@ -9,7 +9,12 @@ $env:ALLOW_REMOTE_DB = 'true'
 
 try {
   Push-Location $repoRoot
-  npm run backup:local --workspace=server
+  Push-Location (Join-Path $repoRoot 'server')
+  try {
+    & node ../node_modules/ts-node/dist/bin.js src/scripts/createLocalBackup.ts
+  } finally {
+    Pop-Location
+  }
   $backupExitCode = $LASTEXITCODE
 } finally {
   Pop-Location
