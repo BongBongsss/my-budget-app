@@ -786,32 +786,32 @@ function App() {
             </span>
           )}
         </button>
-        <nav className="main-nav app-nav">
+        <nav className="main-nav app-nav" aria-label="주요 메뉴">
           <button 
             className={`nav-item ${currentView === 'budget' ? 'active' : ''}`}
             onClick={() => setCurrentView('budget')}
           >
-            <BarChart3 size={18} /> 가계부 관리
+            <BarChart3 size={18} /><span className="nav-label">가계부 관리</span>
           </button>
           <button
             className={`nav-item ${currentView === 'recurring' ? 'active' : ''}`}
             onClick={() => setCurrentView('recurring')}
           >
-            <CalendarClock size={18} /> 고정비 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
+            <CalendarClock size={18} /><span className="nav-label">고정비 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}</span>
           </button>
           <button 
             className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
             onClick={() => setCurrentView('assets')}
           >
-            <Wallet size={18} /> 자산 관리
+            <Wallet size={18} /><span className="nav-label">자산 관리</span>
           </button>
           <button
             className={`nav-item ${currentView === 'logs' ? 'active' : ''}`}
             onClick={() => setCurrentView('logs')}
           >
-            <History size={18} /> 활동 로그
+            <History size={18} /><span className="nav-label">활동 로그</span>
           </button>
-          <button className={`nav-item ${currentView === 'report' ? 'active' : ''}`} onClick={() => setCurrentView('report')}><FileText size={18} /> 리포트</button>
+          <button className={`nav-item ${currentView === 'report' ? 'active' : ''}`} onClick={() => setCurrentView('report')}><FileText size={18} /><span className="nav-label">리포트</span></button>
         </nav>
         <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
           <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} suspended={isReauthenticating} />

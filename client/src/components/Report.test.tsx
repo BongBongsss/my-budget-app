@@ -6,13 +6,33 @@ import Report from './Report';
 const row = (date: string, amount: number, extra: Partial<Transaction> = {}): Transaction => ({ date, amount, type: 'expense', category: '식비', vendor: '', source: '', member: '효', ...extra });
 afterEach(() => vi.useRealTimers());
 describe('리포트 탭', () => {
+  it('모바일 시험 화면에서 한 카테고리만 펼치고 다시 누르면 접는다', () => {
+    vi.useFakeTimers({ shouldAdvanceTime: true }); vi.setSystemTime(new Date(2026, 10, 20));
+    const data = [row('2026-10-01', 30000, { vendor: '마트' }), row('2026-10-02', 10000, { category: '교통', vendor: '버스' })];
+    const { container } = render(<Report transactions={data} categories={[]} exclusions={{ income: [], expense: [] }} />);
+    const buttons = container.querySelectorAll<HTMLButtonElement>('.rp-mobile-category > button');
+    expect(buttons).toHaveLength(2);
+    expect(buttons[0]).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(buttons[0]);
+    expect(buttons[0]).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelector('.rp-mobile-vendors:not([hidden])')).toHaveTextContent('마트');
+    fireEvent.click(buttons[0]);
+    expect(container.querySelector('.rp-mobile-vendors:not([hidden])')).toBeNull();
+    fireEvent.click(buttons[0]);
+    fireEvent.click(buttons[1]);
+    expect(buttons[0]).toHaveAttribute('aria-expanded', 'false');
+    expect(buttons[1]).toHaveAttribute('aria-expanded', 'true');
+    expect(container.querySelector('.rp-mobile-vendors:not([hidden])')).toHaveTextContent('버스');
+    fireEvent.click(screen.getByRole('button', { name: '이전 달' }));
+    expect(container.querySelector('.rp-mobile-vendors:not([hidden])')).toBeNull();
+  });
   it('기간 이동과 선택한 카테고리의 증감·추세를 갱신한다', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true }); vi.setSystemTime(new Date(2026, 10, 20));
     const data = [row('2026-09-01', 20000), row('2026-10-01', 30000), row('2026-10-02', 10000, { category: '교통' })];
     render(<Report transactions={data} categories={[]} exclusions={{ income: [], expense: [] }} />);
     expect(screen.getByText(/10,000원 증가 \(\+50.0%\)/)).toBeInTheDocument();
     expect(screen.getByLabelText('선택한 카테고리 월별 추세')).toHaveTextContent('식비');
-    fireEvent.click(screen.getByRole('button', { name: /교통/ }));
+    fireEvent.click(within(screen.getByRole('group', { name: '지출 카테고리 선택' })).getByRole('button', { name: /교통/ }));
     expect(screen.getByLabelText('선택한 카테고리 월별 추세')).toHaveTextContent('교통');
     expect(screen.getByText(/10,000원 증가/)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '이전 달' }));
@@ -42,7 +62,7 @@ describe('리포트 탭', () => {
     expect(head.querySelectorAll('.trial-mini-line')).toHaveLength(0);
     expect(within(detail).getByText('마트')).toBeInTheDocument();
     expect(within(detail).queryByLabelText('선택한 카테고리 월별 추세')).not.toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: /교통/ }));
+    fireEvent.click(within(screen.getByRole('group', { name: '지출 카테고리 선택' })).getByRole('button', { name: /교통/ }));
     expect(within(head).getByRole('img', { name: '교통 최근 6개월 지출 추이' })).toBeInTheDocument();
     expect(within(detail).getByText('버스')).toBeInTheDocument();
     fireEvent.click(within(head).getByText('월별 금액 보기'));
