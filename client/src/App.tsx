@@ -13,12 +13,13 @@ import RecurringMissingModal from './components/RecurringMissingModal';
 import Login from './components/Login';
 import { getGroupName } from './utils/categoryUtils';
 import './index.css';
-import { Settings, Upload, Download, LogOut, BarChart3, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2, RefreshCw } from 'lucide-react';
+import { Settings, Upload, Download, LogOut, BarChart3, FileText, Wallet, History, Undo2, X, Plus, Menu, CalendarClock, CheckCircle2, RefreshCw } from 'lucide-react';
 
 const SettingsModal = lazy(() => import('./components/SettingsModal'));
 const AssetManager = lazy(() => import('./components/AssetManager'));
 const AuditLogView = lazy(() => import('./components/AuditLogView'));
 const RecurringManager = lazy(() => import('./components/RecurringManager'));
+const Report = lazy(() => import('./components/Report'));
 const LazyViewFallback = () => <div className="card-form" role="status">화면을 불러오는 중입니다.</div>;
 
 function AuthLoading({ complete }: { complete: boolean }) {
@@ -120,7 +121,7 @@ function App() {
   const [isTransactionFormOpen, setIsTransactionFormOpen] = useState(false);
   const [isAssetFormOpen, setIsAssetFormOpen] = useState(false);
   const [activeTab, setActiveTab] = useState<'all' | 'new' | 'duplicate' | 'invalid'>('all');
-  const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'recurring' | 'logs'>('budget');
+  const [currentView, setCurrentView] = useState<'budget' | 'assets' | 'recurring' | 'logs' | 'report'>('budget');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isReauthenticating, setIsReauthenticating] = useState(false);
   const [viewSessionVersion, setViewSessionVersion] = useState(0);
@@ -792,6 +793,12 @@ function App() {
           >
             <BarChart3 size={18} /> 가계부 관리
           </button>
+          <button
+            className={`nav-item ${currentView === 'recurring' ? 'active' : ''}`}
+            onClick={() => setCurrentView('recurring')}
+          >
+            <CalendarClock size={18} /> 고정비 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
+          </button>
           <button 
             className={`nav-item ${currentView === 'assets' ? 'active' : ''}`}
             onClick={() => setCurrentView('assets')}
@@ -804,12 +811,7 @@ function App() {
           >
             <History size={18} /> 활동 로그
           </button>
-          <button
-            className={`nav-item ${currentView === 'recurring' ? 'active' : ''}`}
-            onClick={() => setCurrentView('recurring')}
-          >
-            <CalendarClock size={18} /> 고정비 관리{recurringCandidateCount > 0 ? ` (${recurringCandidateCount})` : ''}
-          </button>
+          <button className={`nav-item ${currentView === 'report' ? 'active' : ''}`} onClick={() => setCurrentView('report')}><FileText size={18} /> 리포트</button>
         </nav>
         <div className={`header-actions ${isMobileMenuOpen ? 'is-mobile-open' : ''}`}>
           <NoticeCenter isAdmin={userRole === 'admin'} onUnreadCountChange={setUnreadNoticeCount} suspended={isReauthenticating} />
@@ -1046,6 +1048,8 @@ function App() {
             />
           </ErrorBoundary>
         </div>
+      ) : currentView === 'report' ? (
+        <ErrorBoundary title="리포트를 불러오지 못했습니다."><Suspense fallback={<LazyViewFallback />}><Report transactions={transactions} categories={categories} exclusions={statisticsExclusions} /></Suspense></ErrorBoundary>
       ) : currentView === 'assets' ? (
         <div className="view-assets animate-fadeIn">
           <div className="view-action-bar">
@@ -1061,17 +1065,21 @@ function App() {
           </ErrorBoundary>
         </div>
       ) : currentView === 'recurring' ? (
+        <div className="view-recurring">
         <ErrorBoundary title="고정비 관리 정보를 불러오지 못했습니다.">
             <Suspense fallback={<LazyViewFallback />}>
               <RecurringManager categories={categories} transactions={transactions} canManage={userRole === 'admin'} onSuccess={showSuccessMessage} />
             </Suspense>
         </ErrorBoundary>
+        </div>
       ) : (
+        <div className="view-logs">
           <ErrorBoundary title="활동 로그를 불러오지 못했습니다.">
             <Suspense fallback={<LazyViewFallback />}>
               <AuditLogView isAdmin={userRole === 'admin'} onRestored={fetchData} />
             </Suspense>
           </ErrorBoundary>
+        </div>
       )}
 
       {userRole === 'admin' && (currentView === 'budget' || currentView === 'assets') && (

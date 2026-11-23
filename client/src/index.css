@@ -79,6 +79,8 @@ body {
   padding: 2rem;
 }
 
+.view-budget, .view-assets, .view-recurring, .view-logs { max-width: 1100px; margin-inline: auto; }
+
 h1 { font-size: 2.5rem; margin-bottom: 2rem; color: #1e293b; }
 h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
 
@@ -166,14 +168,17 @@ h3 { font-size: 1.25rem; margin-bottom: 1rem; color: #334155; }
     position: absolute;
     left: 50%;
     transform: translateX(-50%);
+    justify-content: center;
+    flex-wrap: nowrap;
   }
 
-  .app-nav .nav-item:nth-child(1) { order: 1; }
-  .app-nav .nav-item:nth-child(2) { order: 3; }
-  .app-nav .nav-item:nth-child(3) { order: 4; }
-  .app-nav .nav-item:nth-child(4) { order: 2; }
+  .app-nav .nav-item { flex: 0 0 auto; white-space: nowrap; }
 
   .header-menu-toggle { margin-left: auto; }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  .app-nav { position: static; transform: none; order: 3; flex-basis: 100%; }
 }
 
 /* Desktop trend view uses the same compact, axis-free layout as mobile. */
@@ -1596,10 +1601,6 @@ td { padding: 0.2rem; border-bottom: 1px solid #f1f5f9; font-size: 13px; }
     width: min(190px, calc(100vw - 2rem));
   }
   .main-nav { width: 100%; gap: 4px; }
-  .app-nav .nav-item:nth-child(1) { order: 1; }
-  .app-nav .nav-item:nth-child(2) { order: 3; }
-  .app-nav .nav-item:nth-child(3) { order: 4; }
-  .app-nav .nav-item:nth-child(4) { order: 2; }
   .nav-item { flex: 1 1 24%; min-width: 0; justify-content: center; padding: 8px 4px; font-size: 0.76rem; white-space: nowrap; }
   .header-action-btn { min-height: 34px; }
 

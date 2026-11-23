@@ -27,9 +27,11 @@ import { UnauthorizedError, BadRequestError, ForbiddenError } from './utils/erro
 import { asyncHandler } from './utils/asyncHandler';
 import { assertStrongPassword, assertTrustedMutationOrigin, loginAttemptLimiter } from './security/authSecurity';
 import { createRememberSession, getRememberSessionRefresh } from './security/rememberSession';
+import { localAccessEnabled, localAccessRequest } from './security/localAccess';
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT || 5000);
+const localAutoAccess = localAccessEnabled(process.env.NODE_ENV, process.env.LOCAL_AUTO_LOGIN, process.env.DATABASE_URL);
 const clientOrigins = (process.env.CLIENT_ORIGIN || 'https://my-budget-app-client.vercel.app')
   .split(',')
   .map((origin) => origin.trim())
@@ -37,6 +39,7 @@ const clientOrigins = (process.env.CLIENT_ORIGIN || 'https://my-budget-app-clien
 
 if (process.env.NODE_ENV !== 'production') {
   clientOrigins.push('http://localhost:3000');
+  clientOrigins.push('http://127.0.0.1:3000');
 }
 
 const PgSession = connectPgSimple(session);
@@ -177,6 +180,10 @@ app.post('/api/login', asyncHandler(async (req: any, res: any) => {
 }));
 
 app.get('/api/auth-status', (req: any, res: any) => {
+    if (localAutoAccess && localAccessRequest(req.socket.remoteAddress, req.get('host'), Boolean(req.get('forwarded') || req.get('x-forwarded-for') || req.get('x-forwarded-host')))) {
+        req.session.authenticated = true;
+        req.session.role = 'admin';
+    }
     if (req.session.authenticated) {
         res.json({ isAuthenticated: true, role: req.session.role || 'viewer' });
     } else {
@@ -262,7 +269,7 @@ const startServer = async () => {
 
     await processRecurringTransactions();
 
-    app.listen(PORT, () => {
+    app.listen(PORT, localAutoAccess ? '127.0.0.1' : '0.0.0.0', () => {
       console.log(`Server is running on port ${PORT}`);
       console.log(`API Routes registered: /api/rules, /api/categories, /api/recurring, /api/payment-rules, /api/transactions`);
     });
