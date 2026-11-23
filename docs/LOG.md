@@ -1,9 +1,9 @@
 # LOG
 
-## [Unreleased] — 2026-11-23 · D54. 리포트 운영 반영 준비
+## [2026-11-23] — D54. 리포트 운영 반영 준비
 
 - 태그: [chore]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `docs/PRD.md`, `docs/TRD.md`, `docs/PLAN.md`, `docs/LOG.md` 및 기존 로컬 리포트 변경 파일.
 - 착수 배경: 사용자가 로컬에서 검토한 리포트와 화면 변경의 본웹 반영을 요청했다.
 - `docs/PRD.md`: 변경 예정 — 검증된 리포트 동작과 미완료 표시를 정리한다.
@@ -11,11 +11,14 @@
 - `docs/PLAN.md`: 변경 예정 — M53 배포 전 검증과 운영 확인을 기록한다.
 - `docs/LOG.md`: 변경 예정 — 검증, 커밋·푸시 및 배포 결과를 사실대로 기록한다.
 - 검증 기준: `npm run verify` 통과, 인증 및 로컬 전용 접근 보호 확인, 리포트 PC·모바일 기능 확인 후 승인된 변경만 푸시하고 Vercel 배포 상태를 확인한다. 사용자 데이터 변경은 하지 않는다.
+- 사전 검증: 전체 검증 통과(서버 68개 통과·4개 건너뜀, 클라이언트 34개 통과, Prisma·타입 검사·빌드 통과). 로컬 전용 인증은 운영 모드에서 비활성화되며 관련 테스트가 통과했다. 독립된 시험 데이터로 PC 1600px·모바일 390px 화면에서 기간 선택·연간·구성원·카테고리·미승인 표시와 가로 넘침을 확인했다. 실제 휴대폰 및 운영 로그인 후 화면은 확인하지 않았다.
+- 운영 반영: `64ba084`를 main에 푸시했고 Vercel 운영 배포가 READY 상태로 본웹 주소에 연결되었다. 운영 API 헬스 응답은 200, 비로그인 인증 확인 요청은 401이었다. Render 배포 자체의 상태는 확인하지 못했다.
+- 기록 정정: 최초 푸시 커밋에 `[Unreleased]` 표기가 남아 있어 실제 푸시 날짜로 정정했다. D14, D43, D45–D50, D52–D53은 후속 구현, 사용자 제공 PC 화면 및 이번 시험 데이터 검증을 근거로 완료 처리했다. D44의 기간 배치는 D45에서 대체되어 부분 반영으로 정리했다.
 
-## [Unreleased] — 2026-11-23 · D53. 리포트 탭 아이콘 구분
+## [2026-11-23] — D53. 리포트 탭 아이콘 구분
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/App.tsx`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 가계부 관리와 동일한 리포트 탭 아이콘을 문서형 아이콘으로 구분한다.
 - `docs/PRD.md`: 해당 없음 — 아이콘만 변경한다.
@@ -27,10 +30,10 @@
 - 변경 파일: `client/src/App.tsx`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 코드에서 두 탭의 아이콘 지정과 동일한 크기를 확인했다. 로컬 브라우저가 로그인 화면으로 열려 실제 화면은 확인하지 못해 진행중으로 둔다. 단순 아이콘 교체로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-23 · D52. 리포트 설명 배치 원복
+## [2026-11-23] — D52. 리포트 설명 배치 원복
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 제목 옆에 붙인 승인 거래 안내를 이전의 오른쪽 정렬로 되돌린다.
 - `docs/PRD.md`: 해당 없음 — 시각 배치 원복이다.
@@ -42,7 +45,7 @@
 - 변경 파일: `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 이전 CSS 선언으로 복원했음을 확인했다. 로컬 브라우저가 로그인 화면으로 열려 실제 화면은 확인하지 못해 진행중으로 둔다. 시각 배치 원복으로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-23 · D51. 리포트 제목과 설명 배치
+## [2026-11-23] — D51. 리포트 제목과 설명 배치
 
 - 태그: [fix]
 - 상태: 중단 (사용자 요청으로 D52에서 원복)
@@ -57,10 +60,10 @@
 - 변경 파일: `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: CSS 배치 선언을 확인했다. 로컬 브라우저가 로그인 화면으로 열려 실제 화면 배치는 확인하지 못해 진행중으로 둔다. 시각 배치 변경으로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-23 · D50. 리포트 기간 선택 즉시 적용
+## [2026-11-23] — D50. 리포트 기간 선택 즉시 적용
 
 - 태그: [feat]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.tsx`, `client/src/components/ReportAnalytics.css`, `client/src/components/Report.test.tsx`, `docs/PRD.md`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 기간 선택창의 완료 버튼을 제거하고 선택 즉시 적용한다.
 - `docs/PRD.md`: 변경 예정 — 선택창의 즉시 적용과 닫기 동작을 반영한다.
@@ -72,10 +75,10 @@
 - 변경 파일: `client/src/components/Report.tsx`, `client/src/components/ReportAnalytics.css`, `client/src/components/Report.test.tsx`, `docs/PRD.md`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 리포트 테스트 5개(즉시 반영·바깥 클릭·Escape·연간 이동 포함)와 클라이언트 빌드 통과. 로컬 브라우저가 로그인 화면으로 열려 실제 PC·모바일 선택창은 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-23 · D49. 리포트 제목 크기 통일
+## [2026-11-23] — D49. 리포트 제목 크기 통일
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 리포트의 기간 제목을 가계부 관리 제목과 같은 크기로 맞춘다.
 - `docs/PRD.md`: 해당 없음 — 제목의 시각 표현만 조정한다.
@@ -87,10 +90,10 @@
 - 변경 파일: `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: CSS 선언을 비교해 제목 크기와 색상이 같음을 확인했다. 로컬 브라우저가 로그인 화면으로 열려 실제 화면은 확인하지 못해 진행중으로 둔다. 시각 스타일만 바뀌어 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-23 · D48. 리포트 상단 순서 정리
+## [2026-11-23] — D48. 리포트 상단 순서 정리
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.tsx`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 리포트 기간·승인 건수, 기간 선택, 미승인 안내 순서로 상단을 정리한다.
 - `docs/PRD.md`: 해당 없음 — 기능 및 집계 요구사항은 유지한다.
@@ -102,10 +105,10 @@
 - 변경 파일: `client/src/components/Report.tsx`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 리포트 테스트 5개 통과. 제 로컬 브라우저가 로그인 화면으로 열려 실제 화면의 순서와 간격은 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-23 · D47. 리포트 상단 문구 제거
+## [2026-11-23] — D47. 리포트 상단 문구 제거
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.tsx`, `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 리포트 소개 문구를 제거해 본문을 위로 올린다.
 - `docs/PRD.md`: 해당 없음 — 기능이나 집계 요구사항은 유지한다.
@@ -117,10 +120,10 @@
 - 변경 파일: `client/src/components/Report.tsx`, `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 리포트 테스트 5개 통과. 로컬 브라우저가 로그인 화면으로 열려 실제 표시 위치는 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-23 · D46. 리포트 기간 도구 한 줄 배치
+## [2026-11-23] — D46. 리포트 기간 도구 한 줄 배치
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.tsx`, `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 기간 이동과 월간·연간 및 구성원 선택을 같은 줄에 배치한다.
 - `docs/PRD.md`: 해당 없음 — 기능은 유지하고 배치만 정정한다.
@@ -132,10 +135,10 @@
 - 변경 파일: `client/src/components/Report.tsx`, `client/src/components/Report.css`, `docs/PLAN.md`, `docs/LOG.md`. `ReportAnalytics.css`는 기존 스타일을 그대로 활용해 수정하지 않았다.
 - 검증: 리포트 테스트 5개와 클라이언트 빌드 통과. 로컬 브라우저가 로그인 화면으로 열려 실제 PC·모바일 배치는 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-23 · D45. 리포트 기간 직접 선택
+## [2026-11-23] — D45. 리포트 기간 직접 선택
 
 - 태그: [feat]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.tsx`, `client/src/components/ReportAnalytics.css`, 리포트 테스트, `docs/PRD.md`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 기간 이동을 기존 중앙 위치로 복원하고 가운데 연월에서 직접 선택하도록 한다. D44의 아이콘은 유지한다.
 - `docs/PRD.md`: 변경 예정 — 기간 직접 선택 요구사항을 기록한다.
@@ -147,10 +150,10 @@
 - 변경 파일: `client/src/components/Report.tsx`, `client/src/components/ReportAnalytics.css`, `client/src/components/Report.test.tsx`, `docs/PRD.md`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 리포트 테스트 5개 통과(직접 월 선택, 연간 연도 선택 및 기간 이동 포함), 클라이언트 빌드 통과. 로컬 브라우저 로그인 상태가 없어 실제 PC·모바일 표시와 겹침은 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-23 · D44. 리포트 아이콘과 기간 선택 배치 정리
+## [2026-11-23] — D44. 리포트 아이콘과 기간 선택 배치 정리
 
 - 태그: [feat]
-- 상태: 진행중
+- 상태: 부분 반영 (기간 배치는 D45에서 정정)
 - 변경 파일(예정): `client/src/components/Report.tsx`, `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 리포트 아이콘을 가계부와 일치시키고 기간 이동을 선택 도구 오른쪽에 배치한다.
 - `docs/PRD.md`: 해당 없음 — 기존 기능의 시각 배치만 변경한다.
@@ -163,10 +166,10 @@
 - 검증: 클라이언트 빌드 및 리포트 테스트 5개 통과(월·연간 기간 이동 포함). 기본 테스트 실행은 설정 로더의 상위 경로 접근 거부로 실패했고 `--configLoader runner`로 재실행해 통과했다. 로컬 브라우저가 로그인 화면으로 열려 PC·모바일 실제 배치는 확인하지 못해 진행중으로 둔다.
 - 범위 정정: 기간 이동의 오른쪽 배치는 사용자 요청으로 D45에서 중앙으로 되돌리고 직접 선택을 추가했다. 아이콘 변경은 유지한다.
 
-## [Unreleased] — 2026-11-23 · D43. 리포트 그래프 색상 원복
+## [2026-11-23] — D43. 리포트 그래프 색상 원복
 
 - 태그: [fix]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 착수 배경: 사용자가 아이콘 배경과 동일하게 맞춘 그래프 색상을 이전 색상으로 되돌리도록 요청했다.
 - `docs/PRD.md`: 해당 없음 — 시각 표현 원복으로 요구사항 변경이 없다.
@@ -178,7 +181,7 @@
 - 변경 파일: `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: CSS 값이 D42 이전과 일치함을 확인했다. 로컬 브라우저가 로그인 화면으로 열려 실제 리포트 화면은 확인하지 못했다.
 
-## [Unreleased] — 2026-11-23 · D42. 리포트 그래프 파스텔 색상 통일
+## [2026-11-23] — D42. 리포트 그래프 파스텔 색상 통일
 
 - 태그: [fix]
 - 상태: 중단 (사용자 요청으로 D43에서 원복)
@@ -193,7 +196,7 @@
 - 변경 파일: `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 클라이언트 빌드 통과. 로컬 브라우저가 로그인 화면으로 열려 실제 리포트의 PC·모바일 색상과 구분 가능성은 확인하지 못해 진행중으로 둔다.
 
-## [Unreleased] — 2026-11-20 · D41. 가계부 시험 색상 원복
+## [2026-11-23] — 2026-11-20 · D41. 가계부 시험 색상 원복
 
 - 태그: [fix]
 - 상태: 완료
@@ -208,7 +211,7 @@
 - 변경 파일: `client/src/components/SummaryCharts.tsx`, `client/src/index.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 로컬 PC 1600px에서 탭·필터의 기존 파란색, 그래프의 기존 색상 및 본문 너비를 확인했다. 시각 원복으로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D40. 가계부 그래프 색상 개선
+## [2026-11-23] — 2026-11-20 · D40. 가계부 그래프 색상 개선
 
 - 태그: [fix]
 - 상태: 완료
@@ -223,7 +226,7 @@
 - 변경 파일: `client/src/components/SummaryCharts.tsx`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 로컬 PC 1600px에서 그래프 화면과 색상을 확인하고 모바일 390px에서 색상 적용 및 가로 넘침 없음을 확인했다. 시각 표현 변경으로 별도 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D39. 가계부 보라색 테마 로컬 시험
+## [2026-11-23] — 2026-11-20 · D39. 가계부 보라색 테마 로컬 시험
 
 - 태그: [feat]
 - 상태: 완료
@@ -238,7 +241,7 @@
 - 변경 파일: `client/src/components/SummaryCharts.tsx`, `client/src/index.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 클라이언트 빌드 통과. 로컬 PC 1600px·모바일 390px에서 버튼·그래프 적용 및 가로 넘침 없음을 확인했고, 자산 관리 탭의 기존 파란 활성 색상을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D38. 관리 탭 본문 너비 통일
+## [2026-11-23] — 2026-11-20 · D38. 관리 탭 본문 너비 통일
 
 - 태그: [feat]
 - 상태: 완료
@@ -253,7 +256,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/index.css`, `docs/PRD.md`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 클라이언트 빌드 통과. 로컬 브라우저 PC 1600px과 모바일 390px에서 다섯 탭의 본문 너비와 페이지 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D37. 가계부 본문 너비 로컬 시험
+## [2026-11-23] — 2026-11-20 · D37. 가계부 본문 너비 로컬 시험
 
 - 태그: [chore]
 - 상태: 완료
@@ -268,7 +271,7 @@
 - 변경 파일: `client/src/index.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 로컬 브라우저 PC 1600px에서 본문 너비·가운데 정렬과 헤더 너비를, 모바일 390px에서 본문 너비와 가로 넘침 없음을 확인했다. 스타일 시험으로 별도 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D36. 리포트 색상과 장식 정리
+## [2026-11-23] — 2026-11-20 · D36. 리포트 색상과 장식 정리
 
 - 태그: [fix]
 - 상태: 완료
@@ -283,7 +286,7 @@
 - 변경 파일: `client/src/components/Report.tsx`, `client/src/components/Report.css`, `client/src/components/ReportAnalytics.css`, `docs/PLAN.md`, `docs/LOG.md`.
 - 검증: 클라이언트 빌드 통과. 로컬 PC 1600px에서 화살표 제거, 아이콘·막대·범례 색상 일치 및 가로 넘침 없음을 확인했다. 모바일 화면은 리포트가 표시되지 않아 확인하지 못했다.
 
-## [Unreleased] — 2026-11-20 · D35. 시험 리포트 정식 탭 통합
+## [2026-11-23] — 2026-11-20 · D35. 시험 리포트 정식 탭 통합
 
 - 태그: [feat]
 - 상태: 완료
@@ -298,7 +301,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/components/Report.tsx`, `client/src/components/ReportAnalytics.tsx`, `client/src/components/ReportAnalytics.css`, `client/src/components/Report.test.tsx`, `client/src/utils/reportAnalytics.ts`, `client/src/utils/reportAnalytics.test.ts`, 이전 시험 파일 정리, 네 문서.
 - 검증: 클라이언트 전체 테스트 34개와 빌드 통과. 로컬 PC 1600px에서 정식 리포트, 시험 탭 제거, 기간·구성원 선택과 그래프·구성원 비교를 확인했고 모바일 390px에서 표시 및 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D34. 시험 리포트 월별 차액 표시
+## [2026-11-23] — 2026-11-20 · D34. 시험 리포트 월별 차액 표시
 
 - 태그: [feat]
 - 상태: 완료
@@ -313,7 +316,7 @@
 - 변경 파일: `client/src/components/ReportTrial.tsx`, `client/src/components/ReportTrialAnalytics.tsx`, `client/src/components/ReportTrial.css`, `client/src/components/ReportTrial.test.tsx`, 네 문서.
 - 검증: 관련 테스트 7개와 클라이언트 빌드 통과. 월간·연간 양수·음수·0·데이터 없음 테스트와 PC 1600px·모바일 390px 배치를 확인했다.
 
-## [Unreleased] — 2026-11-20 · D33. 거래처 상세 제목 정리
+## [2026-11-23] — 2026-11-20 · D33. 거래처 상세 제목 정리
 
 - 태그: [fix]
 - 상태: 완료
@@ -327,7 +330,7 @@
 - 실제 결과: 중복된 선택 항목 이름을 제거하고 `거래처별 지출 (승인된 지출 N건)`을 한 줄에 표시하도록 정리했다.
 - 검증: 로컬 PC 1600px에서 제목·건수가 한 줄이고 목록이 바로 아래임을, 모바일 390px에서 가로 넘침 없음을 확인했다. 표시 문구·레이아웃만 바뀌어 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D32. 시험 리포트 상세 머리글 정리
+## [2026-11-23] — 2026-11-20 · D32. 시험 리포트 상세 머리글 정리
 
 - 태그: [fix]
 - 상태: 완료
@@ -341,7 +344,7 @@
 - 실제 결과: 선택 항목 라벨·이름·승인 건수를 한 행에 배치하고 거래처 제목 위 여백을 줄였다. 긴 항목은 좁은 폭에서 줄바꿈하도록 했다.
 - 검증: 클라이언트 빌드 통과. 로컬 PC 1600px에서 세 항목이 한 줄로 표시되고 목록이 그 아래 시작됨을, 모바일 390px에서 가로 넘침이 없음을 확인했다. 별도 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D31. 카테고리 상세와 추이 배치
+## [2026-11-23] — 2026-11-20 · D31. 카테고리 상세와 추이 배치
 
 - 태그: [feat]
 - 상태: 완료
@@ -356,7 +359,7 @@
 - 변경 파일: `client/src/components/ReportTrial.tsx`, `client/src/components/ReportTrialAnalytics.tsx`, `client/src/components/ReportTrial.css`, `client/src/components/ReportTrial.test.tsx`, 네 문서.
 - 검증: 관련 테스트 6개와 클라이언트 빌드 통과. 로컬 PC 1600px에서 카테고리 선택에 따른 요약·그래프·거래처 동기화 및 배치를 확인했고 모바일 390px에서 그래프 영역과 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D30. 리포트 분석 시험 탭
+## [2026-11-23] — 2026-11-20 · D30. 리포트 분석 시험 탭
 
 - 태그: [feat]
 - 상태: 완료
@@ -371,7 +374,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/components/ReportTrial.tsx`, `client/src/components/ReportTrialAnalytics.tsx`, `client/src/components/ReportTrial.css`, `client/src/components/ReportTrial.test.tsx`, `client/src/utils/reportTrial.ts`, `client/src/utils/reportTrial.test.ts`, 네 문서.
 - 검증: 클라이언트 전체 테스트 34개 통과, 마지막 구성원 표시 보완 후 관련 테스트 5개와 빌드 통과. PC 1600px에서 기존·시험 탭과 분석 영역 및 메뉴 겹침 없음을, 모바일 390px에서 시험 탭·구성원 비교·가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D29. PC 상단 메뉴 배치 복원
+## [2026-11-23] — 2026-11-20 · D29. PC 상단 메뉴 배치 복원
 
 - 태그: [fix]
 - 상태: 완료
@@ -385,7 +388,7 @@
 - 실제 결과: 넓은 PC 화면의 가운데 배치를 복원하고, 좁은 PC에서 겹침을 피하도록 1100px 이하의 별도 줄 배치는 유지했다. 탭 순서는 기존 네 탭 뒤에 리포트다.
 - 검증: 로컬 브라우저 1600px에서 제목·가운데 탭·메뉴가 한 줄이고 겹침 없는 것을 확인했으며, 1101px에서도 겹침이 없었다. 모바일 390px에서도 탭과 메뉴 및 가로 넘침 없음을 확인했다. CSS 배치 수정으로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D28. 시안 3 리포트 통합
+## [2026-11-23] — 2026-11-20 · D28. 시안 3 리포트 통합
 
 - 태그: [feat]
 - 상태: 완료
@@ -400,7 +403,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/index.css`, `client/src/components/Report.tsx`, `client/src/components/Report.css`, `client/src/components/Report.test.tsx`, 이전 시안 컴포넌트·스타일·테스트 삭제, 네 문서.
 - 검증: 전체 클라이언트 테스트 29개 및 빌드 통과. 이후 금액 표시 보존 수정 후 관련 테스트 3개 및 빌드 재통과. 로컬 브라우저 PC 1600px·모바일 390px에서 리포트 표시, 시안 탭 없음, 구성원 선택과 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D27. 시안 3 구성원 선택
+## [2026-11-23] — 2026-11-20 · D27. 시안 3 구성원 선택
 
 - 태그: [feat]
 - 상태: 완료
@@ -414,7 +417,7 @@
 - 실제 결과: 시안 3의 기간 선택 옆에 전체·효·굥 필터를 추가하고 요약, 이전 기간 비교, 카테고리·거래처와 미승인 경고에 같은 기준을 적용했다.
 - 검증: 관련 테스트 10개와 클라이언트 빌드 통과. 전체·개인별·공동·미지정 및 미승인·이전 기간 비교를 테스트하고 PC 1600px·모바일 390px에서 선택과 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D26. 시안 3 좌우 비율 조정
+## [2026-11-23] — 2026-11-20 · D26. 시안 3 좌우 비율 조정
 
 - 태그: [fix]
 - 상태: 완료
@@ -428,7 +431,7 @@
 - 실제 결과: PC 카테고리 탐색의 두 열을 같은 비율로 정정했다.
 - 검증: 로컬 브라우저 PC 1600px에서 두 영역의 실제 폭이 같고 가로 넘침이 없음을 확인했다. 모바일 390px에서도 기존 한 열 배치와 넘침 없음을 확인했다. CSS 배치 변경으로 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D25. 시안 3 중복 영역 정리
+## [2026-11-23] — 2026-11-20 · D25. 시안 3 중복 영역 정리
 
 - 태그: [fix]
 - 상태: 완료
@@ -442,7 +445,7 @@
 - 실제 결과: 시안 3의 공통 하단 카드 네 개를 렌더링하지 않도록 하고 요약·카테고리 탐색과 기간 선택을 유지했다. 다른 시안은 기존 구성을 유지한다.
 - 검증: 클라이언트 빌드 및 관련 테스트 9개 통과. 로컬 PC 1600px 브라우저에서 요약·탐색 표시, 하단 공통 카드 없음 및 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D24. 시안 1 기반 개선안
+## [2026-11-23] — 2026-11-20 · D24. 시안 1 기반 개선안
 
 - 태그: [feat]
 - 상태: 완료
@@ -457,7 +460,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/components/ReportEnhanced.tsx`, `client/src/components/ReportEnhanced.css`, `client/src/components/ReportEnhanced.test.tsx`, 이전 `ReportTimeline` 컴포넌트·스타일·테스트 삭제, 네 문서.
 - 검증: 클라이언트 빌드 및 전체 테스트 36개 통과. 이후 기간 전환 테스트 추가 후 관련 테스트 8개 통과. 로컬 브라우저 PC 1427px에서 기존 리포트와 다섯 시안 전환, 모바일 390px에서 새 시안 2~5의 표시와 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D23. 리포트 시안 내용 차별화
+## [2026-11-23] — 2026-11-20 · D23. 리포트 시안 내용 차별화
 
 - 태그: [feat]
 - 상태: 완료
@@ -473,7 +476,7 @@
 - 변경 파일: `client/src/components/ReportPerspectives.tsx`, `client/src/components/ReportTimeline.tsx`, `client/src/components/ReportTimeline.css`, `client/src/components/ReportTimeline.test.tsx`, 네 문서.
 - 검증: 클라이언트 빌드 및 전체 테스트 37개 통과. 최초 테스트에서 중복 텍스트 선택으로 실패한 테스트를 해당 영역으로 한정한 뒤 재실행해 통과했다. 로컬 브라우저 PC 1427px·모바일 390px에서 시안 화면과 가로 넘침 없음을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D22. 리포트 비교 시안 확장
+## [2026-11-23] — 2026-11-20 · D22. 리포트 비교 시안 확장
 
 - 태그: [feat]
 - 상태: 완료
@@ -489,7 +492,7 @@
 - 변경 파일: `client/src/App.tsx`, `client/src/index.css`, `client/src/components/ReportTimeline.tsx`, `client/src/components/ReportTimeline.css`, `client/src/components/ReportTimeline.test.tsx`, 네 문서.
 - 검증: 클라이언트 전체 테스트 34개 통과, 마지막 문구 수정 후 관련 테스트 5개와 빌드 통과. 로컬 브라우저 PC 800px에서 기존 리포트 및 다섯 시안 전환을 확인하고 모바일 390px에서 시안 5와 가로 넘침 없음을 확인했다. 디자인 선택은 사용자 검토가 필요하다.
 
-## [Unreleased] — 2026-11-20 · D21. 리포트 비교 시안
+## [2026-11-23] — 2026-11-20 · D21. 리포트 비교 시안
 
 - 태그: [feat]
 - 상태: 완료
@@ -503,7 +506,7 @@
 - 실제 변경: `client/src/App.tsx`, `client/src/index.css`, `client/src/components/ReportPreview.tsx`, `client/src/components/ReportPreview.css`, `client/src/components/ReportPreview.test.tsx`, 네 문서. 기존 리포트를 보존하고 새 시안을 별도 탭에 추가했다. 좁은 PC 화면에서 탭 증가로 생기는 제목 겹침도 조정했다.
 - 검증: 클라이언트 전체 테스트 29개와 빌드 통과. 로컬 브라우저에서 두 탭 전환, PC 1427px 및 모바일 390px 화면 구조와 가로 넘침 없음을 확인하고, PC 800px에서 제목과 메뉴의 겹침 없음을 확인했다. 시각 디자인은 사용자 확인을 기다린다.
 
-## [Unreleased] — 2026-11-20 · D20. 본웹 데이터 로컬 반영
+## [2026-11-23] — 2026-11-20 · D20. 본웹 데이터 로컬 반영
 
 - 태그: [chore]
 - 상태: 완료
@@ -517,7 +520,7 @@
 - 실제 결과: 2026-11-20 생성한 본웹 읽기 전용 백업을 검증하고 테이블 구성이 일치하는 로컬 개발 DB에 트랜잭션으로 복원했다. 사용자 요청대로 기존 로컬 데이터의 별도 백업은 만들지 않았다. 본웹은 변경하지 않았다.
 - 검증: 백업 및 복원 후 테이블별 건수 검사 통과. 로컬 자동 인증, 거래·자산·고정비 API 정상 응답, 리포트에서 2026년 10월 승인 거래 표시를 확인했다. 최신 거래 월은 2026년 10월이다.
 
-## [Unreleased] — 2026-11-20 · D19. 상단 탭 순서 복원
+## [2026-11-23] — 2026-11-20 · D19. 상단 탭 순서 복원
 
 - 태그: [fix]
 - 상태: 완료
@@ -531,7 +534,7 @@
 - 실제 결과: 탭의 DOM 순서를 가계부 관리·고정비 관리·자산 관리·활동 로그·리포트로 정렬하고 인덱스에 의존하던 CSS 순서 지정을 제거했다.
 - 검증: 로컬 브라우저 1803px 화면에서 실제 탭 순서와 가로 넘침·탭 겹침 없음을 확인했다. 단순 배치 변경으로 별도 자동 테스트는 실행하지 않았다.
 
-## [Unreleased] — 2026-11-20 · D18. 글 중심 리포트 개선
+## [2026-11-23] — 2026-11-20 · D18. 글 중심 리포트 개선
 
 - 태그: [feat]
 - 상태: 완료
@@ -545,7 +548,7 @@
 - 실제 결과: 리포트를 결산 문장, 항목별 지출 변화, 구성원별 기록, 월별 흐름 및 참고 질문으로 구성했다. 미승인 경고와 기존 제외 설정을 유지했다. 연도별 추세와 더 다양한 인사이트는 기존 M13 후속 범위로 남긴다.
 - 검증: 클라이언트 전체 테스트 27개 통과, 마지막 수정 후 관련 테스트 4개와 빌드 통과. 로컬 브라우저에서 PC 1427px, 모바일 390px의 화면 구조와 가로 넘침 없음을 확인했다. 디자인의 시각적 검토는 사용자 확인이 필요하다.
 
-## [Unreleased] — 2026-11-20 · D17. 로컬 클라이언트 API 연결
+## [2026-11-23] — 2026-11-20 · D17. 로컬 클라이언트 API 연결
 
 - 태그: [fix]
 - 상태: 완료
@@ -559,7 +562,7 @@
 - 실제 결과: `client/.env.local`에 로컬 프록시 경로를 설정했다. 운영 설정과 기존 변경사항은 보존했다.
 - 검증: 별도 브라우저 세션을 새로고침한 뒤 로그인 화면 없이 메뉴가 표시되고 API 요청이 로컬 주소를 사용하는 것을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D16. 로컬 비밀번호 없는 접속
+## [2026-11-23] — 2026-11-20 · D16. 로컬 비밀번호 없는 접속
 
 - 태그: [feat]
 - 상태: 완료
@@ -574,7 +577,7 @@
 - 추가 발견: 기존 서버가 `127.0.0.1:3000` 브라우저 출처를 거부했으나 로그인 화면이 이를 비밀번호 오류로 표시했다. 로컬 개발 출처를 허용했다.
 - 검증: 서버 타입 검사와 자동 인증 조건 테스트 2개 통과. 프런트엔드 프록시에서 새 세션으로 관리자 인증과 거래 API 응답을 확인했고 전달 주소 헤더가 있는 요청은 401을 확인했다. 기본 테스트 실행의 설정 접근 오류는 `--configLoader runner`로 해결했다.
 
-## [Unreleased] — 2026-11-20 · D15. 로컬 관리자 로그인 복구
+## [2026-11-23] — 2026-11-20 · D15. 로컬 관리자 로그인 복구
 
 - 태그: [chore]
 - 상태: 완료
@@ -588,10 +591,10 @@
 - 실제 결과: 로컬 DB 호스트를 확인하고 관리자 인증값을 변경했다. 임시 비밀번호는 Git에서 제외되는 로컬 파일에만 저장했다. 운영 DB와 다른 계정은 변경하지 않았다.
 - 검증: 프런트엔드 프록시를 통한 로컬 관리자 로그인 성공을 확인했다.
 
-## [Unreleased] — 2026-11-20 · D14. 월간·연간 리포트 탭
+## [2026-11-23] — 2026-11-20 · D14. 월간·연간 리포트 탭
 
 - 태그: [feat]
-- 상태: 진행중
+- 상태: 완료
 - 변경 파일(예정): `client/src/`, `docs/PRD.md`, `docs/TRD.md`, `docs/PLAN.md`, `docs/LOG.md`
 - 착수 배경: 로컬에서 월간·연간 리포트와 미승인 경고, 구성원·카테고리 및 추세를 확인한다. 메일은 후속 단계다.
 - `docs/PRD.md`: 변경 예정 — 리포트 요구사항을 추가한다.
