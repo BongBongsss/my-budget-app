@@ -18,6 +18,7 @@ import chartSettingsRoutes from './routes/chartSettingsRoutes';
 import assetTypeRoutes from './routes/assetTypeRoutes';
 import reviewRequestRoutes from './routes/reviewRequestRoutes';
 import noticeRoutes from './routes/noticeRoutes';
+import makeReportRoutes from './routes/makeReportRoutes';
 import cron from 'node-cron';
 import { processRecurringTransactions } from './services/recurringService';
 import connectPgSimple from 'connect-pg-simple';
@@ -220,6 +221,8 @@ app.post('/api/change-password', asyncHandler(async (req: any, res: any) => {
 
   res.json({ success: true });
 }));
+
+app.use('/api/integrations/make', makeReportRoutes);
 
 app.use('/api', (req, res, next) => {
     if (req.path === '/login' || req.path === '/health' || req.path === '/auth-status') return next();
